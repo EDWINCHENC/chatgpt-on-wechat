@@ -172,9 +172,9 @@ class CCLite(Plugin):
                 if context.kwargs.get('isgroup'):
                     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                     nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n☑️正在获取实时要闻🔜".format(name=nickname))
+                    _send_info(e_context, "@{name}\n🔜正在获取实时要闻🐳🐳🐳".format(name=nickname))
                 else:
-                    _send_info(e_context, "☑️正在获取实时要闻🔜")
+                    _send_info(e_context, "🔜正在获取实时要闻🐳🐳🐳")
 
                 # 拼接完整的API请求URL
                 api_url = f"{API_BASE_URL}/latest_news/"
@@ -196,9 +196,9 @@ class CCLite(Plugin):
                 if context.kwargs.get('isgroup'):
                     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                     nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n☑️正在获取实时财经资讯🔜".format(name=nickname))
+                    _send_info(e_context, "@{name}\n🔜正在获取实时财经资讯🐳🐳🐳".format(name=nickname))
                 else:
-                    _send_info(e_context, "☑️正在获取实时财经资讯🔜")
+                    _send_info(e_context, "🔜正在获取实时财经资讯🐳🐳🐳")
 
                 # 拼接完整的API请求URL
                 api_url = f"{API_BASE_URL}/financial_news/"
@@ -227,9 +227,9 @@ class CCLite(Plugin):
                 if context.kwargs.get('isgroup'):
                     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                     nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n☑️正在获取{city}的天气情况，请稍后...".format(name=nickname, city=city_name))
+                    _send_info(e_context, "@{name}\n🔜正在获取{city}的天气情况🐳🐳🐳".format(name=nickname, city=city_name))
                 else:
-                    _send_info(e_context, "☑️正在获取{city}的天气情况，请稍后...".format(city=city_name))
+                    _send_info(e_context, "🔜正在获取{city}的天气情况🐳🐳🐳".format(city=city_name))
 
                 # 向API端点发送GET请求，获取指定城市的天气情况
                 try:
@@ -313,9 +313,9 @@ class CCLite(Plugin):
                 if e_context['context'].kwargs.get('isgroup'):
                     msg = e_context['context'].kwargs.get('msg')  # 这是WechatMessage实例
                     nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, f"@{nickname}\n☑️正在获取最新影讯🔜🔜🔜")
+                    _send_info(e_context, f"@{nickname}\n🔜正在获取最新影讯🐳🐳🐳")
                 else:
-                    _send_info(e_context, "☑️正在获取最新影讯🔜🔜🔜")
+                    _send_info(e_context, "🔜正在获取最新影讯🐳🐳🐳")
 
                 # 构建API请求的URL
                 api_url = f"{API_BASE_URL}/now_playing_movies/"
@@ -355,7 +355,7 @@ class CCLite(Plugin):
                 if context.kwargs.get('isgroup'):
                     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                     nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context,"@{name}\n☑️正在为您查询豆瓣的最热影视剧榜单，请稍后...".format(name=nickname)) 
+                    _send_info(e_context,"@{name}\n☑️正在为您查询豆瓣的最热影视剧榜单🐳🐳🐳".format(name=nickname)) 
                 else:
                     _send_info(e_context, "☑️正在为您查询豆瓣的最热影视剧榜单，请稍后...") 
                 # 调用函数，获取豆瓣最热电视剧榜单
