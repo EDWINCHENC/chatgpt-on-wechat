@@ -54,6 +54,7 @@ class CCLite(Plugin):
                 self.bing_subscription_key = config["bing_subscription_key"]
                 self.google_api_key = config["google_api_key"]
                 self.getwt_key = config["getwt_key"]
+                self.cc_api_base = config.get("cc_api_base", "https://api.lfei.cc")
                 self.google_cx_id = config["google_cx_id"]        
                 self.functions_openai_model = config["functions_openai_model"]
                 self.assistant_openai_model = config["assistant_openai_model"]
@@ -70,6 +71,9 @@ class CCLite(Plugin):
 
     def get_prompt_for_function(self, function_name):
         return self.prompt.get(function_name, self.default_prompt)
+    
+    def base_url(self):
+        return self.cc_api_base
 
 
     # 定义常量来表示不同的会话阶段和查询类型
@@ -164,10 +168,7 @@ class CCLite(Plugin):
         if message.get("function_call"):
             function_name = message["function_call"]["name"]
             logger.debug(f"Function call: {function_name}")  # 打印函数调用
-            # 处理各种可能的函数调用，执行函数并获取函数的返回结果
-            
-            API_BASE_URL = "https://api.lfei.cc"
-            
+            # 处理各种可能的函数调用，执行函数并获取函数的返回结果                       
             if function_name == "fetch_latest_news":  # 1.获取最新新闻
                 if context.kwargs.get('isgroup'):
                     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
@@ -177,7 +178,7 @@ class CCLite(Plugin):
                     _send_info(e_context, "🔜正在获取实时要闻🐳🐳🐳")
 
                 # 拼接完整的API请求URL
-                api_url = f"{API_BASE_URL}/latest_news/"
+                api_url = f"{self.base_url()}/latest_news/"
                 
                 try:
                     # 发送GET请求到你的FastAPI服务
@@ -201,7 +202,7 @@ class CCLite(Plugin):
                     _send_info(e_context, "🔜正在获取实时财经资讯🐳🐳🐳")
 
                 # 拼接完整的API请求URL
-                api_url = f"{API_BASE_URL}/financial_news/"
+                api_url = f"{self.base_url()}/financial_news/"
                 
                 try:
                     # 发送GET请求到你的FastAPI服务
@@ -234,7 +235,7 @@ class CCLite(Plugin):
                 # 向API端点发送GET请求，获取指定城市的天气情况
                 try:
                     response = requests.get(
-                        API_BASE_URL + "/weather/",
+                        self.base_url() + "/weather/",
                         params={
                             "city_name": city_name,
                             "user_key": user_key,
@@ -252,7 +253,7 @@ class CCLite(Plugin):
 
             elif function_name == "request_train_info":  # 4.获取火车票信息
                 # 从message里提取函数调用参数
-                url = API_BASE_URL + "/train_info"  # 构建完整的API端点URL
+                url = self.base_url() + "/train_info"  # 构建完整的API端点URL
                 function_args_str = message["function_call"].get("arguments", "{}")
                 function_args = json.loads(function_args_str)
                 departure = function_args.get("departure", None)  # 默认值可以根据需要设置
@@ -269,7 +270,7 @@ class CCLite(Plugin):
                 # 向端点发送请求，获取指定路线的火车票信息
                 try:
                     response = requests.get(
-                        API_BASE_URL + "/train_info/",
+                        self.base_url() + "/train_info/",
                         params={
                             "departure": departure,
                             "arrival": arrival,
@@ -292,7 +293,7 @@ class CCLite(Plugin):
                 function_args = json.loads(function_args_str)
                 search_content = function_args.get("search_content", "")  # 默认为空字符串
 
-                api_url = f"{API_BASE_URL}/douyin_video/"
+                api_url = f"{self.base_url()}/douyin_video/"
                 try:
                     response = requests.get(api_url, params={"search_content": search_content})
                     response.raise_for_status()  # 检查请求是否成功
@@ -318,7 +319,7 @@ class CCLite(Plugin):
                     _send_info(e_context, "🔜正在获取最新影讯🐳🐳🐳")
 
                 # 构建API请求的URL
-                api_url = f"{API_BASE_URL}/now_playing_movies/"
+                api_url = f"{self.base_url()}/now_playing_movies/"
 
                 # 向FastAPI端点发送GET请求
                 try:
@@ -362,7 +363,7 @@ class CCLite(Plugin):
                 # 向API端点发送GET请求，获取最热影视剧榜单
                 try:
                     response = requests.get(
-                        API_BASE_URL + "/top_tv_shows/",
+                        self.base_url() + "/top_tv_shows/",
                         params={
                             "limit": limit,
                             "type": type_,
@@ -401,7 +402,7 @@ class CCLite(Plugin):
 
             elif function_name == "get_hero_ranking":  # 9.获取英雄梯度榜
                 # 构建 API 请求的 URL
-                api_url = f"{API_BASE_URL}/hero_ranking/"
+                api_url = f"{self.base_url()}/hero_ranking/"
                 
                 # 向 FastAPI 端点发送 GET 请求
                 try:
