@@ -4,7 +4,7 @@
   "google_api_key": "AIzaSyAwm53ySYDDRqrTyips5g60kgICISVDiZU",  
   "google_cx_id": "b52dcbdaf00c443ad",  
   "functions_openai_model":"gpt-3.5-turbo-1106",   
-  "assistant_openai_model":"gpt-4-1106-preview",   
+  "assistant_openai_model":"gpt-3.5-turbo-1106",   
   "getwt_key":"fce4fdf1983c47048d06af2512ba29bf",
   "temperature":0.8,     
   "cc_api_base":"https://api.lfei.cc",
