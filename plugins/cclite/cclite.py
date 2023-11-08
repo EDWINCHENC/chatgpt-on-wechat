@@ -160,9 +160,9 @@ class CCLite(Plugin):
             functions=self.functions,
             function_call="auto",
         )
-
+        logger.debug(f"Initial response: {response}")  # 打印原始的response以及其类型
         message = response["choices"][0]["message"]  # 获取模型返回的消息。 
-        
+       
         logger.debug(f"message={message}")
         # 检查模型是否希望调用函数
         if message.get("function_call"):
