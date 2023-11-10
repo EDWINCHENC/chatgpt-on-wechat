@@ -249,7 +249,7 @@ class CCLite(Plugin):
                     logger.error(f"Error fetching weather info: {e}")
                     function_response = {"error": str(e)}
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                return function_response
+                # return function_response
 
             elif function_name == "request_train_info":  # 4.获取火车票信息
                 # 从message里提取函数调用参数
