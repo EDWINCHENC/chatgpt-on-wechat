@@ -1,6 +1,6 @@
 {
-  "open_ai_api_key": "ak-5d3891qEOMMKTqcNBmSVtdO9MxODinFP2iDDPJiNzOZaBcbx",
-  "open_ai_api_base": "https://api.nextweb.fun/openai/v1",
+  "open_ai_api_key": "sk-cZ9VPD4YyFz9m5cyB70dD67d111e4d7d8c2cF3D6B65751Ae",
+  "open_ai_api_base": "https://api.aigcbest.top/v1",
   "model": "gpt-3.5-turbo-1106",
   "proxy": "",
   "single_chat_prefix": [
