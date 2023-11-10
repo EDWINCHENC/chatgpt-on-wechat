@@ -12,15 +12,19 @@
   [
     {
       "key_word": "早报",
-      "func_command_prefix":"$tool "
+      "func_command_prefix":""
     },
     {
-      "key_word": "点歌",
-      "func_command_prefix": "$"
+      "key_word": "AI资讯",
+      "func_command_prefix":"$"
+    },
+    {
+      "key_word": "财经头条",
+      "func_command_prefix":""
     },
     {
       "key_word": "搜索",
-      "func_command_prefix": "$tool google "
+      "func_command_prefix":""
     },
     {
       "key_word": "GPT",
