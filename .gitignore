@@ -9,7 +9,6 @@ venv*
 *.pyc
 QR.png
 nohup.out
-config.json
 tmp
 plugins.json
 itchat.pkl
