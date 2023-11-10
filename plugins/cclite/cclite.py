@@ -186,7 +186,7 @@ class CCLite(Plugin):
                     response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
                     function_response = response.json()  # 解析JSON响应体为字典
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                    return function_response["results"]  # 返回结果字段中的数据
+                    function_response = function_response["results"]  # 返回结果字段中的数据
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
                     _send_info(e_context, "获取最新新闻失败，请稍后再试。")
@@ -210,7 +210,7 @@ class CCLite(Plugin):
                     response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
                     function_response = response.json()  # 解析JSON响应体为字典
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                    return function_response["results"]  # 返回结果字段中的数据
+                    function_response = function_response["results"]  # 返回结果字段中的数据
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
                     _send_info(e_context, "获取财经资讯失败，请稍后再试。")
@@ -286,28 +286,6 @@ class CCLite(Plugin):
                     function_response = {"error": str(e)}
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 return function_response
-
-            elif function_name == "get_douyin_video":  # 5.获取抖音视频
-                # 从message里提取函数调用参数
-                function_args_str = message["function_call"].get("arguments", "{}")
-                function_args = json.loads(function_args_str)
-                search_content = function_args.get("search_content", "")  # 默认为空字符串
-
-                api_url = f"{self.base_url()}/douyin_video/"
-                try:
-                    response = requests.get(api_url, params={"search_content": search_content})
-                    response.raise_for_status()  # 检查请求是否成功
-
-                    # 解析响应数据
-                    function_response = response.json()
-                    function_response = function_response.get("results", "未知错误")
-                    # 打印函数响应
-                    logger.debug(f"Function response: {function_response}")
-                    # 返回抖音视频链接
-                    return function_response
-                except Exception as e:
-                    logger.error(f"Error fetching train info: {e}")
-                    function_response = {"error": str(e)}
                   
             elif function_name == "fetch_nowplaying_movies": # 6.获取正在上映的电影
                 # 发送信息到用户，告知正在获取数据
@@ -367,6 +345,26 @@ class CCLite(Plugin):
                         params={
                             "limit": limit,
                             "type": type_,
+                        }
+                    )
+                    response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                    function_response = response.json()
+                    function_response = function_response.get("results", "未知错误")
+                except Exception as e:
+                    logger.error(f"Error fetching top TV shows info: {e}")
+                    function_response = {"error": str(e)}
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                
+            elif function_name == "fetch_ai_news":  # 7.获取豆瓣最热电视剧榜单              
+                # 从message里提取函数调用参数
+                function_args_str = message["function_call"].get("arguments", "{}")
+                function_args = json.loads(function_args_str)
+                max_items = function_args.get("max_items", 6)
+                try:
+                    response = requests.get(
+                        self.base_url() + "/ainews/",
+                        params={
+                            "max_items": max_items
                         }
                     )
                     response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常

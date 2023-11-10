@@ -16,6 +16,20 @@
         }
     },
     {
+        "name": "fetch_ai_news",
+        "description": "获取最新的AI相关新闻。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "max_items": {
+                    "type": "integer",
+                    "description": "返回的最大新闻条目数，默认是8。"
+                }
+            }
+        },
+        "required": ["max_items"]
+    },
+    {
         "name": "get_morning_news",
         "description": "获取每日早报信息",
         "parameters": {
@@ -183,20 +197,5 @@
             },
             "required": ["departure", "arrival"]
         }
-    },
-    {
-        "name": "get_douyin_video",
-        "description": "用户通过输入搜索抖音的内容，该函数会随机返回一个与搜索内容相关的抖音视频链接。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "search_content": {
-                    "type": "string",
-                    "description": "用户输入的用于搜索抖音视频的内容，例如抖音热门舞蹈、抖音五月天，查询参数为：'热门舞蹈、五月天'等。",
-                    "default": null
-                }
-            },
-            "required": ["search_content"]
-        }
-    }            
+    }
 ]
