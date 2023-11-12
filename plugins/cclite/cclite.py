@@ -131,8 +131,8 @@ class CCLite(Plugin):
             if conversation_output:
                 reply_type = ReplyType.TEXT
                 # 假设所有视频URL都以 "http://" 或 "https://" 开头
-                if conversation_output.startswith(("http://", "https://")):
-                    reply_type = ReplyType.VIDEO_URL                
+                # if conversation_output.startswith(("http://", "https://")):
+                #     reply_type = ReplyType.VIDEO_URL                
                 _set_reply_text(conversation_output, e_context, level=reply_type)
                 logger.debug(f"Conversation output: {conversation_output}")
 
@@ -168,6 +168,7 @@ class CCLite(Plugin):
         if message.get("function_call"):
             function_name = message["function_call"]["name"]
             logger.debug(f"Function call: {function_name}")  # 打印函数调用
+            
             # 处理各种可能的函数调用，执行函数并获取函数的返回结果                       
             if function_name == "fetch_latest_news":  # 1.获取最新新闻
                 if context.kwargs.get('isgroup'):
@@ -189,9 +190,8 @@ class CCLite(Plugin):
                     function_response = function_response["results"]  # 返回结果字段中的数据
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
-                    _send_info(e_context, "获取最新新闻失败，请稍后再试。")
-                    return None
-
+                    _set_reply_text("获取最新新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
             elif function_name == "fetch_financial_news":  # 2.获取财经新闻
                 if context.kwargs.get('isgroup'):
@@ -215,6 +215,7 @@ class CCLite(Plugin):
                     logger.error(f"Request to API failed: {e}")
                     _send_info(e_context, "获取财经资讯失败，请稍后再试。")
                     return None
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
 
 
             elif function_name == "get_weather_by_city_name":  # 3.获取天气
@@ -247,7 +248,7 @@ class CCLite(Plugin):
                     function_response = function_response.get("results", "未知错误")
                 except Exception as e:
                     logger.error(f"Error fetching weather info: {e}")
-                    function_response = {"error": str(e)}
+                    _set_reply_text("获取天气信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 # return function_response
 
@@ -352,14 +353,20 @@ class CCLite(Plugin):
                     function_response = function_response.get("results", "未知错误")
                 except Exception as e:
                     logger.error(f"Error fetching top TV shows info: {e}")
-                    function_response = {"error": str(e)}
+                    _set_reply_text("获取最热影视剧榜单失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
-            elif function_name == "fetch_ai_news":  # 7.获取豆瓣最热电视剧榜单              
+            elif function_name == "fetch_ai_news":  # 7.获取AI新闻              
                 # 从message里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
                 function_args = json.loads(function_args_str)
                 max_items = function_args.get("max_items", 6)
+                if context.kwargs.get('isgroup'):
+                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                    nickname = msg.actual_user_nickname  # 获取nickname
+                    _send_info(e_context, "@{name}\n🔜正在获取最新AI资讯🐳🐳🐳".format(name=nickname))
+                else:
+                    _send_info(e_context, "🔜正在获取最新AI资讯🐳🐳🐳")
                 try:
                     response = requests.get(
                         self.base_url() + "/ainews/",
@@ -372,7 +379,7 @@ class CCLite(Plugin):
                     function_response = function_response.get("results", "未知错误")
                 except Exception as e:
                     logger.error(f"Error fetching top TV shows info: {e}")
-                    function_response = {"error": str(e)}
+                    _set_reply_text("获取AI新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                                            
             elif function_name == "fetch_hero_trending":  # 8.获取英雄热度趋势
@@ -386,7 +393,7 @@ class CCLite(Plugin):
                     _send_info(e_context,"@{name}\n☑️正在为您进行指定英雄（{hero}）的数据获取，请稍后...".format(name=nickname, hero=hero_name)) 
                 else:
                     _send_info(e_context, f"☑️正在为进行指定英雄（{hero_name}）的数据获取，请稍后...") 
-                # 调用函数，获取指定英雄的热度信息
+
                 # 调用第一个函数并获取返回值
                 function_response1 = hero_trending.fetch_and_parse_data(hero_name=hero_name)
                 # 调用第二个函数并获取返回值
