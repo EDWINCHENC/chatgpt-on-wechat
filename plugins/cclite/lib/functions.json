@@ -11,8 +11,16 @@
         "name": "fetch_financial_news",
         "description": "用户通过'财经头条''实时财经'等口令从财经网站上获取最新的7*24小时实时财经新闻和摘要信息。",
         "parameters": {
-          "type": "object",
-          "properties": {}
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "fetch_cls_news",
+        "description": "用户通过'财联社'等口令，获取财联社最新重要新闻。",
+        "parameters": {
+            "type": "object",
+            "properties": {}
         }
     },
     {

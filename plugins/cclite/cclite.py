@@ -381,7 +381,26 @@ class CCLite(Plugin):
                     logger.error(f"Error fetching top TV shows info: {e}")
                     _set_reply_text("获取AI新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                                           
+                
+            elif function_name == "fetch_cls_news":  # 获取CLS新闻
+                if context.kwargs.get('isgroup'):
+                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                    nickname = msg.actual_user_nickname  # 获取nickname
+                    _send_info(e_context, "@{name}\n🔜正在获取最新CLS新闻📰📰📰".format(name=nickname))
+                else:
+                    _send_info(e_context, "🔜正在获取最新CLS新闻📰📰📰")
+                
+                try:
+                    response = requests.get(self.base_url() + "/clsnews/")
+                    response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                    function_response = response.json()
+                    function_response = function_response.get("results", "未知错误")
+                except Exception as e:
+                    logger.error(f"Error fetching CLS news: {e}")
+                    _set_reply_text("获取CLS新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)               
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                
+                                       
             elif function_name == "fetch_hero_trending":  # 8.获取英雄热度趋势
                 # 从message里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
