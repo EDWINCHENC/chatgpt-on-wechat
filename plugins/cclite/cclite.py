@@ -14,6 +14,7 @@ from common import const
 from common.log import logger
 from datetime import datetime
 import os
+import time
 from .lib import herotrending as hero_trending,fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google
 
 
@@ -171,16 +172,9 @@ class CCLite(Plugin):
             
             # 处理各种可能的函数调用，执行函数并获取函数的返回结果                       
             if function_name == "fetch_latest_news":  # 1.获取最新新闻
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n🔜正在获取实时要闻🐳🐳🐳".format(name=nickname))
-                else:
-                    _send_info(e_context, "🔜正在获取实时要闻🐳🐳🐳")
-
-                # 拼接完整的API请求URL
                 api_url = f"{self.base_url()}/latest_news/"
-                
+                start_time = time.time()  # 开始计时
+
                 try:
                     # 发送GET请求到你的FastAPI服务
                     response = requests.get(api_url)
@@ -188,22 +182,26 @@ class CCLite(Plugin):
                     function_response = response.json()  # 解析JSON响应体为字典
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                     function_response = function_response["results"]  # 返回结果字段中的数据
+
+                    elapsed_time = time.time() - start_time  # 计算耗时
+
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅联网获取实时要闻成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅联网获取实时要闻成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
                     _set_reply_text("获取最新新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
             elif function_name == "fetch_financial_news":  # 2.获取财经新闻
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n🔜正在获取实时财经资讯🐳🐳🐳".format(name=nickname))
-                else:
-                    _send_info(e_context, "🔜正在获取实时财经资讯🐳🐳🐳")
-
-                # 拼接完整的API请求URL
                 api_url = f"{self.base_url()}/financial_news/"
-                
+                start_time = time.time()  # 开始计时
+
                 try:
                     # 发送GET请求到你的FastAPI服务
                     response = requests.get(api_url)
@@ -211,12 +209,20 @@ class CCLite(Plugin):
                     function_response = response.json()  # 解析JSON响应体为字典
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                     function_response = function_response["results"]  # 返回结果字段中的数据
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅联网获取到实时财经资讯成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅已联网获取到实时财经资讯，正在整理。🕒耗时: {elapsed_time:.2f}秒")
+
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
                     _send_info(e_context, "获取财经资讯失败，请稍后再试。")
                     return None
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-
 
             elif function_name == "get_weather_by_city_name":  # 3.获取天气
                 # 从message里提取函数调用参数
