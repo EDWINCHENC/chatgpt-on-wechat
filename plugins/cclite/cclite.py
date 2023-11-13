@@ -155,6 +155,7 @@ class CCLite(Plugin):
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base        
         logger.debug(f"User input: {input_messages}")  #用户输入
+        start_time = time.time()  # 开始计时
         response = openai.ChatCompletion.create(
             model=self.functions_openai_model,
             messages=input_messages,
@@ -169,11 +170,11 @@ class CCLite(Plugin):
         if message.get("function_call"):
             function_name = message["function_call"]["name"]
             logger.debug(f"Function call: {function_name}")  # 打印函数调用
+
             
             # 处理各种可能的函数调用，执行函数并获取函数的返回结果                       
             if function_name == "fetch_latest_news":  # 1.获取最新新闻
                 api_url = f"{self.base_url()}/latest_news/"
-                start_time = time.time()  # 开始计时
 
                 try:
                     # 发送GET请求到你的FastAPI服务
@@ -182,16 +183,14 @@ class CCLite(Plugin):
                     function_response = response.json()  # 解析JSON响应体为字典
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                     function_response = function_response["results"]  # 返回结果字段中的数据
-
                     elapsed_time = time.time() - start_time  # 计算耗时
-
                     # 仅在成功获取数据后发送信息
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅联网获取实时要闻成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                        _send_info(e_context, f"@{nickname}\n✅联网获取实时要闻成功,🐳正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context, f"✅联网获取实时要闻成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                        _send_info(e_context, f"✅联网获取实时要闻成功,🐳正在整理。🕒耗时{elapsed_time:.2f}秒")
 
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
@@ -200,8 +199,7 @@ class CCLite(Plugin):
                 
             elif function_name == "fetch_financial_news":  # 2.获取财经新闻
                 api_url = f"{self.base_url()}/financial_news/"
-                start_time = time.time()  # 开始计时
-
+                
                 try:
                     # 发送GET请求到你的FastAPI服务
                     response = requests.get(api_url)
@@ -214,9 +212,9 @@ class CCLite(Plugin):
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅联网获取到实时财经资讯成功,🐳正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                        _send_info(e_context, f"@{nickname}\n✅联网获取实时财经资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context, f"✅已联网获取到实时财经资讯，正在整理。🕒耗时: {elapsed_time:.2f}秒")
+                        _send_info(e_context, f"✅联网获取实时财经资讯，正在整理。🕒耗时{elapsed_time:.2f}秒")
 
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
@@ -260,7 +258,6 @@ class CCLite(Plugin):
 
             elif function_name == "request_train_info":  # 4.获取火车票信息
                 # 从message里提取函数调用参数
-                url = self.base_url() + "/train_info"  # 构建完整的API端点URL
                 function_args_str = message["function_call"].get("arguments", "{}")
                 function_args = json.loads(function_args_str)
                 departure = function_args.get("departure", None)  # 默认值可以根据需要设置
@@ -325,10 +322,6 @@ class CCLite(Plugin):
                 except requests.HTTPError as http_err:
                     # 如果请求出错，则设置失败消息
                     _set_reply_text(f"\n❌HTTP请求错误: {http_err}", e_context, level=ReplyType.TEXT)
-                except Exception as err:
-                    # 如果发生其他错误，则设置失败消息
-                    _set_reply_text(f"\n❌请求失败: {err}", e_context, level=ReplyType.TEXT)               
-                # 记录响应
                 logger.debug(f"Function response: {function_response}")
 
                 
@@ -367,12 +360,6 @@ class CCLite(Plugin):
                 function_args_str = message["function_call"].get("arguments", "{}")
                 function_args = json.loads(function_args_str)
                 max_items = function_args.get("max_items", 6)
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n🔜正在获取最新AI资讯🐳🐳🐳".format(name=nickname))
-                else:
-                    _send_info(e_context, "🔜正在获取最新AI资讯🐳🐳🐳")
                 try:
                     response = requests.get(
                         self.base_url() + "/ainews/",
@@ -382,25 +369,34 @@ class CCLite(Plugin):
                     )
                     response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
                     function_response = response.json()
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅联网获取AI资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅联网获取AI资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     function_response = function_response.get("results", "未知错误")
                 except Exception as e:
                     logger.error(f"Error fetching top TV shows info: {e}")
                     _set_reply_text("获取AI新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
-            elif function_name == "fetch_cls_news":  # 获取CLS新闻
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, "@{name}\n🔜正在获取最新CLS新闻📰📰📰".format(name=nickname))
-                else:
-                    _send_info(e_context, "🔜正在获取最新CLS新闻📰📰📰")
-                
+            elif function_name == "fetch_cls_news":  # 获取CLS新闻                
                 try:
                     response = requests.get(self.base_url() + "/clsnews/")
                     response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
                     function_response = response.json()
                     function_response = function_response.get("results", "未知错误")
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅联网获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅联网获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                    
                 except Exception as e:
                     logger.error(f"Error fetching CLS news: {e}")
                     _set_reply_text("获取CLS新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)               
@@ -499,6 +495,8 @@ class CCLite(Plugin):
                 
             elif function_name == "get_morning_news":  # 11.获取每日早报
                 function_response = fun.get_morning_news(api_key=self.alapi_key)
+                elapsed_time = time.time() - start_time  # 计算耗时
+                _send_info(e_context, f"✅获取早报成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
                                         
@@ -520,28 +518,29 @@ class CCLite(Plugin):
                 search_query = function_args.get("query", "未指定关键词")
                 search_count = function_args.get("count", 1)
                 if "搜索" in context.content or "必应" in context.content.lower():
-                    if context.kwargs.get('isgroup'):
-                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                        nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context,"@{name}\n☑️正在实时联网必应搜索🐳🐳🐳".format(
-                            name=nickname)) 
-                    else:
-                        _send_info(e_context,"☑️正在实时联网必应搜索🐳🐳🐳")
-
                     function_response = fun.search_bing(subscription_key=self.bing_subscription_key, query=search_query,
                                                         count=int(search_count))
                     function_response = json.dumps(function_response, ensure_ascii=False)
-                    logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                elif "谷歌" in context.content or "谷歌搜索" in context.content or "google" in context.content.lower():
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context,"@{name}\n☑️正在实时联网谷歌搜索🐳🐳🐳".format(
-                            name=nickname)) 
+                        _send_info(e_context, f"@{nickname}\n✅联网搜索获取信息成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context,"☑️正在实时联网谷歌搜索🐳🐳🐳")
+                        _send_info(e_context, f"✅联网搜索获取信息成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                    logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                elif "谷歌" in context.content or "谷歌搜索" in context.content or "google" in context.content.lower():
                     function_response = google.search_google(search_terms=search_query, iterations=1, count=1,api_key=self.google_api_key, cx_id=self.google_cx_id,model=self.assistant_openai_model)
                     function_response = json.dumps(function_response, ensure_ascii=False)
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅联网搜索获取信息成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅联网搜索获取信息成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 else:
                     return None                    
