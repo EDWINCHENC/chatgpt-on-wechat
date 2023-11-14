@@ -80,13 +80,13 @@
     },
     {
         "name": "webpilot_search",
-        "description": "默认搜索工具,也可以通过'webpilot搜索', 'w搜索'调用WebPilot,获取与特定搜索关键词相关的内容",
+        "description": "默认搜索工具,只要带有'w'或'搜索'这个关键字,即可调用WebPilot,获取与特定搜索关键词相关的内容",
         "parameters": {
             "type": "object",
             "properties": {
                 "search_term": {
                     "type": "string",
-                    "description": "用户输入的搜索关键词，用于检索相关内容"
+                    "description": ",用户输入的搜索关键词，用于检索相关内容如果用户输入内容中包括'w'或'搜索'这个关键字，则触发检索，例如'w成都的美食',则参数为'成都的美食'"
                 }
             },
             "required": ["search_term"]
