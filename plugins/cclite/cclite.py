@@ -560,7 +560,7 @@ class CCLite(Plugin):
                     )
                     response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
                     function_response = response.json()
-                    function_response = function_response.get("content", "未知错误")
+                    function_response = function_response.get("results", "未知错误")
                     elapsed_time = time.time() - start_time  # 计算耗时
                     # 仅在成功获取数据后发送信息
                     if context.kwargs.get('isgroup'):
