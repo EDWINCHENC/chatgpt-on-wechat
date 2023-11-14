@@ -60,8 +60,8 @@
         }
     },
     {
-        "name": "search",
-        "description": "默认搜索工具，谷歌和必应的搜索引擎",
+        "name": "bing_google_search",
+        "description": "通过必应或谷歌等关键词触发该搜索工具,通过调用谷歌和必应的搜索引擎,获取搜索结果",
         "parameters": {
             "type": "object",
             "properties": {
@@ -78,6 +78,20 @@
             "required": ["query", "count"]
         }
     },
+    {
+        "name": "webpilot_search",
+        "description": "默认搜索工具,也可以通过'webpilot搜索', 'w搜索'调用WebPilot,获取与特定搜索关键词相关的内容",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "search_term": {
+                    "type": "string",
+                    "description": "用户输入的搜索关键词，用于检索相关内容"
+                }
+            },
+            "required": ["search_term"]
+        }
+    },    
     {
         "name": "fetch_hero_trending",
         "description": "查询王者荣耀某个英雄的相关数据，如'xx英雄趋势'，'xx英雄热度','xx英雄数据'等相关指令来获取指定英雄近一个月/一段时间的热度趋势、胜率、受欢迎程度等数据",
