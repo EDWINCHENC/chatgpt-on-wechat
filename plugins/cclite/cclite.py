@@ -566,9 +566,9 @@ class CCLite(Plugin):
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅Webpilot搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"@{nickname}\n✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context, f"✅Webpilot搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 except Exception as e:
                     logger.error(f"Error fetching content: {e}")
