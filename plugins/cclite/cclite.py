@@ -130,10 +130,9 @@ class CCLite(Plugin):
             # 运行会话并获取输出
             conversation_output = self.run_conversation(input_messages, e_context)
             if conversation_output:
-                reply_type = ReplyType.TEXT
-                # 假设所有视频URL都以 "http://" 或 "https://" 开头
-                # if conversation_output.startswith(("http://", "https://")):
-                #     reply_type = ReplyType.VIDEO_URL                
+            # 使用这个函数来处理对话输出
+                conversation_output = remove_markdown(conversation_output)
+                reply_type = ReplyType.TEXT        
                 _set_reply_text(conversation_output, e_context, level=reply_type)
                 logger.debug(f"Conversation output: {conversation_output}")
 
@@ -682,6 +681,13 @@ def _set_reply_text(content: str, e_context: EventContext, level: ReplyType = Re
     reply = Reply(level, content)
     e_context["reply"] = reply
     e_context.action = EventAction.BREAK_PASS
+
+def remove_markdown(text):
+    # 替换Markdown的粗体标记
+    text = text.replace("**", "")
+    # 替换Markdown的标题标记
+    text = text.replace("### ", "").replace("## ", "").replace("# ", "")
+    return text
 
 
 
