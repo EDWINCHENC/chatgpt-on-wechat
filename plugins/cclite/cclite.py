@@ -15,7 +15,7 @@ from common.log import logger
 from datetime import datetime
 import os
 import time
-from .lib import herotrending as hero_trending,fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google
+from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google
 
 
 
@@ -217,8 +217,7 @@ class CCLite(Plugin):
 
                 except requests.RequestException as e:
                     logger.error(f"Request to API failed: {e}")
-                    _send_info(e_context, "获取财经资讯失败，请稍后再试。")
-                    return None
+                    _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
 
             elif function_name == "get_weather_by_city_name":  # 3.获取天气
@@ -286,7 +285,7 @@ class CCLite(Plugin):
                     function_response = function_response['results']
                 except Exception as e:
                     logger.error(f"Error fetching train info: {e}")
-                    function_response = {"error": str(e)}
+                    _set_reply_text("获取火车票信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 return function_response
                   
@@ -398,7 +397,7 @@ class CCLite(Plugin):
                         _send_info(e_context, f"✅获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                    
                 except Exception as e:
                     logger.error(f"Error fetching CLS news: {e}")
-                    _set_reply_text("获取CLS新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)               
+                    _set_reply_text(f"获取CLS新闻失败,请稍后再试,错误信息为 {e}", e_context, level=ReplyType.TEXT)               
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
                                        
@@ -414,17 +413,13 @@ class CCLite(Plugin):
                 else:
                     _send_info(e_context, f"☑️正在为进行指定英雄（{hero_name}）的数据获取，请稍后...") 
 
-                # 调用第一个函数并获取返回值
-                function_response1 = hero_trending.fetch_and_parse_data(hero_name=hero_name)
-                # 调用第二个函数并获取返回值
-                function_response2 = fun.get_hero_info(hero_name)
+                # 调用函数并获取返回值
+                function_response = fun.get_hero_info(hero_name)
                 # 转换为 JSON 格式
-                function_response = function_response1 + "\n" + function_response2
                 # function_response = json.dumps(function_response, ensure_ascii=False)
-
-                logger.debug(f"Function response: {function_response}")  # 打印函数响应      
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                return function_response     
                 
-
             elif function_name == "get_hero_ranking":  # 9.获取英雄梯度榜
                 # 构建 API 请求的 URL
                 api_url = f"{self.base_url()}/hero_ranking/"
@@ -508,8 +503,8 @@ class CCLite(Plugin):
                     function_response = fun.get_hotlist(api_key=self.alapi_key, type=hotlist_type)
                     logger.debug(f"Function response: {function_response}")
                 except Exception as e:
-                    _send_info(e_context,f"❌获取热榜信息时遇到了问题: {str(e)}") # 发送错误消息
-                    logger.error(f"Error fetching hotlist: {e}")              
+                    logger.error(f"Error fetching hotlist: {e}")   
+                    _set_reply_text(f"❌获取热榜信息失败,请稍后再试,错误信息为 {e}", e_context, level=ReplyType.TEXT)        
                     
             elif function_name == "bing_google_search":  # 13.搜索功能
                 function_args_str = message["function_call"].get("arguments", "{}")
@@ -525,9 +520,9 @@ class CCLite(Plugin):
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅实时联网搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"@{nickname}\n✅Bing搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context, f"✅联网搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"✅Bing搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 elif "谷歌" in context.content or "谷歌搜索" in context.content or "google" in context.content.lower():
                     function_response = google.search_google(search_terms=search_query, iterations=1, count=1,api_key=self.google_api_key, cx_id=self.google_cx_id,model=self.assistant_openai_model)
@@ -537,9 +532,9 @@ class CCLite(Plugin):
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅联网搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"@{nickname}\n✅Google搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
-                        _send_info(e_context, f"✅联网搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                        _send_info(e_context, f"✅Google搜索{search_query}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 else:
                     return None      
@@ -571,7 +566,7 @@ class CCLite(Plugin):
                     logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 except Exception as e:
                     logger.error(f"Error fetching content: {e}")
-                    _set_reply_text("获取内容失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    _set_reply_text(f"获取内容失败，请稍后再试。错误信息 {e}", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
               
 
