@@ -613,8 +613,9 @@ class CCLite(Plugin):
                 temperature=float(self.temperature)
             )
             # 打印原始的second_response以及其类型
-            logger.debug(f"Full second_response: {second_response}")
-            messages.append(second_response["choices"][0]["message"])
+            second_response_json = json.dumps(second_response, ensure_ascii=False)
+            logger.debug(f"Full second_response: {second_response_json}")
+            # messages.append(second_response["choices"][0]["message"])
             return second_response['choices'][0]['message']['content']
         else:
             # 如果模型不希望调用函数，直接打印其响应
