@@ -377,8 +377,7 @@ class CCLite(Plugin):
                         _send_info(e_context, f"✅获取AI资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     function_response = function_response.get("results", "未知错误")
                 except Exception as e:
-                    logger.error(f"Error fetching top TV shows info: {e}")
-                    _set_reply_text("获取AI新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
             elif function_name == "fetch_cls_news":  # 获取CLS新闻                
