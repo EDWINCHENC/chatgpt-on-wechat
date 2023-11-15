@@ -15,6 +15,7 @@ from common.log import logger
 from datetime import datetime
 import os
 import time
+import traceback
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google
 
 
@@ -381,24 +382,43 @@ class CCLite(Plugin):
                     _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
-            elif function_name == "fetch_cls_news":  # 获取CLS新闻                
+
+            elif function_name == "fetch_cls_news":  # 获取CLS新闻
                 try:
                     response = requests.get(self.base_url() + "/clsnews/")
-                    response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
-                    function_response = response.json()
-                    function_response = function_response.get("results", "未知错误")
-                    elapsed_time = time.time() - start_time  # 计算耗时
-                    # 仅在成功获取数据后发送信息
-                    if context.kwargs.get('isgroup'):
-                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                        nickname = msg.actual_user_nickname  # 获取nickname
-                        _send_info(e_context, f"@{nickname}\n✅获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                    else:
-                        _send_info(e_context, f"✅获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                    
+                    response.raise_for_status()
                 except Exception as e:
                     logger.error(f"Error fetching CLS news: {e}")
-                    _set_reply_text(f"获取CLS新闻失败,请稍后再试,错误信息为 {e}", e_context, level=ReplyType.TEXT)               
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+                    _set_reply_text(f"获取CLS新闻失败,请稍后再试,错误信息为 {e}", e_context, level=ReplyType.TEXT)
+
+                try:
+                    # 验证并解析JSON响应
+                    function_response = response.json()
+                except ValueError as e:  # 捕获JSON解析错误
+                    logger.error(f"JSON parsing error: {e}")
+                    function_response = "未知错误"
+                else:
+                    function_response = function_response.get("results", "未知错误")
+
+                elapsed_time = time.time() - start_time  # 计算耗时
+
+                # 发送信息
+                try:
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')
+                        nickname = msg.actual_user_nickname
+                        _send_info(e_context, f"@{nickname}\n✅获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅获取财联社新闻成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                except Exception as e:
+                    logger.error(f"Error sending response: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
+
                 
                                        
             elif function_name == "fetch_hero_trending":  # 8.获取英雄热度趋势
