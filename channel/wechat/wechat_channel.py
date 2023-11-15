@@ -227,9 +227,14 @@ class WechatChannel(ChatChannel):
             video_res = requests.get(video_url, stream=True)
             video_storage = io.BytesIO()
             size = 0
+            max_size = 24 * 1024 * 1024  # 24 MB
             for block in video_res.iter_content(1024):
                 size += len(block)
+                if size > max_size:
+                    logger.info(f"Reached maximum video size limit: {max_size} bytes.")
+                    break
                 video_storage.write(block)
+
             logger.info(f"[WX] download video success, size={size}, video_url={video_url}")
             video_storage.seek(0)
             itchat.send_video(video_storage, toUserName=receiver)

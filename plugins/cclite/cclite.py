@@ -145,8 +145,7 @@ class CCLite(Plugin):
                 if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
                     reply_type = ReplyType.VIDEO_URL
                     for video_url in conversation_output:
-                        # 对于每个视频源，单独发送
-                        _send_info(e_context, f"✅获取视频成功")
+                        # 对于每个视频源，单独发送一个视频消息
                         _set_reply_text(video_url, e_context, level=reply_type)
                 else:
                     # 对于其他类型的回复
@@ -441,10 +440,17 @@ class CCLite(Plugin):
                 try:
                     function_response = response.json()
                     function_response = function_response.get("results", "未知错误")
+                    elapsed_time = time.time() - start_time  # 计算耗时
+                    # 仅在成功获取数据后发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅获取dy视频成功。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅获取dy视频成功。🕒耗时{elapsed_time:.2f}秒")
                 except ValueError as e:  # 捕获JSON解析错误
                     logger.error(f"JSON parsing error: {e}")
                     function_response = "未知错误"
-
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 return called_function_name, function_response
 
