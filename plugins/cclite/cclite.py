@@ -354,7 +354,8 @@ class CCLite(Plugin):
                     _set_reply_text("获取最热影视剧榜单失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 
-            elif function_name == "fetch_ai_news":  # 7.获取AI新闻              
+
+            elif function_name == "fetch_ai_news":  # 7.获取AI新闻
                 # 从message里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
                 function_args = json.loads(function_args_str)
@@ -362,26 +363,40 @@ class CCLite(Plugin):
                 try:
                     response = requests.get(
                         self.base_url() + "/ainews/",
-                        params={
-                            "max_items": max_items
-                        }
+                        params={"max_items": max_items}
                     )
                     response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                except Exception as e:
+                    logger.error(f"Error fetching AI news: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+                    _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
+                    return  # 终止后续代码执行
+
+                try:
                     function_response = response.json()
-                    elapsed_time = time.time() - start_time  # 计算耗时
-                    # 仅在成功获取数据后发送信息
+                    function_response = function_response.get("results", "未知错误")
+                except ValueError as e:  # 捕获JSON解析错误
+                    logger.error(f"JSON parsing error: {e}")
+                    function_response = "未知错误"
+
+                elapsed_time = time.time() - start_time  # 计算耗时
+
+                try:
+                    # 发送信息
                     if context.kwargs.get('isgroup'):
                         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                         nickname = msg.actual_user_nickname  # 获取nickname
                         _send_info(e_context, f"@{nickname}\n✅获取AI资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                     else:
                         _send_info(e_context, f"✅获取AI资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                    function_response = function_response.get("results", "未知错误")
                 except Exception as e:
-                    logger.debug(f"Error fetching AI news: {e}")
-                    _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
+                    logger.error(f"Error sending response: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                
+
 
             elif function_name == "fetch_cls_news":  # 获取CLS新闻
                 try:
