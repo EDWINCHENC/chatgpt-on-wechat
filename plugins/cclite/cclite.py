@@ -129,13 +129,32 @@ class CCLite(Plugin):
             logger.debug(f"Input messages: {input_messages}")
 
             # 运行会话并获取输出
-            conversation_output = self.run_conversation(input_messages, e_context)
+            # conversation_output = self.run_conversation(input_messages, e_context)
+            # if conversation_output:
+            # # 使用这个函数来处理对话输出
+            #     conversation_output = remove_markdown(conversation_output)
+            #     reply_type = ReplyType.TEXT        
+            #     _set_reply_text(conversation_output, e_context, level=reply_type)
+            #     logger.debug(f"Conversation output: {conversation_output}")
+            
+            # 运行会话并获取输出
+            called_function_name, conversation_output = self.run_conversation(input_messages, e_context)
+            # 处理对话输出
             if conversation_output:
-            # 使用这个函数来处理对话输出
-                conversation_output = remove_markdown(conversation_output)
-                reply_type = ReplyType.TEXT        
-                _set_reply_text(conversation_output, e_context, level=reply_type)
+                # 如果函数返回的是视频播放源
+                if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
+                    reply_type = ReplyType.VIDEO_URL
+                    for video_url in conversation_output:
+                        # 对于每个视频源，单独发送
+                        _set_reply_text(video_url, e_context, level=reply_type)
+                else:
+                    # 对于其他类型的回复
+                    conversation_output = remove_markdown(conversation_output)
+                    reply_type = ReplyType.TEXT        
+                    _set_reply_text(conversation_output, e_context, level=reply_type)
+
                 logger.debug(f"Conversation output: {conversation_output}")
+
 
 
     def build_input_messages(self, session, context):
@@ -151,6 +170,7 @@ class CCLite(Plugin):
     def run_conversation(self, input_messages, e_context: EventContext):
         global function_response
         context = e_context['context']
+        called_function_name = None  # 初始化变量
         messages = []
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base        
@@ -169,6 +189,7 @@ class CCLite(Plugin):
         # 检查模型是否希望调用函数
         if message.get("function_call"):
             function_name = message["function_call"]["name"]
+            called_function_name = function_name  # 更新变量
             logger.debug(f"Function call: {function_name}")  # 打印函数调用
 
             
@@ -396,7 +417,50 @@ class CCLite(Plugin):
                     logger.error(f"Traceback:\n{traceback.format_exc()}")
 
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                
+            elif function_name == "fetch_dyvideo_sources":  # 抖音视频源获取
+                # 从message里提取函数调用参数
+                function_args_str = message["function_call"].get("arguments", "{}")
+                function_args = json.loads(function_args_str)
+                search_content = function_args.get("search_content", "")
+                max_videos = function_args.get("max_videos", 1)
+                try:
+                    response = requests.get(
+                        self.base_url() + "/dyvideo_sources/",
+                        params={"search_content": search_content, "max_videos": max_videos}
+                    )
+                    response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                except Exception as e:
+                    logger.error(f"Error fetching Douyin video sources: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+                    _set_reply_text(f"获取抖音视频源失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
+                    return  # 终止后续代码执行
 
+                try:
+                    function_response = response.json()
+                    function_response = function_response.get("results", "未知错误")
+                except ValueError as e:  # 捕获JSON解析错误
+                    logger.error(f"JSON parsing error: {e}")
+                    function_response = "未知错误"
+
+                elapsed_time = time.time() - start_time  # 计算耗时
+
+                try:
+                    # 发送信息
+                    if context.kwargs.get('isgroup'):
+                        msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                        nickname = msg.actual_user_nickname  # 获取nickname
+                        _send_info(e_context, f"@{nickname}\n✅获取视频成功。🕒耗时{elapsed_time:.2f}秒")
+                    else:
+                        _send_info(e_context, f"✅获取视频成功。🕒耗时{elapsed_time:.2f}秒")
+                except Exception as e:
+                    logger.error(f"Error sending response: {e}")
+                    logger.error(f"Exception type: {type(e).__name__}")
+                    logger.error(f"Traceback:\n{traceback.format_exc()}")
+
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                return called_function_name, function_response
 
             elif function_name == "fetch_cls_news":  # 获取CLS新闻
                 try:
@@ -650,8 +714,9 @@ class CCLite(Plugin):
             # 打印原始的second_response以及其类型
             second_response_json = json.dumps(second_response, ensure_ascii=False)
             logger.debug(f"Full second_response: {second_response_json}")
+            logger.debug(f"called_function_name: {called_function_name}")
             # messages.append(second_response["choices"][0]["message"])
-            return second_response['choices'][0]['message']['content']
+            return called_function_name, second_response['choices'][0]['message']['content']
         else:
             # 如果模型不希望调用函数，直接打印其响应
             logger.debug(f"Model response: {message['content']}")  # 打印模型的响应

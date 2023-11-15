@@ -219,5 +219,24 @@
             },
             "required": ["departure", "arrival"]
         }
-    }
+    },
+    {
+        "name": "fetch_dyvideo_sources",
+        "description": "根据用户的抖音搜索内容获取对应的抖音视频播放源。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "search_content": {
+                    "type": "string",
+                    "description": "用户搜索的内容，例如：‘抖音王者荣耀大乔’。"
+                },
+                "max_videos": {
+                    "type": "integer",
+                    "description": "最大处理视频链接的数量，默认为1，这表示只处理并返回第一个找到的视频链接的播放源。",
+                    "default": 1
+                }
+            },
+            "required": ["search_content"]
+        }
+    }    
 ]
