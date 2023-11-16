@@ -138,15 +138,20 @@ class CCLite(Plugin):
             #     logger.debug(f"Conversation output: {conversation_output}")
             
             # 运行会话并获取输出
-            called_function_name, conversation_output = self.run_conversation(input_messages, e_context)
+            result = self.run_conversation(input_messages, e_context)
+            called_function_name, conversation_output = result if result else (None, None)
             # 处理对话输出
             if conversation_output:
-                # 如果函数返回的是视频播放源
-                if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
-                    reply_type = ReplyType.VIDEO_URL
-                    for video_url in conversation_output:
-                        # 对于每个视频源，单独发送一个视频消息
-                        _set_reply_text(video_url, e_context, level=reply_type)
+                if called_function_name:
+                # 处理当我们有一个具体的函数名时的情况
+                    # 如果函数返回的是视频播放源
+                    if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
+                        reply_type = ReplyType.VIDEO_URL
+                        for video_url in conversation_output:
+                            # 对于每个视频源，单独发送一个视频消息
+                            _set_reply_text(video_url, e_context, level=reply_type)
+                    # else:
+                    #  ... 其他基于函数名称的逻辑 ...
                 else:
                     # 对于其他类型的回复
                     conversation_output = remove_markdown(conversation_output)
