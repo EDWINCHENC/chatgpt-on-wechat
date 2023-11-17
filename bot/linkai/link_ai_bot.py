@@ -15,7 +15,7 @@ from common.log import logger
 from config import conf, pconf
 
 
-class LinkAIBot(Bot, OpenAIImage):
+class LinkAIBot(Bot):
     # authentication failed
     AUTH_FAILED_CODE = 401
     NO_QUOTA_CODE = 406
@@ -47,10 +47,10 @@ class LinkAIBot(Bot, OpenAIImage):
         :param retry_count: 当前递归重试次数
         :return: 回复
         """
-        if retry_count >= 2:
+        if retry_count > 2:
             # exit from retry 2 times
             logger.warn("[LINKAI] failed after maximum number of retry times")
-            return Reply(ReplyType.ERROR, "请再问我一次吧")
+            return Reply(ReplyType.TEXT, "请再问我一次吧")
 
         try:
             # load config
@@ -118,7 +118,7 @@ class LinkAIBot(Bot, OpenAIImage):
                     logger.warn(f"[LINKAI] do retry, times={retry_count}")
                     return self._chat(query, context, retry_count + 1)
 
-                return Reply(ReplyType.ERROR, "提问太快啦，请休息一下再问我吧")
+                return Reply(ReplyType.TEXT, "提问太快啦，请休息一下再问我吧")
 
         except Exception as e:
             logger.exception(e)
@@ -191,6 +191,32 @@ class LinkAIBot(Bot, OpenAIImage):
             time.sleep(2)
             logger.warn(f"[LINKAI] do retry, times={retry_count}")
             return self.reply_text(session, app_code, retry_count + 1)
+
+
+    def create_img(self, query, retry_count=0, api_key=None):
+        try:
+            logger.info("[LinkImage] image_query={}".format(query))
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {conf().get('linkai_api_key')}"
+            }
+            data = {
+                "prompt": query,
+                "n": 1,
+                "model": conf().get("text_to_image") or "dall-e-2",
+                "response_format": "url",
+                "img_proxy": conf().get("image_proxy")
+            }
+            url = conf().get("linkai_api_base", "https://api.link-ai.chat") + "/v1/images/generations"
+            res = requests.post(url, headers=headers, json=data, timeout=(5, 90))
+            t2 = time.time()
+            image_url = res.json()["data"][0]["url"]
+            logger.info("[OPEN_AI] image_url={}".format(image_url))
+            return True, image_url
+
+        except Exception as e:
+            logger.error(format(e))
+            return False, "画图出现问题，请休息一下再问我吧"
 
 
     def _fetch_knowledge_search_suffix(self, response) -> str:
