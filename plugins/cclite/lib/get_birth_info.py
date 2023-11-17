@@ -83,9 +83,9 @@ def find_birthday(name=None):
 # data = load_data('people_data.json')
 
 # 用户输入
-name = input("请输入人名查询生日信息，直接回车则查询最近一个即将过生日的人：").strip()
+# name = input("请输入人名查询生日信息，直接回车则查询最近一个即将过生日的人：").strip()
 
-# 执行查询并打印结果
-birthday_info = find_birthday(name if name else None)
-print(birthday_info)
+# # 执行查询并打印结果
+# birthday_info = find_birthday(name if name else None)
+# print(birthday_info)
 
