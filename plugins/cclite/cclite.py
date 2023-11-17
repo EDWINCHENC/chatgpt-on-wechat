@@ -152,11 +152,11 @@ class CCLite(Plugin):
                             _set_reply_text(video_url, e_context, level=reply_type)
                     # else:
                     #  ... 其他基于函数名称的逻辑 ...
-                else:
-                    # 对于其他类型的回复
-                    conversation_output = remove_markdown(conversation_output)
-                    reply_type = ReplyType.TEXT        
-                    _set_reply_text(conversation_output, e_context, level=reply_type)
+                    else:
+                        # 对于其他类型的回复
+                        conversation_output = remove_markdown(conversation_output)
+                        reply_type = ReplyType.TEXT        
+                        _set_reply_text(conversation_output, e_context, level=reply_type)
 
                 logger.debug(f"Conversation output: {conversation_output}")
 
