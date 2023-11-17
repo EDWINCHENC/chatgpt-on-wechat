@@ -16,8 +16,7 @@ from datetime import datetime
 import os
 import time
 import traceback
-from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google
-
+from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth
 
 
 @plugins.register(
@@ -664,6 +663,31 @@ class CCLite(Plugin):
                     logger.error(f"Error fetching content: {e}")
                     _set_reply_text(f"获取内容失败，请稍后再试。错误信息 {e}", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
+
+            elif function_name == "find_birthday":  # 查询生日信息
+                # 从message里提取函数调用参数
+                function_args_str = message["function_call"].get("arguments", "{}")
+                function_args = json.loads(function_args_str)
+                name = function_args.get("name", None)  # 如果没有提供名字，则默认查询最近的生日
+
+                if context.kwargs.get('isgroup'):
+                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                    nickname = msg.actual_user_nickname  # 获取nickname
+                    if name:
+                        _send_info(e_context, f"@{nickname}\n☑️正在查询{name}的生日信息，请稍后...")
+                    else:
+                        _send_info(e_context, f"@{nickname}\n☑️正在查询最近一个即将过生日的人，请稍后...")
+                else:
+                    if name:
+                        _send_info(e_context, f"☑️正在查询{name}的生日信息，请稍后...")
+                    else:
+                        _send_info(e_context, "☑️正在查询最近一个即将过生日的人，请稍后...")
+
+                # 调用函数并获取返回值
+                function_response = birth.find_birthday(name)
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                # return function_response
+
               
 
             elif function_name == "search_bing_news":  # 14.搜索新闻

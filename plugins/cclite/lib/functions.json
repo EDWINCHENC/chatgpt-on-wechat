@@ -238,5 +238,20 @@
             },
             "required": ["search_content"]
         }
-    }    
+    },
+    {
+        "name": "find_birthday",
+        "description": "该函数用于查询指定人物的生日信息或者查找最近一个即将到来的生日。如果提供人名，将返回该人物的生日信息；如果没有提供人名，则返回最近一个即将过生日的人的信息。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "要查询生日的人物的名字。可以是完整的姓名或昵称。如果不提供此参数，将返回最近一个即将过生日的人的信息。",
+                    "default": null
+                }
+            },
+            "required": []
+        }
+    }        
 ]
