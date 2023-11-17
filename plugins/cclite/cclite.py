@@ -142,21 +142,21 @@ class CCLite(Plugin):
             called_function_name, conversation_output = result if result else (None, None)
             # 处理对话输出
             if conversation_output:
-                if called_function_name:
+                # if called_function_name:
                 # 处理当我们有一个具体的函数名时的情况
                     # 如果函数返回的是视频播放源
-                    if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
-                        reply_type = ReplyType.VIDEO_URL
-                        for video_url in conversation_output:
-                            # 对于每个视频源，单独发送一个视频消息
-                            _set_reply_text(video_url, e_context, level=reply_type)
-                    # else:
-                    #  ... 其他基于函数名称的逻辑 ...
-                    else:
-                        # 对于其他类型的回复
-                        conversation_output = remove_markdown(conversation_output)
-                        reply_type = ReplyType.TEXT        
-                        _set_reply_text(conversation_output, e_context, level=reply_type)
+                if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
+                    reply_type = ReplyType.VIDEO_URL
+                    for video_url in conversation_output:
+                        # 对于每个视频源，单独发送一个视频消息
+                        _set_reply_text(video_url, e_context, level=reply_type)
+                # else:
+                #  ... 其他基于函数名称的逻辑 ...
+                else:
+                    # 对于其他类型的回复
+                    conversation_output = remove_markdown(conversation_output)
+                    reply_type = ReplyType.TEXT        
+                    _set_reply_text(conversation_output, e_context, level=reply_type)
 
                 logger.debug(f"Conversation output: {conversation_output}")
 
