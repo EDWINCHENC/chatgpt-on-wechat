@@ -14,7 +14,7 @@
   ],
 
   "group_chat_reply_suffix": "",
-  "group_chat_keyword": ["搜索"],  
+  "group_chat_keyword": ["搜索","查聊天"],  
   "group_name_white_list": [
     "ALL_GROUP"
   ],
