@@ -677,8 +677,8 @@ class CCLite(Plugin):
             elif function_name == "analyze_user_chatmessages":
                 # 从 message 里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
-                logger.debug(f"Function arguments: {function_args}")  # 打印函数参数
                 function_args = json.loads(function_args_str)
+                logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
                 nickname = function_args.get("nickname", None)
                 num_words = function_args.get("num_words", 5)  # 如果没有指定，使用默认值5
 
@@ -697,8 +697,8 @@ class CCLite(Plugin):
             elif function_name == "analyze_keyword_in_chatmessages":
                 # 从 message 里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
-                logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
                 function_args = json.loads(function_args_str)
+                logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
                 keyword = function_args.get("keyword", None)
 
                 function_response = wx.analyze_keyword_in_messages(keyword)
