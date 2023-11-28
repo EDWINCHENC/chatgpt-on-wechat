@@ -25,15 +25,20 @@ def get_msg_from_db():
     nickname_mapping = {member['ID']: member['Nickname'] for member in members_list}
 
     # 数据库文件路径列表
+    # db_paths = [
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
+    # ]
+    
     db_paths = [
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
+        '/home/ccc/MSG0.db',
+        '/home/ccc/MSG1.db'
     ]
 
     # 指定的群聊ID
