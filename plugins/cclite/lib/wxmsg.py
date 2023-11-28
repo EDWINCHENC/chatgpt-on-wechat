@@ -38,14 +38,15 @@ def get_msg_from_db():
     
     db_paths = [
         '/home/ccc/MSG0.db',
-        '/home/ccc/MSG1.db'
+        '/home/ccc/MSG1.db',
+        '/home/ccc/MSG2.db',
     ]
 
     # 指定的群聊ID
     target_talker = '13291955218@chatroom'
     # 获取当前日期并计算一个月前的日期
     current_date = datetime.now()
-    analysis_start_date = current_date - timedelta(days=365)
+    analysis_start_date = current_date - timedelta(days=90)
 
     # 类型映射字典
     type_mapping = {
