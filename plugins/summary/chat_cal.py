@@ -24,6 +24,7 @@ class ChatStatistics(Plugin):
                     (sessionid TEXT, msgid INTEGER, user TEXT, content TEXT, type TEXT, timestamp INTEGER,
                     PRIMARY KEY (sessionid, msgid))''')
         self.conn.commit()
+        logger.info("[summary] inited")
 
     def _insert_record(self, session_id, msg_id, user, content, msg_type, timestamp):
         c = self.conn.cursor()
