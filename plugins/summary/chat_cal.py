@@ -10,7 +10,16 @@ from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 import datetime
 from common.log import logger
+import plugins
 
+
+@plugins.register(
+    name="c_summary",
+    desc="A plugin that summarize",
+    version="0.1.0",
+    author="cc",
+    desire_priority=60
+)
 class ChatStatistics(Plugin):
     def __init__(self):
         super().__init__()
