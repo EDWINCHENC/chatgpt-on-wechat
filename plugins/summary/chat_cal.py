@@ -5,7 +5,9 @@ from bridge.bridge import Bridge
 from bridge.context import ContextType
 from channel.chat_message import ChatMessage
 from config import conf
-from plugins import Plugin, EventContext, EventAction, Reply, ReplyType
+from plugins import *
+from bridge.context import ContextType
+from bridge.reply import Reply, ReplyType
 import datetime
 from common.log import logger
 
