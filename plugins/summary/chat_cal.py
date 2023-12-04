@@ -76,7 +76,7 @@ class ChatStatistics(Plugin):
         session_id = cmsg.from_user_id
         if conf().get('channel_type', 'wx') == 'wx' and cmsg.from_user_nickname is not None:
             session_id = cmsg.from_user_nickname # itchat channel id会变动，只好用群名作为session id
-
+        logger.debug(f"session_id: {session_id}")
         if context.get("isgroup", False):
             username = cmsg.actual_user_nickname
             if username is None:
@@ -107,7 +107,9 @@ class ChatStatistics(Plugin):
 
         # 解析用户请求
         if "总结群聊" in content:
+            logger.debug("开始总结群聊...")
             result = self.summarize_group_chat(session_id, 100)  # 总结最近100条群聊消息
+            logger.debug("总结群聊结果: {}".format(result))
             _set_reply_text(result, e_context, level=ReplyType.TEXT)
         elif "我的聊天" in content:
             self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
@@ -119,10 +121,9 @@ class ChatStatistics(Plugin):
     def summarize_group_chat(self, session_id, count):
         # 从 _get_records 方法获取当天的所有聊天记录
         all_records = self._get_records(session_id)
-
         # 从所有记录中提取最新的 count 条记录，并只获取 user, content, timestamp 字段
         recent_records = [{"user": record[2], "content": record[3], "timestamp": record[5]} for record in all_records[:count]]
-
+        logger.debug("recent_records: {}".format(recent_records))
         # 构建 ChatGPT 需要的消息格式
         messages = [
             {"role": "system", "content": "你是一个聊天记录分析总结专家，要根据获取到聊天记录，将时间段内的聊天内容的主要信息提炼出来。适当使用emoji让生成的总结更生动。文本要连贯、排版要结构清晰。"}
