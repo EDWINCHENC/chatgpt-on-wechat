@@ -281,7 +281,7 @@ class CCLite(Plugin):
                     logger.error(f"Error fetching weather info: {e}")
                     _set_reply_text("获取天气信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                # return function_response
+                return called_function_name, function_response
 
             elif function_name == "request_train_info":  # 4.获取火车票信息
                 # 从message里提取函数调用参数
@@ -516,7 +516,7 @@ class CCLite(Plugin):
                 # 转换为 JSON 格式
                 # function_response = json.dumps(function_response, ensure_ascii=False)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                return function_response     
+                return called_function_name, function_response     
                 
             elif function_name == "get_hero_ranking":  # 9.获取英雄梯度榜
                 # 构建 API 请求的 URL
