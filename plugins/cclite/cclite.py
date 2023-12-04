@@ -249,8 +249,11 @@ class CCLite(Plugin):
             elif function_name == "get_weather_by_city_name":  # 3.获取天气
                 # 从message里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
+                logger.debug(f"函数调用返回的原始字符串: {function_args_str}")
                 function_args = json.loads(function_args_str)
+                logger.debug(f"解析后的函数调用参数: {function_args}")
                 city_name = function_args.get("city_name", "北京")  # 默认为北京
+                logger.debug(f"查询的城市名参数值: {city_name} (类型: {type(city_name)})")
                 adm = function_args.get("adm", None)  # 
                 user_key = self.getwt_key
 
