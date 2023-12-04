@@ -3,7 +3,7 @@
   "bing_subscription_key": "519831cb59cc442eaf1adf095228efa9",  
   "google_api_key": "AIzaSyAwm53ySYDDRqrTyips5g60kgICISVDiZU",  
   "google_cx_id": "b52dcbdaf00c443ad",  
-  "functions_openai_model":"gpt-3.5-turbo-1106",   
+  "functions_openai_model":"gpt-3.5-turbo-0613",   
   "assistant_openai_model":"gpt-4-1106-preview",   
   "getwt_key":"fce4fdf1983c47048d06af2512ba29bf",
   "temperature":0.8,     
