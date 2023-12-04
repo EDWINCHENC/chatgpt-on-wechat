@@ -108,7 +108,7 @@ class ChatStatistics(Plugin):
         # 解析用户请求
         if "总结群聊" in content:
             logger.debug("开始总结群聊...")
-            result = self.summarize_group_chat(session_id, 100)  # 总结最近100条群聊消息
+            result = remove_markdown(self.summarize_group_chat(session_id, 100) ) # 总结最近100条群聊消息
             logger.debug("总结群聊结果: {}".format(result))
             _set_reply_text(result, e_context, level=ReplyType.TEXT)
         elif "我的聊天" in content:
@@ -149,8 +149,9 @@ class ChatStatistics(Plugin):
         )
 
         logger.debug(f"Summary response: {response}")
-        message = response["choices"][0]["message"]['content']  # 获取模型返回的消息
-        function_response = json.dumps(message, ensure_ascii=False)
+        function_response = response["choices"][0]["message"]['content']  # 获取模型返回的消息
+        # function_response = json.dumps(message, ensure_ascii=False)
+        logger.debug(f"Summary response: {json.dumps(function_response, ensure_ascii=False)}")
         # 返回 ChatGPT 生成的总结
         return function_response
 
@@ -173,3 +174,10 @@ def _set_reply_text(content: str, e_context: EventContext, level: ReplyType = Re
     e_context["reply"] = reply
     e_context.action = EventAction.BREAK_PASS
 # 其他必要的插件逻辑
+
+def remove_markdown(text):
+    # 替换Markdown的粗体标记
+    text = text.replace("**", "")
+    # 替换Markdown的标题标记
+    text = text.replace("### ", "").replace("## ", "").replace("# ", "")
+    return text
