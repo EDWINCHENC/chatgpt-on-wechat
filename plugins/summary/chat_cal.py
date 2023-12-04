@@ -147,9 +147,9 @@ class ChatStatistics(Plugin):
 
         logger.debug(f"Summary response: {response}")
         message = response["choices"][0]["message"]['content']  # 获取模型返回的消息
-        message_json = json.dumps(message)
+        function_response = json.dumps(message, ensure_ascii=False)
         # 返回 ChatGPT 生成的总结
-        return message_json
+        return function_response
 
     # def summarize_user_chat(self, username, session_id):
     #     # 从数据库中获取用户username今天的聊天记录并进行总结
