@@ -89,6 +89,13 @@ class ChatStatistics(Plugin):
         self._insert_record(session_id, cmsg.msg_id, username, context.content, str(context.type), cmsg.create_time)
         # logger.debug("[Summary] {}:{} ({})" .format(username, context.content, session_id))
 
+# 在类中添加一个新的辅助方法
+    def _get_session_id(self, chat_message: ChatMessage):
+        session_id = chat_message.from_user_id
+        if conf().get('channel_type', 'wx') == 'wx' and chat_message.from_user_nickname:
+            session_id = chat_message.from_user_nickname
+        return session_id
+
     def on_handle_context(self, e_context: EventContext):
         if e_context['context'].type != ContextType.TEXT:
             return
