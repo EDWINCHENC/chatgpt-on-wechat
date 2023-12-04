@@ -114,7 +114,7 @@ class ChatStatistics(Plugin):
         elif "我的聊天" in content:
             self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
         else:
-            _set_reply_text("我不知道你在说什么，请问你想问什么？", e_context, level=ReplyType.TEXT)
+            EventAction.CONTINUE
 
 
 
@@ -144,7 +144,7 @@ class ChatStatistics(Plugin):
 
         # 调用 OpenAI ChatGPT
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0613",
+            model="gpt-4-1106-preview",
             messages=messages
         )
 
