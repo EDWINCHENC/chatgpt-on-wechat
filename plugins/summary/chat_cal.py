@@ -11,6 +11,8 @@ from bridge.reply import Reply, ReplyType
 import datetime
 from common.log import logger
 import plugins
+import openai
+import time
 
 
 @plugins.register(
@@ -43,7 +45,9 @@ class ChatStatistics(Plugin):
         if not column_exists:
             self.conn.execute("ALTER TABLE chat_records ADD COLUMN is_triggered INTEGER DEFAULT 0;")
             self.conn.execute("UPDATE chat_records SET is_triggered = 0;")
-
+        self.openai_api_key = conf().get("open_ai_api_key")
+        logger.info(f"[csummary] openai_api_key: {self.openai_api_key}")
+        self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
         self.conn.commit()
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
         self.handlers[Event.ON_RECEIVE_MESSAGE] = self.on_receive_message
@@ -55,10 +59,15 @@ class ChatStatistics(Plugin):
         c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
         self.conn.commit()
     
-    def _get_records(self, session_id, start_timestamp=0, limit=9999):
+    def _get_records(self, session_id):
+        # 获取当天的起始时间戳
+        start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        start_timestamp = int(start_of_day.timestamp())
+        # 获取当天的聊天记录
         c = self.conn.cursor()
-        c.execute("SELECT * FROM chat_records WHERE sessionid=? and timestamp>? ORDER BY timestamp DESC LIMIT ?", (session_id, start_timestamp, limit))
+        c.execute("SELECT * FROM chat_records WHERE sessionid=? and timestamp>=? ORDER BY timestamp DESC", (session_id, start_timestamp))
         return c.fetchall()
+
 
     def on_receive_message(self, e_context: EventContext):
         context = e_context['context']
@@ -85,27 +94,62 @@ class ChatStatistics(Plugin):
             return
 
         content = e_context['context'].content
-        logger.debug("[ChatStatistics] on_handle_context. content: %s" % content)
+        chat_message: ChatMessage = e_context['context']['msg']
+        username = chat_message.actual_user_nickname or chat_message.from_user_id
+        session_id = self._get_session_id(chat_message)
 
-        cmsg: ChatMessage = e_context['context']['msg']
-        session_id = cmsg.from_user_id
-        if conf().get('channel_type', 'wx') == 'wx' and cmsg.from_user_nickname is not None:
-            session_id = cmsg.from_user_nickname
-
-        # 获取当天的起始时间戳
-        start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        start_timestamp = int(start_of_day.timestamp())
-
-        records = self._get_records(session_id, start_timestamp=start_timestamp, limit=9999)
-        if len(records) == 0:
-            reply = Reply(ReplyType.INFO, "今天还没有聊天记录")
+        # 解析用户请求
+        if "总结群聊" in content:
+            result = self.summarize_group_chat(session_id, 100)  # 总结最近100条群聊消息
+            _set_reply_text(result, e_context, level=ReplyType.TEXT)
+        elif "我的聊天" in content:
+            self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
         else:
-            record_strings = [f"{record[2]} ({datetime.datetime.fromtimestamp(record[5]).strftime('%Y-%m-%d %H:%M:%S')}): {record[3]}" for record in records]
-            reply_text = "\n".join(record_strings)
-            reply = Reply(ReplyType.TEXT, f"今天的聊天记录如下：\n{reply_text}")
+            _set_reply_text("我不知道你在说什么，请问你想问什么？", e_context, level=ReplyType.TEXT)
 
-        e_context['reply'] = reply
-        e_context.action = EventAction.BREAK_PASS
+
+
+    def summarize_group_chat(self, session_id, count):
+        # 从 _get_records 方法获取当天的所有聊天记录
+        all_records = self._get_records(session_id)
+
+        # 从所有记录中提取最新的 count 条记录，并只获取 user, content, timestamp 字段
+        recent_records = [{"user": record[2], "content": record[3], "timestamp": record[5]} for record in all_records[:count]]
+
+        # 构建 ChatGPT 需要的消息格式
+        messages = [
+            {"role": "system", "content": "你是一个聊天记录分析总结专家，要根据获取到聊天记录，将时间段内的聊天内容的主要信息提炼出来。适当使用emoji让生成的总结更生动。文本要连贯、排版要结构清晰。"}
+        ]
+        messages.extend([
+            {"role": "user", "content": f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"} 
+            for record in recent_records
+        ])
+
+        # 设置 OpenAI API 密钥和基础 URL
+        openai.api_key = self.openai_api_key
+        openai.api_base = self.openai_api_base
+
+        logger.debug(f"Summarizing messages: {messages}")
+
+        # 调用 OpenAI ChatGPT
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0613",
+            messages=messages
+        )
+
+        logger.debug(f"Summary response: {response}")
+        message = response["choices"][0]["message"]['content']  # 获取模型返回的消息
+        message_json = json.dumps(message)
+        # 返回 ChatGPT 生成的总结
+        return message_json
+
+    # def summarize_user_chat(self, username, session_id):
+    #     # 从数据库中获取用户username今天的聊天记录并进行总结
+    #     start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    #     start_timestamp = int(start_of_day.timestamp())
+    #     records = self._get_records(session_id, start_timestamp=start_timestamp)
+    #     user_records = [record for record in records if record[2] == username]
+    #     # ... 总结逻辑 ...
 
     def get_help_text(self, verbose=False, **kwargs):
         help_text = "聊天记录统计插件。\n"
@@ -113,4 +157,8 @@ class ChatStatistics(Plugin):
             help_text += "使用方法: 输入特定命令以获取聊天统计信息，例如每个用户的发言数量。"
         return help_text
 
+def _set_reply_text(content: str, e_context: EventContext, level: ReplyType = ReplyType.ERROR):
+    reply = Reply(level, content)
+    e_context["reply"] = reply
+    e_context.action = EventAction.BREAK_PASS
 # 其他必要的插件逻辑

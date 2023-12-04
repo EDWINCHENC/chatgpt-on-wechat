@@ -1,27 +1,24 @@
 import sqlite3
 import blackboxprotobuf
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import os
 import jieba
 import re
 from collections import defaultdict, Counter
+import csv
+import random
 
 
 def get_msg_from_db(days=90):
 
-    # 加载群成员的昵称映射数据
-    # 获取当前脚本的目录
+    # 加载roomdata1.json文件中的昵称映射
     curdir = os.path.dirname(os.path.realpath(__file__))
-    # 构建roomdata1.json文件的路径
     json_path = os.path.join(curdir, 'roomdata1.json')
-
-    # 使用动态路径加载群成员的昵称映射数据
     with open(json_path, 'r', encoding='utf-8') as file:
         members_list = json.load(file)
+    nickname_mapping2 = {member['ID']: member['Nickname'] for member in members_list}
 
-    # 创建wechat_id到Nickname的映射字典
-    nickname_mapping = {member['ID']: member['Nickname'] for member in members_list}
 
     # 数据库文件路径列表
     # db_paths = [
@@ -29,6 +26,7 @@ def get_msg_from_db(days=90):
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
     #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
@@ -40,6 +38,20 @@ def get_msg_from_db(days=90):
         '/home/ccc/MSG1.db',
         '/home/ccc/MSG2.db',
     ]
+
+    # 微信昵称数据库路径
+    micro_msg_db_path = 'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MicroMsg.db'
+    # micro_msg_db_path = '/home/ccc/MicroMsg.db'
+    
+    
+    # 提取微信昵称映射
+    nickname_mapping = {}
+    with sqlite3.connect(micro_msg_db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT UserName, NickName FROM Contact")  # 替换SomeTable为实际的表名
+        for row in cursor.fetchall():
+            wechat_id, nickname = row
+            nickname_mapping[wechat_id] = nickname
 
     # 指定的群聊ID
     target_talker = '13291955218@chatroom'
@@ -125,8 +137,10 @@ def get_msg_from_db(days=90):
                     continue  # 如果解析错误，跳过这条记录
 
 
-            # 如果wechat_id已经设置（用户自己的消息）或者解析BytesExtra成功，则从映射中获取昵称
-            nickname = nickname_mapping.get(wechat_id, "未知成员") if wechat_id else "未知成员"
+            # 使用数据库中的昵称
+            nickname = nickname_mapping.get(wechat_id, "未知成员")
+            # 新增：从roomdata1.json中获取的昵称
+            nickname2 = nickname_mapping2.get(wechat_id, "未知成员")
             # 转换消息类型
             msg_type_str = type_mapping.get(msg_type, "未知类型")
             # 记录消息记录，包括解析后的微信ID
@@ -138,16 +152,16 @@ def get_msg_from_db(days=90):
                 "talker": str_talker,
                 "content": str_content,
                 "wechat_id": wechat_id,
-                "nickname": nickname  # 新增昵称信息
+                "nickname": nickname,  # 新增昵称信息
+                "nickname2": nickname2  # 新增nickname2字段
             })
-
-        # all_extracted_messages.extend(extracted_messages)
         # 关闭数据库连接
         conn.close()
     return all_extracted_messages
 #打印提取出的聊天记录
-# results = get_msg_from_db(5)
+# results = get_msg_from_db(10)
 # print(results)
+
 
 
 # 定义函数，用于找出每天消息数最多的人
@@ -173,7 +187,7 @@ def find_most_active_user_by_day():
     return most_active_by_day
 
 # 调用函数并打印结果
-# most_active_by_day = find_most_active_user_by_day(all_extracted_messages)
+# most_active_by_day = find_most_active_user_by_day()
 # for date, (nickname, count) in most_active_by_day.items():
 #     print(f"日期: {date}, 昵称: {nickname}, 消息数: {count}")
     
@@ -265,7 +279,7 @@ def analyze_user_messages(nickname, num_words=5):
     :return: 包含各类统计数据的字典。
     """
     stopwords = load_stopwords()
-    messages = get_msg_from_db()
+    messages = get_msg_from_db(365)
     mention_pattern = re.compile(r"@([\w\-\u4e00-\u9fa5]+)")  # 用于匹配@后的昵称
 
     texts, message_counts, message_length, hourly_counts = [], Counter(), 0, Counter()
@@ -275,7 +289,7 @@ def analyze_user_messages(nickname, num_words=5):
     # 遍历消息列表
     for msg in messages:
         # print(f"Processing message: Type: {msg['type']}, Nickname: {msg['nickname']}")
-        if msg['nickname'] == nickname:
+        if msg['nickname2'] == nickname:
             # 统计消息类型
             message_counts[msg['type']] += 1
 
@@ -302,9 +316,11 @@ def analyze_user_messages(nickname, num_words=5):
             mentions = mention_pattern.findall(msg['content'])
             for mention in mentions:
                 user_mentions[mention] += 1
+    # 只获取被艾特最多的前5个人
+    top_mentions = user_mentions.most_common(5)
 
     # 找出发言最多的那天及其字数
-    most_talkative_day, max_messages = None, 0
+    most_talkative_day, max_messages, max_messages_length = None, 0, 0
     if daily_message_count:
         most_talkative_day, max_messages = daily_message_count.most_common(1)[0]
         max_messages_length = daily_message_length[most_talkative_day]
@@ -326,17 +342,18 @@ def analyze_user_messages(nickname, num_words=5):
         f"总发言条数: {sum(daily_message_count.values())}\n"
         f"总字数: {message_length}\n"
         f"最话痨的一天: {most_talkative_day} (发言条数: {max_messages}, 字数: {max_messages_length})"
-        f"\n该用户@了以下人员:\n{json.dumps(user_mentions, indent=4, ensure_ascii=False)}"
+        f"\n该用户@了以下人员:\n{json.dumps(top_mentions, indent=4, ensure_ascii=False)}"
     )
 
     return formatted_result
 
 
 #测试代码
-if __name__ == "__main__":
-    nickname = '小羊'  # 替换为实际要分析的昵称
-    formatted_analysis_result = analyze_user_messages(nickname)
-    print(formatted_analysis_result)
+# if __name__ == "__main__":
+#     nickname = '小羊'  # 替换为实际要分析的昵称
+#     formatted_analysis_result = analyze_user_messages(nickname)
+#     print(formatted_analysis_result)
+
 
 
 # 定义函数，用于分析指定关键词的提及情况
@@ -359,7 +376,7 @@ def analyze_keyword_in_messages(keyword):
 
     # 编译正则表达式以匹配关键词（忽略大小写）
     keyword_regex = re.compile(re.escape(keyword), re.IGNORECASE)
-    messages = get_msg_from_db()
+    messages = get_msg_from_db(365)
     # 遍历消息列表
     for message in messages:
         # 检查消息内容中是否包含关键词
@@ -413,56 +430,143 @@ def analyze_keyword_in_messages(keyword):
 # print(keyword_analysis)
 
 
+def analyze_chat_year_report():
+    stopwords = load_stopwords()
+    messages = get_msg_from_db(days=365)  # 获取消息
 
-# 假设已有 get_msg_from_db, load_stopwords, analyze_user_messages 函数
+    # 初始化统计变量
+    total_messages = len(messages)
+    total_words = 0
+    all_word_counts = Counter()
+    night_messages = []
+    message_type_count = defaultdict(int)
+    daily_messages = defaultdict(list)
+    keywords = ["奶茶", "剧", "电视", "不行", "滴滴", "哈喽", "我不行", "观战", "意外", "哈哈", "相亲", "废物", "肯德基", "王者", "睡觉"]
 
-def generate_annual_report():
-    messages = get_msg_from_db(days=365)
+    # 初始化关键词统计字典
+    keyword_stats = {keyword: {'总次数': 0, '提及最多的人': None, '提及次数': 0} for keyword in keywords}
+    keyword_mentions = {keyword: defaultdict(int) for keyword in keywords}
 
-    # 统计每个用户的消息数
-    user_message_counts = Counter()
-    user_message_lengths = defaultdict(int)  # 存储每个用户的总字数
-    user_first_message_time = defaultdict(lambda: 23)  # 假设最早发言时间为23点
-    user_weekday_activity = defaultdict(lambda: Counter())  # 记录每个用户每周哪天最活跃
-    for message in messages:
-        user = message["nickname"]
-        user_message_counts[user] += 1
-        user_message_lengths[user] += len(message["content"])
-        message_time = datetime.strptime(message["create_time"], '%Y-%m-%d %H:%M:%S')
-        if message_time.hour < user_first_message_time[user]:
-            user_first_message_time[user] = message_time.hour
-        user_weekday_activity[user][message_time.strftime("%A")] += 1
+    for msg in messages:
+        # 统计不同类型的消息数量
+        message_type_count[msg['type']] += 1
 
-    # 找到年度最活跃用户
-    most_active_user = user_message_counts.most_common(1)[0][0]
-    total_messages = user_message_counts[most_active_user]
-    total_words = user_message_lengths[most_active_user]
-    avg_daily_messages = total_messages / 365
-    earliest_message_time = user_first_message_time[most_active_user]
-    most_active_weekday = user_weekday_activity[most_active_user].most_common(1)[0][0]
+        # 统计总字数和高频词
+        if msg['type'] == "文本":
+            content_length = len(msg['content'])
+            total_words += content_length
+            words = [word for word in jieba.cut(msg['content'], cut_all=False) if word not in stopwords and len(word) > 1]
+            all_word_counts.update(words)
+            for keyword in keywords:
+                if keyword in msg['content']:
+                    keyword_stats[keyword]['总次数'] += msg['content'].count(keyword)
+                    keyword_mentions[keyword][msg['nickname']] += msg['content'].count(keyword)
 
-    # 获取最活跃用户的高频词和最常@的人
-    user_analysis = analyze_user_messages(most_active_user, num_words=5)
-    user_high_freq_words = json.loads(user_analysis)["高频词"]
-    user_most_mentioned = json.loads(user_analysis)["该用户@了以下人员"].most_common(1)[0][0]
+        # 收集夜间消息
+        msg_time = datetime.strptime(msg['create_time'], '%Y-%m-%d %H:%M:%S')
+        if 0 <= msg_time.hour < 6:
+            night_messages.append(msg)
 
-    # 组装年报
-    annual_report = {
-        "年度最活跃用户": most_active_user,
-        "消息总条数": total_messages,
-        "聊天总字数": total_words,
-        "平均每天发言数": avg_daily_messages,
-        "最早发言时间": earliest_message_time,
-        "最活跃的星期": most_active_weekday,
-        "高频词": user_high_freq_words,
-        "最常@的人": user_most_mentioned
+        # 按日期收集消息
+        daily_messages[msg_time.date()].append(msg)
+
+    # 计算每个关键词提到最多的人及其提及次数
+    for keyword in keywords:
+        if keyword_mentions[keyword]:
+            most_mentioned_person = max(keyword_mentions[keyword].items(), key=lambda x: x[1])
+            keyword_stats[keyword]['提及最多的人'] = most_mentioned_person[0]
+            keyword_stats[keyword]['提及次数'] = most_mentioned_person[1]
+
+    # 统计每个用户（按昵称）的消息数
+    user_message_count = Counter([msg['nickname'] for msg in messages])
+    top_five_users = user_message_count.most_common(5)
+
+    # 最活跃用户的详细分析（按昵称）
+    most_active_user_nickname = top_five_users[0][0]
+    most_active_user_messages = [msg for msg in messages if msg['nickname'] == most_active_user_nickname]
+    most_active_user_word_counts = Counter()
+
+    for msg in most_active_user_messages:
+        if msg['type'] == "文本":
+            words = [word for word in jieba.cut(msg['content'], cut_all=False) if word not in stopwords and len(word) > 1]
+            most_active_user_word_counts.update(words)
+
+    # 随机获取10条夜间消息
+    random_night_messages = random.sample(night_messages, min(10, len(night_messages)))
+    formatted_night_messages = [{'content': msg['content'], 'time': msg['create_time'], 'nickname': msg['nickname']} for msg in random_night_messages]
+
+    # 聊天量最高的一天
+    most_active_day, most_active_day_messages = max(daily_messages.items(), key=lambda x: len(x[1]))
+    random_most_active_day_messages = random.sample(most_active_day_messages, min(5, len(most_active_day_messages)))
+
+    # 转换最活跃天的消息为所需格式
+    formatted_most_active_day_messages = [{'nickname': msg['nickname'], 'time': msg['create_time'], 'content': msg['content']} for msg in random_most_active_day_messages]
+
+    return {
+        '最活跃的排名前五用户': [{'昵称': user[0], '消息数': user[1]} for user in top_five_users],
+        '年度最活跃用户': {
+            '昵称': most_active_user_nickname,
+            '聊天记录总条数': len(most_active_user_messages),
+            '总字数': sum(len(msg['content']) for msg in most_active_user_messages if isinstance(msg['content'], str)),
+            '平均每天发言数': len(most_active_user_messages) / 365,
+            '最活跃的一天': most_active_day.strftime('%Y-%m-%d'),
+            '高频词': [{'词汇': word[0], '频次': word[1]} for word in most_active_user_word_counts.most_common(10)],
+            '最常@的人': [{'昵称': mention[0], '次数': mention[1]} for mention in Counter(re.findall(r'@([\u4e00-\u9fa5\w]+)', ' '.join([msg['content'] for msg in most_active_user_messages]))).most_common(5)]
+        },
+        '年度统计': {
+            '总消息条数': total_messages,
+            '总字数': total_words,
+            '平均每天的聊天条数': total_messages / 365,
+            '聊天量最高的一天': most_active_day.strftime('%Y-%m-%d'),
+            '当天聊天记录': formatted_most_active_day_messages,
+            '高频词汇': [{'词汇': word[0], '频次': word[1]} for word in all_word_counts.most_common(10)],
+            '夜间消息': formatted_night_messages,
+            '消息类型统计': dict(message_type_count),
+            '关键词统计': keyword_stats
+        }
     }
 
-    return annual_report
+# 使用该函数
+# chat_year_report = analyze_chat_year_report()
 
-# 使用示例
-# annual_report = generate_annual_report()
-# print(json.dumps(annual_report, indent=4, ensure_ascii=False))
+# 以美化的JSON格式打印结果
+# print(json.dumps(chat_year_report, indent=4, ensure_ascii=False))
+
+
+
+def get_messages_and_export_to_csv(nickname, days=40):
+    """
+    获取指定用户在近半年内的所有聊天记录，并将其导出为CSV文件。
+
+    :param nickname: 指定用户的昵称。
+    :param days: 查找的天数范围，默认为近半年（180天）。
+    """
+    all_messages = get_msg_from_db(days)
+    user_messages = []
+
+    # 过滤出指定用户的消息，并排除不需要的字段
+    for message in all_messages:
+        if message['nickname'] == nickname:
+            message['create_time'] = message['create_time'].split(' ')[0]
+            filtered_message = {key: message[key] for key in message if key not in ['issender']}
+            user_messages.append(filtered_message)
+
+    # 导出到CSV
+    csv_file_name = f"{nickname}_messages_last_{days}_days.txt"
+    with open(csv_file_name, 'w', newline='', encoding='utf-8') as file:
+        if user_messages:
+            fieldnames = user_messages[0].keys()
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            for message in user_messages:
+                writer.writerow(message)
+
+    print(f"聊天记录已导出到文件：{csv_file_name}")
+
+# 调用函数
+# nickname = "小羊"
+# get_messages_and_export_to_csv(nickname)
+
 
 
 
