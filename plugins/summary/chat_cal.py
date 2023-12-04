@@ -124,14 +124,17 @@ class ChatStatistics(Plugin):
         # 从所有记录中提取最新的 count 条记录，并只获取 user, content, timestamp 字段
         recent_records = [{"user": record[2], "content": record[3], "timestamp": record[5]} for record in all_records[:count]]
         logger.debug("recent_records: {}".format(recent_records))
+        
+        # 将所有聊天记录合并成一个字符串
+        combined_content = "\n".join(
+            f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"
+            for record in recent_records
+        )
         # 构建 ChatGPT 需要的消息格式
         messages = [
-            {"role": "system", "content": "你是一个聊天记录分析总结专家，要根据获取到聊天记录，将时间段内的聊天内容的主要信息提炼出来。适当使用emoji让生成的总结更生动。文本要连贯、排版要结构清晰。"}
+            {"role": "system", "content": "你是一个聊天记录分析总结专家，要根据获取到聊天记录，将时间段内的聊天内容的主要信息提炼出来。适当使用emoji让生成的总结更生动。文本要连贯、排版要结构清晰。"},
+            {"role": "user", "content": combined_content}
         ]
-        messages.extend([
-            {"role": "user", "content": f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"} 
-            for record in recent_records
-        ])
 
         # 设置 OpenAI API 密钥和基础 URL
         openai.api_key = self.openai_api_key
