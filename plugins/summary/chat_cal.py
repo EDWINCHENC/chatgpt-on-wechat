@@ -145,6 +145,12 @@ class ChatStatistics(Plugin):
             _set_reply_text(result, e_context, level=ReplyType.TEXT)
         elif "我的聊天" in content:
             self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
+        if "群聊统计" in content:
+            logger.debug("开始进行群聊统计...")
+            ranking_results = self.get_chat_activity_ranking(session_id)
+            logger.debug("群聊统计结果: {}".format(ranking_results))
+            _set_reply_text(ranking_results, e_context, level=ReplyType.TEXT)
+
         elif "聊天记录" in content:
             keyword = content.replace("聊天记录", "").strip()
             if keyword:
@@ -205,38 +211,66 @@ class ChatStatistics(Plugin):
             {"role": "user", "content": combined_content}
         ]
 
-        # 设置 OpenAI API 密钥和基础 URL
-        openai.api_key = self.openai_api_key
-        openai.api_base = self.openai_api_base
-
-        logger.debug(f"Summarizing messages: {messages}")
-
-        # 调用 OpenAI ChatGPT
-        response = openai.ChatCompletion.create(
-            model="gpt-4-1106-preview",
-            messages=messages
-        )
-
-        logger.debug(f"Summary response: {response}")
-        function_response = response["choices"][0]["message"]['content']  # 获取模型返回的消息
-        # function_response = json.dumps(message, ensure_ascii=False)
+        # 使用封装的方法调用 OpenAI
+        function_response = self.generate_summary_with_openai(messages)
         logger.debug(f"Summary response: {json.dumps(function_response, ensure_ascii=False)}")
         # 返回 ChatGPT 生成的总结
         return function_response
 
-    # def summarize_user_chat(self, username, session_id):
-    #     # 从数据库中获取用户username今天的聊天记录并进行总结
-    #     start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    #     start_timestamp = int(start_of_day.timestamp())
-    #     records = self._get_records(session_id, start_timestamp=start_timestamp)
-    #     user_records = [record for record in records if record[2] == username]
-    #     # ... 总结逻辑 ...
+    def get_chat_activity_ranking(self, session_id):
+        """获取聊天活跃度排名前6位"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                query = "SELECT user, COUNT(*) as msg_count FROM chat_records WHERE sessionid=? GROUP BY user ORDER BY msg_count DESC"
+                c.execute(query, (session_id,))
+                results = c.fetchall()
+                
+                # 生成带有emoji序号的排名信息，只包括前6位
+                ranking = []
+                for idx, (user, count) in enumerate(results[:6], start=1):
+                    emoji_number = self.get_emoji_for_number(idx)
+                    ranking.append(f"{emoji_number} {user}: {count} messages")
+                return "\n".join(ranking)
+        except Exception as e:
+            logger.error(f"Error getting chat activity ranking: {e}")
+            return "Unable to retrieve chat activity ranking."
+
+
+    def get_emoji_for_number(self, number):
+        """将数字转换为对应的emoji"""
+        emoji_numbers = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
+        return ''.join(emoji_numbers[int(digit)] for digit in str(number))
+    
+
+    def generate_summary_with_openai(self, messages):
+        """使用 OpenAI ChatGPT 生成总结"""
+        try:
+            # 设置 OpenAI API 密钥和基础 URL
+            openai.api_key = self.openai_api_key
+            openai.api_base = self.openai_api_base
+
+            logger.debug(f"向 OpenAI 发送消息: {messages}")
+
+            # 调用 OpenAI ChatGPT
+            response = openai.ChatCompletion.create(
+                model="gpt-4-1106-preview",
+                messages=messages
+            )
+            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
+            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
+        except Exception as e:
+            logger.error(f"Error generating summary with OpenAI: {e}")
+            return "Unable to generate summary."
+
+
 
     def get_help_text(self, verbose=False, **kwargs):
         help_text = "聊天记录统计插件。\n"
         if verbose:
             help_text += "使用方法: 输入特定命令以获取聊天统计信息，例如每个用户的发言数量。"
         return help_text
+    
 
 def _set_reply_text(content: str, e_context: EventContext, level: ReplyType = ReplyType.ERROR):
     reply = Reply(level, content)
