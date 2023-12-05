@@ -72,21 +72,33 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 
-    def _get_records(self, session_id):
-        """获取指定会话的当天聊天记录，排除特定用户"""
-        excluded_user = "黄二狗²⁴⁶⁷"  # 定义要排除的用户
+    def _get_records(self, session_id, excluded_users=None):
+        """获取指定会话的当天聊天记录，排除特定用户列表中的用户"""
+        if excluded_users is None:
+            excluded_users = ["黄二狗²⁴⁶⁷","Oʀ ."]  # 默认排除的用户列表
+
         start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         start_timestamp = int(start_of_day.timestamp())
 
         try:
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
-                query = "SELECT * FROM chat_records WHERE sessionid=? AND timestamp>=? AND user!=? ORDER BY timestamp DESC"
-                c.execute(query, (session_id, start_timestamp, excluded_user))
+
+                # 构建排除用户的 SQL 条件
+                excluded_users_placeholder = ','.join('?' for _ in excluded_users)
+                query = f"SELECT * FROM chat_records WHERE sessionid=? AND timestamp>=? AND user NOT IN ({excluded_users_placeholder}) ORDER BY timestamp DESC"
+
+                # 准备查询参数
+                query_params = [session_id, start_timestamp] + excluded_users
+
+                # 执行查询
+                c.execute(query, query_params)
                 return c.fetchall()
+
         except Exception as e:
             logger.error(f"Error fetching records: {e}")
             return []
+
 
 
     def on_receive_message(self, e_context: EventContext):
