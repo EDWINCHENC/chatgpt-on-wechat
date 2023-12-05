@@ -22,51 +22,72 @@ import time
     author="cc",
     desire_priority=60
 )
+
+
 class ChatStatistics(Plugin):
     def __init__(self):
         super().__init__()
-        
+
+        # 设置数据库路径和API配置
         curdir = os.path.dirname(__file__)
-        db_path = os.path.join(curdir, "chat.db")
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        c = self.conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS chat_records
-                    (sessionid TEXT, msgid INTEGER, user TEXT, content TEXT, type TEXT, timestamp INTEGER, is_triggered INTEGER,
-                    PRIMARY KEY (sessionid, msgid))''')
-        
-        # 后期增加了is_triggered字段，这里做个过渡，这段代码某天会删除
-        c = c.execute("PRAGMA table_info(chat_records);")
-        column_exists = False
-        for column in c.fetchall():
-            logger.debug("[Summary] column: {}" .format(column))
-            if column[1] == 'is_triggered':
-                column_exists = True
-                break
-        if not column_exists:
-            self.conn.execute("ALTER TABLE chat_records ADD COLUMN is_triggered INTEGER DEFAULT 0;")
-            self.conn.execute("UPDATE chat_records SET is_triggered = 0;")
+        self.db_path = os.path.join(curdir, "chat.db")
         self.openai_api_key = conf().get("open_ai_api_key")
-        logger.info(f"[csummary] openai_api_key: {self.openai_api_key}")
         self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
-        self.conn.commit()
+
+        # 初始化数据库
+        self.initialize_database()
+
+        # 设置事件处理器
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
         self.handlers[Event.ON_RECEIVE_MESSAGE] = self.on_receive_message
-        logger.info("[Summary] inited")
 
-    def _insert_record(self, session_id, msg_id, user, content, msg_type, timestamp, is_triggered = 0):
-        c = self.conn.cursor()
-        logger.debug("[Summary] insert record: {} {} {} {} {} {} {}" .format(session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
-        c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
-        self.conn.commit()
-    
+        # 记录初始化信息
+        logger.info("[Summary] Initialized")
+
+    def initialize_database(self):
+        """初始化数据库，创建所需表格和列"""
+        try:
+            with sqlite3.connect(self.db_path, check_same_thread=False) as conn:
+                c = conn.cursor()
+                # 创建表
+                c.execute('''CREATE TABLE IF NOT EXISTS chat_records
+                            (sessionid TEXT, msgid INTEGER, user TEXT, content TEXT, type TEXT, timestamp INTEGER, is_triggered INTEGER,
+                            PRIMARY KEY (sessionid, msgid))''')
+                
+                # 检查并添加新列
+                c.execute("PRAGMA table_info(chat_records);")
+                if not any(column[1] == 'is_triggered' for column in c.fetchall()):
+                    c.execute("ALTER TABLE chat_records ADD COLUMN is_triggered INTEGER DEFAULT 0;")
+        except Exception as e:
+            logger.error(f"Database initialization error: {e}")
+
+    def _insert_record(self, session_id, msg_id, user, content, msg_type, timestamp, is_triggered=0):
+        """向数据库中插入一条新记录"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", 
+                          (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
+        except Exception as e:
+            logger.error(f"Error inserting record: {e}")
+
     def _get_records(self, session_id):
-        # 获取当天的起始时间戳
+        """获取指定会话的当天聊天记录，排除特定用户"""
+        excluded_user = "黄二狗²⁴⁶⁷"  # 定义要排除的用户
         start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         start_timestamp = int(start_of_day.timestamp())
-        # 获取当天的聊天记录
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM chat_records WHERE sessionid=? and timestamp>=? ORDER BY timestamp DESC", (session_id, start_timestamp))
-        return c.fetchall()
+
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                query = "SELECT * FROM chat_records WHERE sessionid=? AND timestamp>=? AND user!=? ORDER BY timestamp DESC"
+                c.execute(query, (session_id, start_timestamp, excluded_user))
+                return c.fetchall()
+        except Exception as e:
+            logger.error(f"Error fetching records: {e}")
+            return []
+
+
 
 
     def on_receive_message(self, e_context: EventContext):
