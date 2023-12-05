@@ -227,15 +227,26 @@ class ChatStatistics(Plugin):
                 results = c.fetchall()
                 
                 # 生成带有emoji序号的排名信息，只包括前6位
-                ranking = []
+                ranking = ["📊今日群员聊天榜:"]  # 添加标题
                 for idx, (user, count) in enumerate(results[:6], start=1):
                     emoji_number = self.get_emoji_for_number(idx)
-                    ranking.append(f"{emoji_number} {user}: {count} messages")
+                    special_emoji = self.get_special_emoji_for_top_three(idx)
+                    ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
                 return "\n".join(ranking)
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")
             return "Unable to retrieve chat activity ranking."
 
+    def get_special_emoji_for_top_three(self, rank):
+        """为前三名提供特别的emoji"""
+        if rank == 1:
+            return "🥇"
+        elif rank == 2:
+            return "🥈"
+        elif rank == 3:
+            return "🥉"
+        else:
+            return ""
 
     def get_emoji_for_number(self, number):
         """将数字转换为对应的emoji"""
