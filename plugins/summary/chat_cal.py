@@ -150,8 +150,17 @@ class ChatStatistics(Plugin):
             if keyword:
                 logger.debug(f"开始搜索关键词：{keyword}")
                 search_results = self.search_chat_by_keyword(session_id, keyword)
-                formatted_results = "\n".join(f"[{datetime.datetime.fromtimestamp(rec[0]).strftime('%Y-%m-%d %H:%M:%S')}] {rec[1]}: {rec[2]}" for rec in search_results)
+
+                # 过滤掉包含 "聊天记录" 的聊天记录
+                filtered_results = [rec for rec in search_results if "聊天记录" not in rec[2]]
+
+                formatted_results = "\n".join(
+                    f"[{datetime.datetime.fromtimestamp(rec[0]).strftime('%Y-%m-%d %H:%M:%S')}] {rec[1]}: {rec[2]}"
+                    for rec in filtered_results
+                )
                 _set_reply_text(formatted_results, e_context, level=ReplyType.TEXT)
+            else:
+                _set_reply_text("请提供要搜索的关键词。", e_context, level=ReplyType.TEXT)
         else:
             EventAction.CONTINUE
 
@@ -192,7 +201,7 @@ class ChatStatistics(Plugin):
         )
         # 构建 ChatGPT 需要的消息格式
         messages = [
-            {"role": "system", "content": "你是一个群聊聊天记录分析总结专家，要根据获取到聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天主题和内容。其次，对群聊聊天记录的内容要有深入的理解，总结的文本要连贯、排版要结构清晰、可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当分析群聊参与者的交互行为，总体字数不要超过150字。"},
+            {"role": "system", "content": "你是一个群聊聊天记录分析总结专家，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）"},
             {"role": "user", "content": combined_content}
         ]
 
