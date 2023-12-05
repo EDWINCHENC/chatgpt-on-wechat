@@ -15,7 +15,7 @@
 
   "channel_type": "wx",
   "group_chat_reply_suffix": "",
-  "group_chat_keyword": ["搜索","总结群聊"],  
+  "group_chat_keyword": ["搜索","总结群聊","群聊统计"],  
   "group_name_white_list": [
     "ALL_GROUP"
   ],
