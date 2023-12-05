@@ -68,6 +68,7 @@ class ChatStatistics(Plugin):
                 c = conn.cursor()
                 c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", 
                           (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
+            logger.debug("insert chat record to db: %s", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 
@@ -86,8 +87,6 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error fetching records: {e}")
             return []
-
-
 
 
     def on_receive_message(self, e_context: EventContext):
@@ -134,9 +133,45 @@ class ChatStatistics(Plugin):
             _set_reply_text(result, e_context, level=ReplyType.TEXT)
         elif "我的聊天" in content:
             self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
+        elif "聊天记录" in content:
+            keyword = content.replace("聊天记录", "").strip()
+            if keyword:
+                logger.debug(f"开始搜索关键词：{keyword}")
+                search_results = self.search_chat_by_keyword(session_id, keyword)
+                formatted_results = "\n".join(f"[{datetime.datetime.fromtimestamp(rec[0]).strftime('%Y-%m-%d %H:%M:%S')}] {rec[1]}: {rec[2]}" for rec in search_results)
+                _set_reply_text(formatted_results, e_context, level=ReplyType.TEXT)
         else:
             EventAction.CONTINUE
 
+
+    def search_chat_by_keyword(self, session_id, keyword):
+        """根据关键词搜索聊天记录，同时获取匹配记录前后各3条记录"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                logger.debug("正在获取聊天记录")
+                # 获取所有聊天记录
+                c.execute("SELECT timestamp, user, content FROM chat_records WHERE sessionid=? ORDER BY timestamp", (session_id,))
+                all_records = c.fetchall()
+                logger.debug("获取聊天记录完成")
+                # 查找包含关键词的记录索引
+                matching_indices = [i for i, record in enumerate(all_records) if keyword in record[2]]
+
+                # 获取匹配记录及其前后各3条记录的索引
+                expanded_indices = set()
+                for index in matching_indices:
+                    expanded_indices.update(range(max(0, index - 3), min(len(all_records), index + 4)))
+
+                # 根据索引获取记录
+                result_records = [all_records[i] for i in sorted(expanded_indices)]
+                logger.debug(f"聊天记录匹配结果: {result_records}")
+                return result_records
+
+        except Exception as e:
+            logger.error(f"Error searching records by keyword: {e}")
+            return []
+
+        
 
 
     def summarize_group_chat(self, session_id, count):
