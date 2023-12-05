@@ -145,33 +145,25 @@ class ChatStatistics(Plugin):
 
 
     def search_chat_by_keyword(self, session_id, keyword):
-        """根据关键词搜索聊天记录，同时获取匹配记录前后各3条记录"""
+        """根据关键词搜索聊天记录"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
-                logger.debug("正在获取聊天记录")
-                # 获取所有聊天记录
-                c.execute("SELECT timestamp, user, content FROM chat_records WHERE sessionid=? ORDER BY timestamp", (session_id,))
-                all_records = c.fetchall()
-                logger.debug("获取聊天记录完成")
-                # 查找包含关键词的记录索引
-                matching_indices = [i for i, record in enumerate(all_records) if keyword in record[2]]
-
-                # 获取匹配记录及其前后各3条记录的索引
-                expanded_indices = set()
-                for index in matching_indices:
-                    expanded_indices.update(range(max(0, index - 3), min(len(all_records), index + 4)))
-
-                # 根据索引获取记录
-                result_records = [all_records[i] for i in sorted(expanded_indices)]
-                logger.debug(f"聊天记录匹配结果: {result_records}")
-                return result_records
+                # 准备 SQL 查询，只选取包含关键词的记录
+                logger.debug("正在搜索聊天记录...")
+                query = "SELECT timestamp, user, content FROM chat_records WHERE sessionid=? AND content LIKE ? ORDER BY timestamp DESC"
+                keyword_pattern = f"%{keyword}%"
+                # 执行查询
+                c.execute(query, (session_id, keyword_pattern))
+                # 获取并返回匹配的记录
+                matching_records = c.fetchall()
+                logger.debug(f"聊天记录匹配结果: {matching_records}")
+                return matching_records
 
         except Exception as e:
+            # 记录错误信息
             logger.error(f"Error searching records by keyword: {e}")
             return []
-
-        
 
 
     def summarize_group_chat(self, session_id, count):
