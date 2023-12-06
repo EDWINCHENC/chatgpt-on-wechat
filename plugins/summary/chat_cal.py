@@ -13,6 +13,7 @@ from common.log import logger
 import plugins
 import openai
 import time
+from collections import Counter
 
 
 @plugins.register(
@@ -217,41 +218,61 @@ class ChatStatistics(Plugin):
         # 返回 ChatGPT 生成的总结
         return function_response
 
+
+
     def get_chat_activity_ranking(self, session_id):
-        """获取聊天活跃度排名前6位"""
+        """获取聊天活跃度排名前6位（当天）"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
-                c = conn.cursor()
-                query = "SELECT user, COUNT(*) as msg_count FROM chat_records WHERE sessionid=? GROUP BY user ORDER BY msg_count DESC"
-                c.execute(query, (session_id,))
-                results = c.fetchall()
-                
-                # 生成带有emoji序号的排名信息，只包括前6位
-                ranking = ["📊今日群员聊天榜:"]  # 添加标题
-                for idx, (user, count) in enumerate(results[:6], start=1):
-                    emoji_number = self.get_emoji_for_number(idx)
-                    special_emoji = self.get_special_emoji_for_top_three(idx)
-                    ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
-                return "\n".join(ranking)
+            # 获取当天的聊天记录
+            daily_records = self._get_records(session_id)
+            # 使用 Counter 统计每个用户的消息数量
+            user_message_count = Counter(record[2] for record in daily_records)
+            # 根据消息数量排序
+            sorted_users = user_message_count.most_common(6)
+            # 获取排名第一的用户
+            top_user = sorted_users[0][0] if sorted_users else None
+            logger.debug(f"最活跃的用户: {top_user}")
+            # 提取排名第一的用户的聊天内容
+            top_user_messages = [record[3] for record in daily_records if record[2] == top_user]
+            # 如果有消息，将其发送给 OpenAI
+            if top_user_messages:
+                # 构建消息格式
+                messages_to_openai = [
+                    {"role": "system", "content": "你是一个群聊小助手，对获取到的群内最活跃的群员的聊天记录，进行适当的总结，并进行一句话点评（添加emoji)。总字数50字以内"},
+                    {"role": "user", "content": "\n".join(top_user_messages)}
+                ]
+
+                # 调用 OpenAI 进行分析
+                openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+                logger.debug(f"已完成群聊分析")
+                # 处理 OpenAI 的回复...
+
+            # 生成排名信息
+            ranking = ["📊 今日群员聊天榜:", "----------------"]  # 添加标题和分割线
+            for idx, (user, count) in enumerate(sorted_users, start=1):
+                emoji_number = self.get_fancy_emoji_for_number(idx)
+                special_emoji = self.get_special_emoji_for_top_three(idx)
+                ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
+            logger.debug(f"活跃度排名成功: {ranking}")
+            # 将 OpenAI 的分析结果附加到排名信息之后
+            final_result = "\n".join(ranking)
+            if openai_analysis:
+                final_result += "\n\n🔍点评时刻:\n" + openai_analysis
+            return final_result
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")
-            return "Unable to retrieve chat activity ranking."
+            return "Unable to retrieve chat activity ranking.", []
+
+
+    def get_fancy_emoji_for_number(self, number):
+        """为排名序号提供更漂亮的emoji"""
+        fancy_emojis = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"]
+        return fancy_emojis[number - 1] if number <= len(fancy_emojis) else "🔹"
 
     def get_special_emoji_for_top_three(self, rank):
         """为前三名提供特别的emoji"""
-        if rank == 1:
-            return "🥇"
-        elif rank == 2:
-            return "🥈"
-        elif rank == 3:
-            return "🥉"
-        else:
-            return ""
-
-    def get_emoji_for_number(self, number):
-        """将数字转换为对应的emoji"""
-        emoji_numbers = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
-        return ''.join(emoji_numbers[int(digit)] for digit in str(number))
+        special_emojis = ["✨", "🌟", "💫", "", "", ""]
+        return special_emojis[rank - 1] if rank <= len(special_emojis) else ""
     
 
     def generate_summary_with_openai(self, messages):
