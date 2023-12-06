@@ -208,7 +208,7 @@ class ChatStatistics(Plugin):
         )
         # 构建 ChatGPT 需要的消息格式
         messages = [
-            {"role": "system", "content": "你是一个群聊聊天记录分析总结专家，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）"},
+            {"role": "system", "content": "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"},
             {"role": "user", "content": combined_content}
         ]
 
@@ -238,9 +238,10 @@ class ChatStatistics(Plugin):
             # 如果有消息，将其发送给 OpenAI
             if top_user_messages:
                 # 构建消息格式
+                formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
                 messages_to_openai = [
                     {"role": "system", "content": "你是一个群聊小助手，对获取到的群内最活跃的群员的聊天记录，进行适当的总结，并进行一句话点评（添加emoji)。总字数50字以内"},
-                    {"role": "user", "content": "\n".join(top_user_messages)}
+                    {"role": "user", "content": "\n".join(formatted_top_user_messages)}
                 ]
 
                 # 调用 OpenAI 进行分析
