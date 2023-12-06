@@ -241,7 +241,7 @@ class ChatStatistics(Plugin):
                 formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
                 messages_to_openai = [
                     {"role": "system", "content": "你是一个群聊小助手，对获取到的群内最活跃的群员的聊天记录，进行适当的总结，并进行一句话点评（添加emoji)。总字数50字以内"},
-                    {"role": "user", "content": "\n".join(formatted_top_user_messages)}
+                    {"role": "user", "content": formatted_top_user_messages}
                 ]
 
                 # 调用 OpenAI 进行分析
