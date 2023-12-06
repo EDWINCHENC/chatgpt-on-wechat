@@ -234,6 +234,7 @@ class ChatStatistics(Plugin):
             logger.debug(f"最活跃的用户: {top_user}")
             # 提取排名第一的用户的聊天内容
             top_user_messages = [record[3] for record in daily_records if record[2] == top_user]
+            logger.debug(f"最活跃的用户的聊天内容: {top_user_messages[:5]}")
             # 如果有消息，将其发送给 OpenAI
             if top_user_messages:
                 # 构建消息格式
@@ -248,7 +249,7 @@ class ChatStatistics(Plugin):
                 # 处理 OpenAI 的回复...
 
             # 生成排名信息
-            ranking = ["📊 今日群员聊天榜:", "----------------"]  # 添加标题和分割线
+            ranking = ["😈 今日群员聊天榜🔝", "----------------"]  # 添加标题和分割线
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
