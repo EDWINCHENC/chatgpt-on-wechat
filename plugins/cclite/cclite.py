@@ -85,11 +85,6 @@ class CCLite(Plugin):
     # 查询类型与提示信息的映射
     query_types = {
         '查天气': '你要查询哪个城市的天气呀？',
-        '查新闻': '你想看哪类新闻？财经头条、微博热搜、实时要闻...',
-        '查聊天': '你想查谁的聊天记录？或者你想搜索哪个聊天记录关键词？试试吧',
-        '查王者':'关于王者荣耀，你可以查看英雄梯度榜/查英雄的数据/热度趋势...',
-        '刷抖音':'你想看什么内容的抖音视频？',
-        '看剧':'你想看哪部电视剧或电影？输入电视剧/电影+名字即可，例如电视剧汉武大帝。',
     }
 
     def on_handle_context(self, e_context: EventContext):
@@ -677,43 +672,43 @@ class CCLite(Plugin):
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 # return function_response
 
-            elif function_name == "analyze_user_chatmessages":
-                # 从 message 里提取函数调用参数
-                function_args_str = message["function_call"].get("arguments", "{}")
-                function_args = json.loads(function_args_str)
-                logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
-                nickname = function_args.get("nickname", None)
-                num_words = function_args.get("num_words", 5)  # 如果没有指定，使用默认值5
+            # elif function_name == "analyze_user_chatmessages":
+            #     # 从 message 里提取函数调用参数
+            #     function_args_str = message["function_call"].get("arguments", "{}")
+            #     function_args = json.loads(function_args_str)
+            #     logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
+            #     nickname = function_args.get("nickname", None)
+            #     num_words = function_args.get("num_words", 5)  # 如果没有指定，使用默认值5
 
-                # 调用函数并获取返回值
-                function_response = wx.analyze_user_messages(nickname, num_words)
-                elapsed_time = time.time() - start_time  # 计算耗时
-                # 仅在成功获取数据后发送信息
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    Nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, f"@{Nickname}\n✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                else:
-                    _send_info(e_context, f"✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                
-                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+            #     # 调用函数并获取返回值
+            #     function_response = wx.analyze_user_messages(nickname, num_words)
+            #     elapsed_time = time.time() - start_time  # 计算耗时
+            #     # 仅在成功获取数据后发送信息
+            #     if context.kwargs.get('isgroup'):
+            #         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+            #         Nickname = msg.actual_user_nickname  # 获取nickname
+            #         _send_info(e_context, f"@{Nickname}\n✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+            #     else:
+            #         _send_info(e_context, f"✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                
+            #     logger.debug(f"Function response: {function_response}")  # 打印函数响应
 
-            elif function_name == "analyze_keyword_in_chatmessages":
-                # 从 message 里提取函数调用参数
-                function_args_str = message["function_call"].get("arguments", "{}")
-                function_args = json.loads(function_args_str)
-                logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
-                keyword = function_args.get("keyword", None)
+            # elif function_name == "analyze_keyword_in_chatmessages":
+            #     # 从 message 里提取函数调用参数
+            #     function_args_str = message["function_call"].get("arguments", "{}")
+            #     function_args = json.loads(function_args_str)
+            #     logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
+            #     keyword = function_args.get("keyword", None)
 
-                function_response = wx.analyze_keyword_in_messages(keyword)
-                elapsed_time = time.time() - start_time  # 计算耗时
-                # 仅在成功获取数据后发送信息
-                if context.kwargs.get('isgroup'):
-                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                    Nickname = msg.actual_user_nickname  # 获取nickname
-                    _send_info(e_context, f"@{Nickname}\n✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                else:
-                    _send_info(e_context, f"✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")    
-                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+            #     function_response = wx.analyze_keyword_in_messages(keyword)
+            #     elapsed_time = time.time() - start_time  # 计算耗时
+            #     # 仅在成功获取数据后发送信息
+            #     if context.kwargs.get('isgroup'):
+            #         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+            #         Nickname = msg.actual_user_nickname  # 获取nickname
+            #         _send_info(e_context, f"@{Nickname}\n✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+            #     else:
+            #         _send_info(e_context, f"✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")    
+            #     logger.debug(f"Function response: {function_response}")  # 打印函数响应
               
 
             elif function_name == "search_bing_news":  # 14.搜索新闻

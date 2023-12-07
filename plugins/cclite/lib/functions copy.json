@@ -240,6 +240,39 @@
         }
     },
     {
+        "name": "analyze_user_chatmessages",
+        "description": "从内部数据库获取聊天记录，并分析指定用户在聊天记录中的行为模式。返回包括消息类型统计、高频词统计、每两小时发言频率、总发言条数和字数，以及发言最多的一天及其字数的分析结果。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "nickname": {
+                    "type": "string",
+                    "description": "要分析的用户昵称。例如'聊天记录小明'，则查询'小明'的聊天记录"
+                },
+                "num_words": {
+                    "type": "integer",
+                    "description": "返回的高频词数量，默认为5。",
+                    "default": 5
+                }
+            },
+            "required": ["nickname"]
+        }
+    },    
+    {
+        "name": "analyze_keyword_in_chatmessages",
+        "description": "分析特定关键词在聊天记录中的提及情况。返回关于关键词的分析结果，包括提及次数、讨论最多的日期及星期、该日提及次数、提及最多的人及其提及次数、以及摘取相关聊天记录内容。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "description": "要搜索的聊天记录关键词。"
+                }
+            },
+            "required": ["keyword"]
+        }
+    },    
+    {
         "name": "find_birthday",
         "description": "该函数用于查询指定人物的生日信息或者查找最近一个即将到来的生日。如果提供人名，将返回该人物的生日信息；如果没有提供人名，则返回最近一个即将过生日的人的信息。",
         "parameters": {

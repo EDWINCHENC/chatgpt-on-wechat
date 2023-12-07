@@ -10,7 +10,7 @@ import csv
 import random
 
 
-def get_msg_from_db(days=90):
+def get_msg_from_db(days=None):
 
     # 加载roomdata1.json文件中的昵称映射
     curdir = os.path.dirname(os.path.realpath(__file__))
@@ -18,32 +18,21 @@ def get_msg_from_db(days=90):
     with open(json_path, 'r', encoding='utf-8') as file:
         members_list = json.load(file)
     nickname_mapping2 = {member['ID']: member['Nickname'] for member in members_list}
+    
+    # 加载配置文件
+    config_path = os.path.join(curdir, 'config.json')
+    with open(config_path, 'r') as config_file:
+        config = json.load(config_file)
+
+    # 从配置文件中提取数据库路径
+    db_paths = config['db_paths']
+    micro_msg_db_path = config['micro_msg_db_path']
+    target_talker = config['target_talker']
+    # 如果没有指定days，则使用配置文件中的默认值
+    if days is None:
+        days = config.get('default_days', 90)  # 如果配置文件中没有default_days，则默认为90
 
 
-    # 数据库文件路径列表
-    # db_paths = [
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
-    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
-    # ]
-    
-    db_paths = [
-        '/home/ccc/MSG0.db',
-        '/home/ccc/MSG1.db',
-        '/home/ccc/MSG2.db',
-    ]
-
-    # 微信昵称数据库路径
-    # micro_msg_db_path = 'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MicroMsg.db'
-    micro_msg_db_path = '/home/ccc/MicroMsg.db'
-    
-    
     # 提取微信昵称映射
     nickname_mapping = {}
     with sqlite3.connect(micro_msg_db_path) as conn:
@@ -53,9 +42,7 @@ def get_msg_from_db(days=90):
             wechat_id, nickname = row
             nickname_mapping[wechat_id] = nickname
 
-    # 指定的群聊ID
-    target_talker = '13291955218@chatroom'
-    # target_talker = '45090913852@chatroom'
+
     # 获取当前日期并计算一个月前的日期
     current_date = datetime.now()
     analysis_start_date = current_date - timedelta(days=days)
@@ -169,7 +156,7 @@ def get_msg_from_db(days=90):
 def find_most_active_user_by_day():
     # 创建一个默认字典来记录每天的消息发送者及其计数
     daily_activity = defaultdict(Counter)
-    messages = get_msg_from_db(90)
+    messages = get_msg_from_db()
 
     # 遍历消息列表，记录每个人每天的消息数
     for message in messages:
@@ -280,7 +267,7 @@ def analyze_user_messages(nickname, num_words=5):
     :return: 包含各类统计数据的字典。
     """
     stopwords = load_stopwords()
-    messages = get_msg_from_db(365)
+    messages = get_msg_from_db()
     mention_pattern = re.compile(r"@([\w\-\u4e00-\u9fa5]+)")  # 用于匹配@后的昵称
 
     texts, message_counts, message_length, hourly_counts = [], Counter(), 0, Counter()
@@ -377,7 +364,7 @@ def analyze_keyword_in_messages(keyword):
 
     # 编译正则表达式以匹配关键词（忽略大小写）
     keyword_regex = re.compile(re.escape(keyword), re.IGNORECASE)
-    messages = get_msg_from_db(365)
+    messages = get_msg_from_db()
     # 遍历消息列表
     for message in messages:
         # 检查消息内容中是否包含关键词
@@ -433,7 +420,7 @@ def analyze_keyword_in_messages(keyword):
 
 def analyze_chat_year_report():
     stopwords = load_stopwords()
-    messages = get_msg_from_db(days=365)  # 获取消息
+    messages = get_msg_from_db(365)  # 获取消息
 
     # 初始化统计变量
     total_messages = len(messages)

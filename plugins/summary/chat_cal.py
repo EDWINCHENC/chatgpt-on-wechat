@@ -12,9 +12,9 @@ import datetime
 from common.log import logger
 import plugins
 import openai
-import time
 from collections import Counter
 from .lib import wxmsg as wx
+import re
 
 
 @plugins.register(
@@ -155,13 +155,26 @@ class ChatStatistics(Plugin):
             
         elif content.startswith(prefix):
             # 直接提取关键词
-            keyword = content[len(prefix):].strip()
-            
+            keyword = content[len(prefix):].strip()           
             if keyword:
                 keyword_summary = self.analyze_keyword_usage(keyword)
                 _set_reply_text(keyword_summary, e_context, level=ReplyType.TEXT)
             else:
                 _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
+
+        elif content.startswith("查群员"):
+            # 使用正则表达式提取昵称
+            match = re.match(r"查群员(.*?)的聊天", content)
+            if match:
+                nickname = match.group(1).strip()
+                if nickname:
+                    logger.debug(f"开始分析群员 {nickname} 的聊天记录...")
+                    user_summary = self.analyze_specific_user_usage(nickname)
+                    logger.debug(f"群员 {nickname} 的聊天记录分析结果: {user_summary}")
+                    _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
+            else:
+                _set_reply_text("请按正确格式输入命令，例如：'查群员张三的聊天'", e_context, level=ReplyType.TEXT)
+
 
 
     def summarize_group_chat(self, session_id, count):
@@ -187,7 +200,6 @@ class ChatStatistics(Plugin):
         logger.debug(f"Summary response: {json.dumps(function_response, ensure_ascii=False)}")
         # 返回 ChatGPT 生成的总结
         return function_response
-
 
 
     def get_chat_activity_ranking(self, session_id):
@@ -256,12 +268,31 @@ class ChatStatistics(Plugin):
 
         # 准备 OpenAI 的输入
         messages_to_openai = [
-            {"role": "system", "content": "你是群里的聊天记录统计工具，你主要的功能是根据用户查询的关键词，对和该关键词有关的聊天记录进行分析，形成一份简明客观完整的聊天记录报告，该报告要准确的结合报告的文案风格，语言连贯，段落清晰，搭配数据加以展示。将获取到的聊天记录数据进行呈现，可以适当添加emoji，报告的角度包括但不限于该关键词讨论的热度、总提及次数、讨论最多的日期（频率、时间段）和该日提及次数、最多聊到该关键词的人是谁、聊了多少次....等等，以及根据提取出的特定聊天者针对该话题的聊天记录进行行为特征分析。"},
+            {"role": "system", "content": "你是群里的聊天记录统计工具，你主要的功能是根据用户查询的关键词，对和该关键词有关的聊天记录进行分析，形成一份简明客观完整的聊天记录报告，该报告要准确的结合报告的文案风格，语言连贯，段落清晰，搭配数据加以展示。将获取到的聊天记录数据进行呈现，可以适当添加emoji，报告的角度包括但不限于该关键词讨论的热度、总提及次数、讨论最多的日期（频率、时间段）和该日提及次数、最多聊到该关键词的人是谁、聊了多少次....等等，以及根据提取出的特定聊天者针对该话题的聊天记录进行精彩点评。"},
             {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
         ]
         # 调用 OpenAI 生成总结
         openai_analysis = self.generate_summary_with_openai(messages_to_openai)
         return openai_analysis
+    
+    def analyze_specific_user_usage(self, nickname):
+        # 调用 analyze_user_messages 函数进行分析
+        user_analysis = wx.analyze_user_messages(nickname)
+        
+        # 判断是否有有效的分析结果
+        if not user_analysis:
+            return "没有找到关于此用户的信息。"
+
+        # 准备 OpenAI 的输入
+        messages_to_openai = [
+            {"role": "system", "content": "你是群里的聊天记录统计工具，主要的功能是分析用户的聊天记录,精确整理出用户的重要聊天信息。根据用户指定的聊天人生成一份关于他/她的聊天记录报告，要求内容连贯、客观并体现数据，适当添加emoji使报告更美观，包括但不限于：用户各种类型的消息的发送数量、用户的消息最爱说哪些词汇、哪个时间段最爱聊天、该统计周期内总的聊天次数、聊天字数、话最多的一天是哪天（当天的发言条数和聊天字数）、用户的消息发送内容的情感倾向等等。"},
+            {"role": "user", "content": user_analysis}
+        ]
+
+        # 调用 OpenAI 生成总结
+        openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+        return openai_analysis
+
 
     def generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
