@@ -22,27 +22,27 @@ def get_msg_from_db(days=90):
 
 
     # 数据库文件路径列表
-    db_paths = [
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
-    ]
-    
     # db_paths = [
-    #     '/home/ccc/MSG0.db',
-    #     '/home/ccc/MSG1.db',
-    #     '/home/ccc/MSG2.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
     # ]
+    
+    db_paths = [
+        '/home/ccc/MSG0.db',
+        '/home/ccc/MSG1.db',
+        '/home/ccc/MSG2.db',
+    ]
 
     # 微信昵称数据库路径
-    micro_msg_db_path = 'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MicroMsg.db'
-    # micro_msg_db_path = '/home/ccc/MicroMsg.db'
+    # micro_msg_db_path = 'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MicroMsg.db'
+    micro_msg_db_path = '/home/ccc/MicroMsg.db'
     
     
     # 提取微信昵称映射
