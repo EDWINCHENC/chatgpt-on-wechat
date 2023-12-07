@@ -155,6 +155,7 @@ class ChatStatistics(Plugin):
             
         elif content.startswith(prefix):
             # 直接提取关键词
+            logger.debug("开始分析群聊关键词...")
             keyword = content[len(prefix):].strip()           
             if keyword:
                 keyword_summary = self.analyze_keyword_usage(keyword)
@@ -163,6 +164,7 @@ class ChatStatistics(Plugin):
                 _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
 
         elif content.startswith("查群员"):
+            logger.debug("开始分析群员聊天记录...")
             # 使用正则表达式提取昵称
             match = re.match(r"查群员(.*?)的聊天", content)
             if match:
