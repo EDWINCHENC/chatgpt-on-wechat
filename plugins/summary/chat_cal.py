@@ -14,6 +14,7 @@ import plugins
 import openai
 import time
 from collections import Counter
+from .lib import wxmsg as wx
 
 
 @plugins.register(
@@ -43,7 +44,7 @@ class ChatStatistics(Plugin):
         self.handlers[Event.ON_RECEIVE_MESSAGE] = self.on_receive_message
 
         # 记录初始化信息
-        logger.info("[Summary] Initialized")
+        logger.info("[c_summary] Initialized")
 
     def initialize_database(self):
         """初始化数据库，创建所需表格和列"""
@@ -135,8 +136,9 @@ class ChatStatistics(Plugin):
 
         content = e_context['context'].content
         chat_message: ChatMessage = e_context['context']['msg']
-        username = chat_message.actual_user_nickname or chat_message.from_user_id
+        # username = chat_message.actual_user_nickname or chat_message.from_user_id
         session_id = self._get_session_id(chat_message)
+        prefix = "查群聊关键词 "
 
         # 解析用户请求
         if "总结群聊" in content:
@@ -144,54 +146,22 @@ class ChatStatistics(Plugin):
             result = remove_markdown(self.summarize_group_chat(session_id, 100) ) # 总结最近100条群聊消息
             logger.debug("总结群聊结果: {}".format(result))
             _set_reply_text(result, e_context, level=ReplyType.TEXT)
-        elif "我的聊天" in content:
-            self.summarize_user_chat(username, session_id)  # 总结用户当天的聊天
-        if "群聊统计" in content:
+            
+        elif "群聊统计" in content:
             logger.debug("开始进行群聊统计...")
             ranking_results = self.get_chat_activity_ranking(session_id)
             logger.debug("群聊统计结果: {}".format(ranking_results))
             _set_reply_text(ranking_results, e_context, level=ReplyType.TEXT)
-
-        elif "聊天记录" in content:
-            keyword = content.replace("聊天记录", "").strip()
+            
+        elif content.startswith(prefix):
+            # 直接提取关键词
+            keyword = content[len(prefix):].strip()
+            
             if keyword:
-                logger.debug(f"开始搜索关键词：{keyword}")
-                search_results = self.search_chat_by_keyword(session_id, keyword)
-
-                # 过滤掉包含 "聊天记录" 的聊天记录
-                filtered_results = [rec for rec in search_results if "聊天记录" not in rec[2]]
-
-                formatted_results = "\n".join(
-                    f"[{datetime.datetime.fromtimestamp(rec[0]).strftime('%Y-%m-%d %H:%M:%S')}] {rec[1]}: {rec[2]}"
-                    for rec in filtered_results
-                )
-                _set_reply_text(formatted_results, e_context, level=ReplyType.TEXT)
+                keyword_summary = self.analyze_keyword_usage(keyword)
+                _set_reply_text(keyword_summary, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("请提供要搜索的关键词。", e_context, level=ReplyType.TEXT)
-        else:
-            EventAction.CONTINUE
-
-
-    def search_chat_by_keyword(self, session_id, keyword):
-        """根据关键词搜索聊天记录"""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                c = conn.cursor()
-                # 准备 SQL 查询，只选取包含关键词的记录
-                logger.debug("正在搜索聊天记录...")
-                query = "SELECT timestamp, user, content FROM chat_records WHERE sessionid=? AND content LIKE ? ORDER BY timestamp DESC"
-                keyword_pattern = f"%{keyword}%"
-                # 执行查询
-                c.execute(query, (session_id, keyword_pattern))
-                # 获取并返回匹配的记录
-                matching_records = c.fetchall()
-                logger.debug(f"聊天记录匹配结果: {matching_records}")
-                return matching_records
-
-        except Exception as e:
-            # 记录错误信息
-            logger.error(f"Error searching records by keyword: {e}")
-            return []
+                _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
 
 
     def summarize_group_chat(self, session_id, count):
@@ -275,7 +245,23 @@ class ChatStatistics(Plugin):
         """为前三名提供特别的emoji"""
         special_emojis = ["✨", "🌟", "💫", "", "", ""]
         return special_emojis[rank - 1] if rank <= len(special_emojis) else ""
-    
+
+    def analyze_keyword_usage(self, keyword):
+        # 调用 wxmsg 模块中的函数
+        keyword_analysis = wx.analyze_keyword_in_messages(keyword)
+        
+        # 判断是否有有效的分析结果
+        if not keyword_analysis:
+            return "没有找到关于此关键词的信息。"
+
+        # 准备 OpenAI 的输入
+        messages_to_openai = [
+            {"role": "system", "content": "你是群里的聊天记录统计工具，你主要的功能是根据用户查询的关键词，对和该关键词有关的聊天记录进行分析，形成一份简明客观完整的聊天记录报告，该报告要准确的结合报告的文案风格，语言连贯，段落清晰，搭配数据加以展示。将获取到的聊天记录数据进行呈现，可以适当添加emoji，报告的角度包括但不限于该关键词讨论的热度、总提及次数、讨论最多的日期（频率、时间段）和该日提及次数、最多聊到该关键词的人是谁、聊了多少次....等等，以及根据提取出的特定聊天者针对该话题的聊天记录进行行为特征分析。"},
+            {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
+        ]
+        # 调用 OpenAI 生成总结
+        openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+        return openai_analysis
 
     def generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
@@ -300,9 +286,9 @@ class ChatStatistics(Plugin):
 
 
     def get_help_text(self, verbose=False, **kwargs):
-        help_text = "聊天记录统计插件。\n"
+        help_text = "一个清新易用的聊天记录统计插件。\n"
         if verbose:
-            help_text += "使用方法: 输入特定命令以获取聊天统计信息，例如每个用户的发言数量。"
+            help_text += "使用方法: 总结群聊、聊天统计、聊天关键词等"
         return help_text
     
 
