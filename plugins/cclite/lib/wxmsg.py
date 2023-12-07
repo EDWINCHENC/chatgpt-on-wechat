@@ -10,7 +10,6 @@ import csv
 import random
 
 
-
 def get_msg_from_db(days=90):
 
     # 加载roomdata1.json文件中的昵称映射
@@ -22,23 +21,23 @@ def get_msg_from_db(days=90):
 
 
     # 数据库文件路径列表
-    db_paths = [
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
-        'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
-    ]
-    
     # db_paths = [
-    #     '/home/ccc/MSG0.db',
-    #     '/home/ccc/MSG1.db',
-    #     '/home/ccc/MSG2.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG0.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG1.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG2.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG3.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG4.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG5.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG6.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG7.db',
+    #     'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MSG8.db'
     # ]
+    
+    db_paths = [
+        '/home/ccc/MSG0.db',
+        '/home/ccc/MSG1.db',
+        '/home/ccc/MSG2.db',
+    ]
 
     # 微信昵称数据库路径
     micro_msg_db_path = 'D:\\MyWeb\\WeChatMsg\\app\\DataBase\\msg\\MicroMsg.db'
@@ -56,7 +55,6 @@ def get_msg_from_db(days=90):
 
     # 指定的群聊ID
     target_talker = '13291955218@chatroom'
-    # target_talker = '45090913852@chatroom'
     # 获取当前日期并计算一个月前的日期
     current_date = datetime.now()
     analysis_start_date = current_date - timedelta(days=days)
@@ -529,10 +527,10 @@ def analyze_chat_year_report():
     }
 
 # 使用该函数
-chat_year_report = analyze_chat_year_report()
+# chat_year_report = analyze_chat_year_report()
 
 # 以美化的JSON格式打印结果
-print(json.dumps(chat_year_report, indent=4, ensure_ascii=False))
+# print(json.dumps(chat_year_report, indent=4, ensure_ascii=False))
 
 
 
