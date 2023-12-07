@@ -16,7 +16,7 @@ from datetime import datetime
 import os
 import time
 import traceback
-from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth,wxmsg as wx
+from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth
 
 
 @plugins.register(
