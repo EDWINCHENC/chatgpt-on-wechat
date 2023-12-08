@@ -277,7 +277,7 @@ def analyze_user_messages(nickname, num_words=5):
     # 遍历消息列表
     for msg in messages:
         # print(f"Processing message: Type: {msg['type']}, Nickname: {msg['nickname']}")
-        if msg['nickname2'] == nickname:
+        if msg['nickname'] == nickname:
             # 统计消息类型
             message_counts[msg['type']] += 1
 
