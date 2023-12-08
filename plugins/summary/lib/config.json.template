@@ -1,0 +1,17 @@
+{
+    "db_paths": [
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG1.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG0.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG2.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG3.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG4.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG5.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG6.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG7.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG8.db",
+        "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MSG.db"
+    ],
+    "micro_msg_db_path": "D:\\MyWeb\\WeChatMsg\\app\\DataBase\\Msg\\MicroMsg.db",
+    "target_talker": "13291955218@chatroom",
+    "default_days": 365
+}

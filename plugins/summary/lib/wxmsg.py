@@ -127,8 +127,10 @@ def get_msg_from_db(days=None):
 
             # 使用数据库中的昵称
             nickname = nickname_mapping.get(wechat_id, "未知成员")
+            # print(f"nickname: {nickname}")
             # 新增：从roomdata1.json中获取的昵称
             nickname2 = nickname_mapping2.get(wechat_id, "未知成员")
+            # print(f"nickname2: {nickname2}")
             # 转换消息类型
             msg_type_str = type_mapping.get(msg_type, "未知类型")
             # 记录消息记录，包括解析后的微信ID
@@ -338,7 +340,7 @@ def analyze_user_messages(nickname, num_words=5):
 
 #测试代码
 # if __name__ == "__main__":
-#     nickname = '小羊'  # 替换为实际要分析的昵称
+#     nickname = '眠眠羊₊⁺'  # 替换为实际要分析的昵称
 #     formatted_analysis_result = analyze_user_messages(nickname)
 #     print(formatted_analysis_result)
 

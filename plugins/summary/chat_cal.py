@@ -138,7 +138,7 @@ class ChatStatistics(Plugin):
         chat_message: ChatMessage = e_context['context']['msg']
         # username = chat_message.actual_user_nickname or chat_message.from_user_id
         session_id = self._get_session_id(chat_message)
-        prefix = "查群聊关键词 "
+        prefix = "查群聊关键词"
 
         # 解析用户请求
         if "总结群聊" in content:
@@ -163,20 +163,25 @@ class ChatStatistics(Plugin):
             else:
                 _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
 
-        elif content.startswith("查群员"):
-            logger.debug("开始分析群员聊天记录...")
-            # 使用正则表达式提取昵称
-            match = re.match(r"查群员(.*?)的聊天", content)
+        elif content == "我的聊天":
+            # 使用发送消息的用户昵称或用户ID
+            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id
+            logger.debug(f"开始分析用户 {user_identifier} 的聊天记录...")
+            user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
+            logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
+            _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
+
+        else:
+            # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
+            match = re.match(r"@(\w+)的聊天$", content)
             if match:
                 nickname = match.group(1).strip()
-                if nickname:
-                    logger.debug(f"开始分析群员 {nickname} 的聊天记录...")
-                    user_summary = remove_markdown(self.analyze_specific_user_usage(nickname))
-                    logger.debug(f"群员 {nickname} 的聊天记录分析结果: {user_summary}")
-                    _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
+                logger.debug(f"开始分析群员 @ {nickname} 的聊天记录...")
+                user_summary = remove_markdown(self.analyze_specific_user_usage(nickname))
+                logger.debug(f"群员 @ {nickname} 的聊天记录分析结果: {user_summary}")
+                _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("请按正确格式输入命令，例如：'查群员张三的聊天'", e_context, level=ReplyType.TEXT)
-
+                _set_reply_text("请按正确格式输入命令，例如：'@张三的聊天'或'我的聊天'", e_context, level=ReplyType.TEXT)
 
 
     def summarize_group_chat(self, session_id, count):
@@ -280,7 +285,7 @@ class ChatStatistics(Plugin):
     def analyze_specific_user_usage(self, nickname):
         # 调用 analyze_user_messages 函数进行分析
         user_analysis = wx.analyze_user_messages(nickname)
-        
+        logger.debug(user_analysis)
         # 判断是否有有效的分析结果
         if not user_analysis:
             return "没有找到关于此用户的信息。"
