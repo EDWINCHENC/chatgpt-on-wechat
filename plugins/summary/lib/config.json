@@ -12,6 +12,7 @@
         "/home/ccc/MSG8.db"
     ],
     "micro_msg_db_path": "/home/ccc/MicroMsg.db",
-    "target_talker": "13291955218@chatroom",
-    "default_days": 365
+    "target_talker": "49390760479@chatroom",
+    "default_days": 365,
+    "_comments": "13291955218@chatroom"
 }
