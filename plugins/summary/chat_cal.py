@@ -158,7 +158,7 @@ class ChatStatistics(Plugin):
             logger.debug("开始分析群聊关键词...")
             keyword = content[len(prefix):].strip()           
             if keyword:
-                keyword_summary = self.analyze_keyword_usage(keyword)
+                keyword_summary = remove_markdown(self.analyze_keyword_usage(keyword))
                 _set_reply_text(keyword_summary, e_context, level=ReplyType.TEXT)
             else:
                 _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
@@ -171,7 +171,7 @@ class ChatStatistics(Plugin):
                 nickname = match.group(1).strip()
                 if nickname:
                     logger.debug(f"开始分析群员 {nickname} 的聊天记录...")
-                    user_summary = self.analyze_specific_user_usage(nickname)
+                    user_summary = remove_markdown(self.analyze_specific_user_usage(nickname))
                     logger.debug(f"群员 {nickname} 的聊天记录分析结果: {user_summary}")
                     _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
             else:
@@ -314,7 +314,7 @@ class ChatStatistics(Plugin):
             return response["choices"][0]["message"]['content']  # 获取模型返回的消息
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
-            return "Unable to generate summary."
+            return "生成总结时出错，请稍后再试。"
 
 
 

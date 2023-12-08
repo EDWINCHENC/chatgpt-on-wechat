@@ -141,7 +141,7 @@ def get_msg_from_db(days=None):
                 "content": str_content,
                 "wechat_id": wechat_id,
                 "nickname": nickname,  # 新增昵称信息
-                "nickname2": nickname2  # 新增nickname2字段
+                "nickname2": nickname2  # 新增nickname2字段,自定义的昵称
             })
         # 关闭数据库连接
         conn.close()
