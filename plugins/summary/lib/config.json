@@ -1,9 +1,17 @@
 {
     "db_paths": [
         "/home/ccc/MSG.db",
-        "/home/ccc/MSG0.db"
+        "/home/ccc/MSG0.db",
+        "/home/ccc/MSG1.db",
+        "/home/ccc/MSG2.db",
+        "/home/ccc/MSG3.db",
+        "/home/ccc/MSG4.db",
+        "/home/ccc/MSG5.db",
+        "/home/ccc/MSG6.db",
+        "/home/ccc/MSG7.db",
+        "/home/ccc/MSG8.db"
     ],
     "micro_msg_db_path": "/home/ccc/MicroMsg.db",
     "target_talker": "13291955218@chatroom",
-    "default_days": 30
+    "default_days": 365
 }
