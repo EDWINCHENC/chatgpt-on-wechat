@@ -163,8 +163,10 @@ class ChatStatistics(Plugin):
 
         elif content == "我的聊天":
             # 使用发送消息的用户昵称或用户ID
-            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id.strip()
-            logger.debug(f"开始分析用户 {user_identifier} 的聊天记录...")
+            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id
+            if user_identifier:
+                user_identifier = user_identifier.strip()
+            logger.debug(f"开始分析用户{user_identifier}的聊天记录...")
             user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
             logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
             _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
@@ -283,7 +285,7 @@ class ChatStatistics(Plugin):
     def analyze_specific_user_usage(self, nickname):
         # 调用 analyze_user_messages 函数进行分析
         user_analysis = wx.analyze_user_messages(nickname)
-        logger.debug(f"分析用户 {nickname} 的使用情况成功: {user_analysis}")
+        logger.debug(f"分析用户 {nickname} 的使用情况: {user_analysis}")
         if user_analysis:
             # 准备 OpenAI 的输入
             messages_to_openai = [
