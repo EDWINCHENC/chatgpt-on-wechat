@@ -181,7 +181,7 @@ class ChatStatistics(Plugin):
                 logger.debug(f"群员 @ {nickname} 的聊天记录分析结果: {user_summary}")
                 _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("请按正确格式输入命令，例如：'@张三的聊天'或'我的聊天'", e_context, level=ReplyType.TEXT)
+                e_context.action = EventAction.CONTINUE
 
 
     def summarize_group_chat(self, session_id, count):

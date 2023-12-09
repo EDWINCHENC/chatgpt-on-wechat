@@ -6,7 +6,7 @@ from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 from channel.chat_message import ChatMessage
 from config import conf
-# from common.expired_dict import ExpiredDict
+from common.expired_dict import ExpiredDict
 from plugins import *
 from bridge import bridge
 from bridge.bridge import Bridge
@@ -30,6 +30,7 @@ class CCLite(Plugin):
     def __init__(self):
         super().__init__()
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
+        self.sessions= ExpiredDict(180)            #在CCLite类里创建一个SessionHandler实例
         curdir = os.path.dirname(__file__)
         config_path = os.path.join(curdir, "config.json")
         logger.info(f"[cclite] current directory: {curdir}")
@@ -75,6 +76,17 @@ class CCLite(Plugin):
     def base_url(self):
         return self.cc_api_base
 
+
+    # 定义常量来表示不同的会话阶段和查询类型
+    STAGE = 'current_stage'
+    QUERY_TYPE = 'query_type'
+    QUERY_VALUE = 'query_value'
+
+    # 查询类型与提示信息的映射
+    query_types = {
+        '查天气': '你要查询哪个城市的天气呀？',
+    }
+
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
         # 过滤不需要处理的内容类型
@@ -83,10 +95,42 @@ class CCLite(Plugin):
             return
 
         if context.type == ContextType.TEXT:
+            session_id = e_context["context"]["session_id"]
+            session = self.sessions.setdefault(session_id, {})
+            logger.debug(f"Session: {session}")
+            handled_query = False  # 添加一个标志
+            # 如果处于 QUERY_TYPE 阶段，则进入下一阶段
+            if session.get(self.STAGE) == self.QUERY_TYPE:
+                session[self.STAGE] = self.QUERY_VALUE
+                session[self.QUERY_VALUE] = context.content
+                # _send_info(e_context, f"正在从🔜{session[self.QUERY_TYPE]}栏目为你获取{context.content}...")
+                session[self.STAGE] = None  # 重置当前阶段
+                handled_query = True  # 设置标志为True
+                logger.debug(f"Session updated to: {session}")
 
-            input_messages = self.build_input_messages(context)
+            # 检查是否是已定义的查询类型
+            if not handled_query:
+                for query_keyword in self.query_types.keys():
+                    if query_keyword in context.content:
+                        session[self.STAGE] = self.QUERY_TYPE
+                        session[self.QUERY_TYPE] = query_keyword  # 保存匹配到的关键词
+                        _set_reply_text(self.query_types[query_keyword], e_context, level=ReplyType.TEXT)  # 使用匹配到的关键词获取提示信息
+                        logger.debug(f"Session updated to: {session}")
+                        return  # 如果找到匹配项，则退出循环
+
+            # 如果没有处理查询或者已经完成 QUERY_VALUE 阶段，则执行以下代码
+            input_messages = self.build_input_messages(session, context)
             logger.debug(f"Input messages: {input_messages}")
-      
+
+            # 运行会话并获取输出
+            # conversation_output = self.run_conversation(input_messages, e_context)
+            # if conversation_output:
+            # # 使用这个函数来处理对话输出
+            #     conversation_output = remove_markdown(conversation_output)
+            #     reply_type = ReplyType.TEXT        
+            #     _set_reply_text(conversation_output, e_context, level=reply_type)
+            #     logger.debug(f"Conversation output: {conversation_output}")
+            
             # 运行会话并获取输出
             result = self.run_conversation(input_messages, e_context)
             called_function_name, conversation_output = result if result else (None, None)
@@ -94,7 +138,7 @@ class CCLite(Plugin):
             if conversation_output:
                 # if called_function_name:
                 # 处理当我们有一个具体的函数名时的情况
-                # 如果函数返回的是视频播放源
+                    # 如果函数返回的是视频播放源
                 if called_function_name == "fetch_dyvideo_sources" and isinstance(conversation_output, list):
                     reply_type = ReplyType.VIDEO_URL
                     for video_url in conversation_output:
@@ -110,11 +154,18 @@ class CCLite(Plugin):
 
                 logger.debug(f"Conversation output: {conversation_output}")
 
-    def build_input_messages(self, context):
-        find_content = context.content
-        return [{"role": "user", "content": find_content}]
 
-     
+
+    def build_input_messages(self, session, context):
+        if self.QUERY_VALUE in session and self.QUERY_TYPE in session:
+            combined_content = f"{session[self.QUERY_TYPE]}:{session[self.QUERY_VALUE]}"
+            session.clear()  # 清空session
+        else:
+            combined_content = context.content
+        return [{"role": "user", "content": combined_content}]
+
+
+               
     def run_conversation(self, input_messages, e_context: EventContext):
         global function_response
         context = e_context['context']
@@ -621,6 +672,45 @@ class CCLite(Plugin):
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 # return function_response
 
+            # elif function_name == "analyze_user_chatmessages":
+            #     # 从 message 里提取函数调用参数
+            #     function_args_str = message["function_call"].get("arguments", "{}")
+            #     function_args = json.loads(function_args_str)
+            #     logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
+            #     nickname = function_args.get("nickname", None)
+            #     num_words = function_args.get("num_words", 5)  # 如果没有指定，使用默认值5
+
+            #     # 调用函数并获取返回值
+            #     function_response = wx.analyze_user_messages(nickname, num_words)
+            #     elapsed_time = time.time() - start_time  # 计算耗时
+            #     # 仅在成功获取数据后发送信息
+            #     if context.kwargs.get('isgroup'):
+            #         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+            #         Nickname = msg.actual_user_nickname  # 获取nickname
+            #         _send_info(e_context, f"@{Nickname}\n✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+            #     else:
+            #         _send_info(e_context, f"✅查询{nickname}的聊天记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")                
+            #     logger.debug(f"Function response: {function_response}")  # 打印函数响应
+
+            # elif function_name == "analyze_keyword_in_chatmessages":
+            #     # 从 message 里提取函数调用参数
+            #     function_args_str = message["function_call"].get("arguments", "{}")
+            #     function_args = json.loads(function_args_str)
+            #     logger.debug(f"Function arguments: {function_args_str}")  # 打印函数参数
+            #     keyword = function_args.get("keyword", None)
+
+            #     function_response = wx.analyze_keyword_in_messages(keyword)
+            #     elapsed_time = time.time() - start_time  # 计算耗时
+            #     # 仅在成功获取数据后发送信息
+            #     if context.kwargs.get('isgroup'):
+            #         msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+            #         Nickname = msg.actual_user_nickname  # 获取nickname
+            #         _send_info(e_context, f"@{Nickname}\n✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+            #     else:
+            #         _send_info(e_context, f"✅查询{keyword}相关记录成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")    
+            #     logger.debug(f"Function response: {function_response}")  # 打印函数响应
+              
+
             elif function_name == "search_bing_news":  # 14.搜索新闻
                 function_args = json.loads(message["function_call"].get("arguments", "{}"))
                 logger.debug(f"Function arguments: {function_args}")  # 打印函数参数
@@ -671,7 +761,7 @@ class CCLite(Plugin):
             return called_function_name, second_response['choices'][0]['message']['content']
         else:
             # 如果模型不希望调用函数，直接打印其响应
-            logger.debug(f"未调用函数，原始模型响应: {message['content']}")  # 打印模型的响应
+            logger.debug(f"Model response: {message['content']}")  # 打印模型的响应
             return     
 
     def get_help_text(self, verbose=False, **kwargs):
