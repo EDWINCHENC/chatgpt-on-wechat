@@ -43,7 +43,7 @@ def get_msg_from_db(days=None):
             nickname_mapping[wechat_id] = nickname
 
 
-    # 获取当前日期并计算一个月前的日期
+    # 获取当前日期并计算N个月前的日期
     current_date = datetime.now()
     analysis_start_date = current_date - timedelta(days=days)
 
@@ -105,7 +105,7 @@ def get_msg_from_db(days=None):
             if msg_type != 1 and ('<xml>' in str_content or '<msg>' in str_content):
                 str_content = ""
             # 当消息是由用户自己发送时，设置wechat_id为用户自己的ID
-            wechat_id = 'wxid_9jvcn4tu30q622' if issender == 1 else None
+            wechat_id = config.get('my_wechat_id','') if issender == 1 else None
             
             # 如果消息不是用户发送的，解析BytesExtra字段以获取微信ID
             if issender != 1 and bytes_extra:
@@ -181,7 +181,6 @@ def find_most_active_user_by_day():
 # for date, (nickname, count) in most_active_by_day.items():
 #     print(f"日期: {date}, 昵称: {nickname}, 消息数: {count}")
     
-
 
 # 定义函数，用于统计每天的消息条数
 def count_messages_per_day():
@@ -517,7 +516,7 @@ def analyze_chat_year_report():
     }
 
 # 使用该函数
-chat_year_report = analyze_chat_year_report()
+# chat_year_report = analyze_chat_year_report()
 
 # 以美化的JSON格式打印结果
 # print(json.dumps(chat_year_report, indent=4, ensure_ascii=False))
@@ -551,7 +550,7 @@ def get_messages_and_export_to_csv(nickname, days=40):
             for message in user_messages:
                 writer.writerow(message)
 
-    print(f"聊天记录已导出到文件：{csv_file_name}")
+    # print(f"聊天记录已导出到文件：{csv_file_name}")
 
 # 调用函数
 # nickname = "小羊"
