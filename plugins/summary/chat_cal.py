@@ -163,7 +163,7 @@ class ChatStatistics(Plugin):
 
         elif content == "我的聊天":
             # 使用发送消息的用户昵称或用户ID
-            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id
+            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id.strip()
             logger.debug(f"开始分析用户 {user_identifier} 的聊天记录...")
             user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
             logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
