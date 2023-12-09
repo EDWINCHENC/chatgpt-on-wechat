@@ -176,9 +176,9 @@ class ChatStatistics(Plugin):
             match = re.match(r"@(\w+)的聊天$", content)
             if match:
                 nickname = match.group(1).strip()
-                logger.debug(f"开始分析群员 @ {nickname} 的聊天记录...")
+                logger.debug(f"开始分析群员{nickname}的聊天记录...")
                 user_summary = remove_markdown(self.analyze_specific_user_usage(nickname))
-                logger.debug(f"群员 @ {nickname} 的聊天记录分析结果: {user_summary}")
+                logger.debug(f"群员{nickname}的聊天记录分析结果: {user_summary}")
                 _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
             else:
                 e_context.action = EventAction.CONTINUE

@@ -339,7 +339,7 @@ def analyze_user_messages(nickname, num_words=5):
 
 #测试代码
 # if __name__ == "__main__":
-#     nickname = '爱笑的男孩'  # 替换为实际要分析的昵称
+#     nickname = '兔子橙'  # 替换为实际要分析的昵称
 #     formatted_analysis_result = analyze_user_messages(nickname)
 #     print(formatted_analysis_result)
 
