@@ -173,7 +173,8 @@ class ChatStatistics(Plugin):
 
         else:
             # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
-            match = re.match(r"@(\w+)的聊天$", content)
+            # 使用正则表达式检查是否符合 "@xxx 的聊天" 格式
+            match = re.match(r"@([\w\s]+)的聊天$", content)
             if match:
                 nickname = match.group(1).strip()
                 logger.debug(f"开始分析群员{nickname}的聊天记录...")
