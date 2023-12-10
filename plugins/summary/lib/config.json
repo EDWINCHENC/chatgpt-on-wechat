@@ -13,5 +13,6 @@
     ],
     "micro_msg_db_path": "/home/ccc/MicroMsg.db",
     "target_talker": "13291955218@chatroom",
-    "default_days": 365
+    "default_days": 90,
+    "my_wechat_id":"wxid_9jvcn4tu30q622"
 }

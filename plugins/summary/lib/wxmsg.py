@@ -37,11 +37,18 @@ def get_msg_from_db(days=None):
     nickname_mapping = {}
     with sqlite3.connect(micro_msg_db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT UserName, NickName FROM Contact")  # 替换SomeTable为实际的表名
-        for row in cursor.fetchall():
-            wechat_id, nickname = row
-            nickname_mapping[wechat_id] = nickname
+        cursor.execute("SELECT RoomData FROM ChatRoom WHERE ChatRoomName = ?", (target_talker,))
+        row = cursor.fetchone()
+        if row:
+            room_data = row[0]
+            decoded_message_json, message_type = blackboxprotobuf.protobuf_to_json(room_data)
+            decoded_message = json.loads(decoded_message_json)
 
+            if "1" in decoded_message and isinstance(decoded_message["1"], list):
+                for member in decoded_message["1"]:
+                    wechat_id = member.get("1")
+                    nickname = member.get("2", "未知成员")
+                    nickname_mapping[wechat_id] = nickname
 
     # 获取当前日期并计算N个月前的日期
     current_date = datetime.now()
@@ -142,7 +149,7 @@ def get_msg_from_db(days=None):
                 "talker": str_talker,
                 "content": str_content,
                 "wechat_id": wechat_id,
-                "nickname": nickname,  # 新增昵称信息
+                "nickname": nickname,  # 新增昵称信息，从ChatRoom表中匹配nickname
                 "nickname2": nickname2  # 新增nickname2字段,自定义的昵称
             })
         # 关闭数据库连接
