@@ -83,10 +83,16 @@ class CCLite(Plugin):
             return
 
         if context.type == ContextType.TEXT:
+            if "倒计时" in context.content:
+                url = "https://dayu.qqsuu.cn/moyurili/apis.php?type=json"
+                response = requests.get(url)
+                data = response.json()
+                _set_reply_text(data, e_context,level=ReplyType.IMAGE)
 
+            #以下处理可能的函数调用逻辑
             input_messages = self.build_input_messages(context)
             logger.debug(f"Input messages: {input_messages}")
-      
+
             # 运行会话并获取输出
             result = self.run_conversation(input_messages, e_context)
             called_function_name, conversation_output = result if result else (None, None)
