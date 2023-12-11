@@ -123,6 +123,7 @@ class CCLite(Plugin):
                             ]
                             # 调用OpenAI处理函数
                             openai_response = self.generate_summary_with_openai(messages)
+                            logger.debug(f"openai美食建议点评：{openai_response}")
                             # 构建最终的回复消息
                             final_response = (
                                 f"🌟 {nickname}，你好呀！\n"
@@ -131,6 +132,7 @@ class CCLite(Plugin):
                                 f"😊 奉上我的推荐理由：\n"
                                 f"{openai_response}"
                             )
+                            logger.debug(f"最终回复：{final_response}")
                             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
                             return
                         else:
