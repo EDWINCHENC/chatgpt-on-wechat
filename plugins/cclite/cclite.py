@@ -101,10 +101,44 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     logger.error(f"Request failed: {e}")
-            elif "百分茶" in context.content:
-                logger.debug("百分茶小程序")
-                _set_reply_text("#小程序://百分茶/9ShFNO03CHt8Vtq", e_context, level=ReplyType.MINIAPP)
-                return                
+                
+            elif "今天吃什么" in context.content:
+                logger.debug("正替你考虑今天吃什么")
+                msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                nickname = msg.actual_user_nickname  # 获取nickname
+                url = "https://zj.v.api.aa1.cn/api/eats/"
+                try:
+                    response = requests.get(url)
+                    logger.debug(f"response响应：{response}")
+                    if response.status_code == 200:
+                        data = response.json()
+                        logger.debug(f"data数据：{data}")
+                        if data['code'] == 200:
+                            # 将数据整合为一个消息列表，用于发送给OpenAI
+                            messages = [
+                                {"role": "system", "content": "你是每日饮食建议专家，会根据用户的烦恼给出合理的饮食建议。"},
+                                {"role": "user", "content": "今天该吃些什么好呢？"},
+                                {"role": "assistant", "content": f"你可以试试{data.get('meal1', '')}，或者{data.get('meal2', '')}。"},
+                                {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜，分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。"},
+                            ]
+                            # 调用OpenAI处理函数
+                            openai_response = self.generate_summary_with_openai(messages)
+                            # 构建最终的回复消息
+                            final_response = (
+                                f"🌟 {nickname}，你好呀！\n"
+                                f"🍽️ 今天推荐给你的美食有：\n"
+                                f"🥘 {data.get('meal1', '')} 或者 🍮 {data.get('meal2', '')}\n\n"
+                                f"😊 奉上我的推荐理由：\n"
+                                f"{openai_response}"
+                            )
+                            _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
+                            return
+                        else:
+                            return "无法获取餐点建议，接口返回错误。"
+                    else:
+                        return f"请求失败，状态码：{response.status_code}"
+                except requests.RequestException as e:
+                    return f"请求异常：{e}"
 
 
 
@@ -134,6 +168,26 @@ class CCLite(Plugin):
                     _set_reply_text(conversation_output, e_context, level=reply_type)
 
                 logger.debug(f"Conversation output: {conversation_output}")
+
+    def generate_summary_with_openai(self, messages):
+        """使用 OpenAI ChatGPT 生成总结"""
+        try:
+            # 设置 OpenAI API 密钥和基础 URL
+            openai.api_key = self.openai_api_key
+            openai.api_base = self.openai_api_base
+
+            logger.debug(f"向 OpenAI 发送消息: {messages}")
+
+            # 调用 OpenAI ChatGPT
+            response = openai.ChatCompletion.create(
+                model=self.assistant_openai_model,
+                messages=messages
+            )
+            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
+            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
+        except Exception as e:
+            logger.error(f"Error generating summary with OpenAI: {e}")
+            return "生成总结时出错，请稍后再试。"
 
     def build_input_messages(self, context):
         find_content = context.content
