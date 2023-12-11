@@ -97,13 +97,15 @@ class CCLite(Plugin):
                             _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE_URL)
                             return
                         else:
-                            logger.error(f"API returned an error: {json_data.get('msg', 'No error message')}")
-                    else:
-                        logger.error(f"Failed to fetch data from API. Status code: {response.status_code}")
+                            _set_reply_text(f"获取数据失败，请稍后再试", e_context, level=ReplyType.TEXT)
+                            return
                 except requests.RequestException as e:
                     logger.error(f"Request failed: {e}")
-                except json.JSONDecodeError:
-                    logger.error("Failed to parse JSON response")
+            elif "百分茶" in context.content:
+                logger.debug("百分茶小程序")
+                _set_reply_text("#小程序://百分茶/9ShFNO03CHt8Vtq", e_context, level=ReplyType.MINIAPP)
+                return                
+
 
 
             #以下处理可能的函数调用逻辑
