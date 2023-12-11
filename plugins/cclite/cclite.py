@@ -83,11 +83,25 @@ class CCLite(Plugin):
             return
 
         if context.type == ContextType.TEXT:
+            
             if "倒计时" in context.content:
-                url = "https://dayu.qqsuu.cn/moyurili/apis.php?type=json"
-                response = requests.get(url)
-                data = response.json()
-                _set_reply_text(data, e_context,level=ReplyType.IMAGE)
+                logger.debug("正倒计时获取数据")
+                url = "https://dayu.qqsuu.cn/moyurili/apis.php?type=json" 
+                try:
+                    response = requests.get(url)
+                    if response.status_code == 200:
+                        json_data = response.json()
+                        if json_data['code'] == 200 and 'data' in json_data:
+                            countdown_data = json_data['data']
+                            _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE)
+                        else:
+                            logger.error(f"API returned an error: {json_data.get('msg', 'No error message')}")
+                    else:
+                        logger.error(f"Failed to fetch data from API. Status code: {response.status_code}")
+                except requests.RequestException as e:
+                    logger.error(f"Request failed: {e}")
+                except json.JSONDecodeError:
+                    logger.error("Failed to parse JSON response")
 
             #以下处理可能的函数调用逻辑
             input_messages = self.build_input_messages(context)
