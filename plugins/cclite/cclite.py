@@ -89,11 +89,12 @@ class CCLite(Plugin):
                 url = "https://dayu.qqsuu.cn/moyurili/apis.php?type=json" 
                 try:
                     response = requests.get(url)
+                    logger.debug(f"response响应：{response}")
                     if response.status_code == 200:
                         json_data = response.json()
                         if json_data['code'] == 200 and 'data' in json_data:
                             countdown_data = json_data['data']
-                            _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE)
+                            _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE_URL)
                         else:
                             logger.error(f"API returned an error: {json_data.get('msg', 'No error message')}")
                     else:
