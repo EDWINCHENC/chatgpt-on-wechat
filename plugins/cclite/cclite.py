@@ -95,6 +95,7 @@ class CCLite(Plugin):
                         if json_data['code'] == 200 and 'data' in json_data:
                             countdown_data = json_data['data']
                             _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE_URL)
+                            return
                         else:
                             logger.error(f"API returned an error: {json_data.get('msg', 'No error message')}")
                     else:
@@ -103,6 +104,7 @@ class CCLite(Plugin):
                     logger.error(f"Request failed: {e}")
                 except json.JSONDecodeError:
                     logger.error("Failed to parse JSON response")
+
 
             #以下处理可能的函数调用逻辑
             input_messages = self.build_input_messages(context)
