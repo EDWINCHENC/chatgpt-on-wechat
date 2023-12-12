@@ -126,13 +126,13 @@ class CCLite(Plugin):
                         return
 
             elif "求签" in context.content:
+                logger.debug("开始求签")
                 divination = horo.fetch_divination()
-                logger.debug(f"求签结果：{divination}")
                 if divination and divination['code'] == 200:
                     # 存储用户的抽签结果
                     self.user_divinations[user_id] = divination
                     logger.debug(f"用户{user_id}的抽签结果字典：{divination}")
-                    response = f"📜 {nickname}的{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}"
+                    response = f"📜 你抽到了{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     return
                 else:
@@ -141,12 +141,15 @@ class CCLite(Plugin):
 
             elif "解签" in context.content:
                 # 检查用户是否已经抽过签
+                logger.debug("开始解签")
                 if user_id in self.user_divinations:
                     divination = self.user_divinations[user_id]
-                    response = f"📖 解签：{divination['jie']}"
+                    response = f"📖 {divination['jie']}"
+                    logger.debug(f"用户{user_id}的解签结果：{response}")
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     # 删除存储的抽签结果
                     del self.user_divinations[user_id]
+                    logger.debug(f"目前字典状况：{self.user_divinations}")
                     return
                 else:
                     _set_reply_text("请先抽签后再请求解签。", e_context, level=ReplyType.TEXT)
