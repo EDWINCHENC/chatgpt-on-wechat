@@ -17,7 +17,7 @@ import os
 import time
 import traceback
 import re
-from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth
+from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
 
 
 @plugins.register(
@@ -102,7 +102,24 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     logger.error(f"Request failed: {e}")
-                
+
+            # 使用正则表达式来匹配星座运势的请求
+            elif "运势" in context.content:
+                match = re.search(r"(今日)?\s*(白羊座|金牛座|双子座|巨蟹座|狮子座|处女座|天秤座|天蝎座|射手座|摩羯座|水瓶座|双鱼座)\s*(运势|今日运势)?", context.content)
+                if match:
+                    sign = match.group(2)  # 获取匹配到的星座名称
+                    logger.debug(f"正在获取 {sign} 的星座运势数据")
+                    _send_info(e_context, f"✅ {sign} 的今日运势即将呈现")
+                    try:
+                        horoscope_data = horo.fetch_horoscope(sign)
+                        logger.debug(f"星座运势响应：{horoscope_data}")
+                        final_response = f"{horoscope_data}\n\n🔮 发送‘求签’, 让诸葛神数签诗为你今日算上一卦。"
+                        _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
+                        return
+                    except Exception as e:
+                        logger.error(f"获取星座运势失败: {e}")
+                        _set_reply_text(f"获取星座运势失败，请稍后再试", e_context, level=ReplyType.TEXT)
+                        return
 
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
