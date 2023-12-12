@@ -16,6 +16,7 @@ from datetime import datetime
 import os
 import time
 import traceback
+import re
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth
 
 
@@ -102,7 +103,8 @@ class CCLite(Plugin):
                 except requests.RequestException as e:
                     logger.error(f"Request failed: {e}")
                 
-            elif "今天吃什么" in context.content:
+
+            elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
                 msg = context.kwargs.get('msg')  # 这是WechatMessage实例
                 nickname = msg.actual_user_nickname  # 获取nickname
@@ -119,29 +121,24 @@ class CCLite(Plugin):
                                 {"role": "system", "content": "你是每日饮食建议专家，会根据用户的烦恼给出合理的饮食建议。"},
                                 {"role": "user", "content": "今天该吃些什么好呢？"},
                                 {"role": "assistant", "content": f"你可以试试{data.get('meal1', '')}，或者{data.get('meal2', '')}。"},
-                                {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜，分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。"},
+                                {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超60字。"},
                             ]
                             # 调用OpenAI处理函数
                             openai_response = self.generate_summary_with_openai(messages)
                             logger.debug(f"openai美食建议点评：{openai_response}")
                             # 构建最终的回复消息
                             final_response = (
-                                f"🌟 {nickname}，你好呀！\n"
-                                f"🍽️ 今天推荐给你的美食有：\n"
-                                f"🥘 {data.get('meal1', '')} 或者 🍮 {data.get('meal2', '')}\n\n"
+                                f"🌟 你好呀！{nickname}，\n"
+                                f"🍽️ 今天推荐给你的美食有：\n\n"
+                                f"🍴 {data.get('meal1', '精选美食')} 或者 🍴 {data.get('meal2', '精选美食')}\n\n"
                                 f"😊 奉上我的推荐理由：\n"
                                 f"{openai_response}"
                             )
                             logger.debug(f"最终回复：{final_response}")
                             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
                             return
-                        else:
-                            return "无法获取餐点建议，接口返回错误。"
-                    else:
-                        return f"请求失败，状态码：{response.status_code}"
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
-
 
 
             #以下处理可能的函数调用逻辑
