@@ -132,7 +132,7 @@ class CCLite(Plugin):
                     # 存储用户的抽签结果
                     self.user_divinations[user_id] = divination
                     logger.debug(f"用户{user_id}的抽签结果字典：{divination}")
-                    response = f"📜 你抽到了{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}"
+                    response = f"📜 你抽到了{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}\n🔮 发送‘解签’, 让诸葛神数为你解卦。"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     return
                 else:
