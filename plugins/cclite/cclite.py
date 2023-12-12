@@ -131,7 +131,7 @@ class CCLite(Plugin):
                 logger.debug("开始求签")
                 # 检查用户是否已在当天抽过签
                 if self.has_user_drawn_today(user_id):
-                    response = "今日已得签，请明日再来。\n"
+                    response = "--今日已得签，请明日再来。--\n"
                     # 如果今日已求过签，显示今日的签文
                     if 'divination' in self.user_divinations[user_id]:
                         divination = self.user_divinations[user_id]['divination']
