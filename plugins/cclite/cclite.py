@@ -81,9 +81,8 @@ class CCLite(Plugin):
         context = e_context['context']
         msg: ChatMessage = context['msg']
         # user_id = msg.from_user_id
-        receiver = e_context["context"].get("receiver")
         isgroup = e_context["context"].get("isgroup")
-        user_id = receiver if isgroup else msg.from_user_id
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
@@ -132,7 +131,7 @@ class CCLite(Plugin):
                 logger.debug("开始求签")
                 # 检查用户是否已在当天抽过签
                 if self.has_user_drawn_today(user_id):
-                    _set_reply_text("今日已求签，请明日再来。", e_context, level=ReplyType.TEXT)
+                    _set_reply_text("今日已得签，请明日再来。", e_context, level=ReplyType.TEXT)
                     return
 
                 divination = horo.fetch_divination()
@@ -202,7 +201,7 @@ class CCLite(Plugin):
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
 
-
+    #====================================================================================================
             #以下处理可能的函数调用逻辑
             input_messages = self.build_input_messages(context)
             logger.debug(f"Input messages: {input_messages}")
