@@ -80,7 +80,10 @@ class CCLite(Plugin):
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
         msg: ChatMessage = context['msg']
-        user_id = msg.from_user_id     
+        # user_id = msg.from_user_id
+        receiver = e_context["context"].get("receiver")
+        isgroup = e_context["context"].get("isgroup")
+        user_id = receiver if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
@@ -127,10 +130,18 @@ class CCLite(Plugin):
 
             elif "求签" in context.content:
                 logger.debug("开始求签")
+                # 检查用户是否已在当天抽过签
+                if self.has_user_drawn_today(user_id):
+                    _set_reply_text("今日已求签，请明日再来。", e_context, level=ReplyType.TEXT)
+                    return
+
                 divination = horo.fetch_divination()
                 if divination and divination['code'] == 200:
-                    # 存储用户的抽签结果
-                    self.user_divinations[user_id] = divination
+                    # 存储用户的抽签结果及日期
+                    self.user_divinations[user_id] = {
+                        'date': datetime.now().date().isoformat(),
+                        'divination': divination
+                    }
                     logger.debug(f"用户{user_id}的抽签结果字典：{divination}")
                     response = f"📜 你抽到了{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}\n🔮 发送‘解签’, 让诸葛神数为你解卦。"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
@@ -140,21 +151,21 @@ class CCLite(Plugin):
                     return
 
             elif "解签" in context.content:
-                # 检查用户是否已经抽过签
                 logger.debug("开始解签")
-                if user_id in self.user_divinations:
-                    divination = self.user_divinations[user_id]
+                # 检查用户是否已经抽过签
+                if user_id in self.user_divinations and 'divination' in self.user_divinations[user_id]:
+                    divination = self.user_divinations[user_id]['divination']
                     response = f"📖 {divination['jie']}"
                     logger.debug(f"用户{user_id}的解签结果：{response}")
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
-                    # 删除存储的抽签结果
-                    del self.user_divinations[user_id]
+                    # 删除签文，保留日期
+                    del self.user_divinations[user_id]['divination']
                     logger.debug(f"目前字典状况：{self.user_divinations}")
                     return
                 else:
-                    _set_reply_text("请先抽签后再请求解签。", e_context, level=ReplyType.TEXT)
+                    _set_reply_text("请先求签后再请求解签。", e_context, level=ReplyType.TEXT)
                     return
-                    
+
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
                 msg = context.kwargs.get('msg')  # 这是WechatMessage实例
@@ -238,6 +249,14 @@ class CCLite(Plugin):
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
             return "生成总结时出错，请稍后再试。"
+
+
+    def has_user_drawn_today(self, user_id):
+        """检查用户是否在当天已求过签"""
+        if user_id in self.user_divinations:
+            last_divination_date = self.user_divinations[user_id].get('date')
+            return last_divination_date == datetime.now().date().isoformat()
+        return False
 
     def build_input_messages(self, context):
         find_content = context.content
