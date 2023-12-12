@@ -131,7 +131,12 @@ class CCLite(Plugin):
                 logger.debug("开始求签")
                 # 检查用户是否已在当天抽过签
                 if self.has_user_drawn_today(user_id):
-                    _set_reply_text("今日已得签，请明日再来。", e_context, level=ReplyType.TEXT)
+                    response = "今日已得签，请明日再来。\n"
+                    # 如果今日已求过签，显示今日的签文
+                    if 'divination' in self.user_divinations[user_id]:
+                        divination = self.user_divinations[user_id]['divination']
+                        response += f"📜 今日{divination['qian']}"
+                    _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     return
 
                 divination = horo.fetch_divination()
@@ -139,9 +144,10 @@ class CCLite(Plugin):
                     # 存储用户的抽签结果及日期
                     self.user_divinations[user_id] = {
                         'date': datetime.now().date().isoformat(),
-                        'divination': divination
+                        'divination': divination,
+                        'already_interpreted': False  # 初始化解签标记
                     }
-                    logger.debug(f"用户{user_id}的抽签结果字典：{divination}")
+                    logger.debug(f"当前抽签结果字典：{self.user_divinations}")
                     response = f"📜 你抽到了{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}\n🔮 发送‘解签’, 让诸葛神数为你解卦。"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     return
@@ -153,13 +159,18 @@ class CCLite(Plugin):
                 logger.debug("开始解签")
                 # 检查用户是否已经抽过签
                 if user_id in self.user_divinations and 'divination' in self.user_divinations[user_id]:
-                    divination = self.user_divinations[user_id]['divination']
+                    user_divination_data = self.user_divinations[user_id]
+                    logger.debug(f"用户{user_id}的解签数据：{user_divination_data}")
+                    # 检查是否已经解过签
+                    if user_divination_data.get('already_interpreted', False):
+                        _set_reply_text("今日已解签，请明日再来。", e_context, level=ReplyType.TEXT)
+                        return
+                    divination = user_divination_data['divination']
                     response = f"📖 {divination['jie']}"
-                    logger.debug(f"用户{user_id}的解签结果：{response}")
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
-                    # 删除签文，保留日期
-                    del self.user_divinations[user_id]['divination']
-                    logger.debug(f"目前字典状况：{self.user_divinations}")
+                    # 标记为已解签
+                    user_divination_data['already_interpreted'] = True
+                    logger.debug(f"用户{user_id}已完成解签")
                     return
                 else:
                     _set_reply_text("请先求签后再请求解签。", e_context, level=ReplyType.TEXT)
