@@ -3,8 +3,12 @@ import datetime
 
 def fetch_horoscope(sign: str) -> str:
     """获取并整合两个API的星座运势信息"""
-    url1 = f"https://api.52vmy.cn/api/wl/xingzuo?type=json&msg={sign}"
-    url2 = f"https://service-m9yegcn9-1311248022.sh.apigw.tencentcs.com/release/star?n={sign}"
+    # 针对"魔羯座"进行特别处理
+    sign_for_api1 = "摩羯座" if sign == "魔羯座" else sign
+    sign_for_api2 = "魔羯座" if sign == "摩羯座" else sign
+
+    url1 = f"https://api.52vmy.cn/api/wl/xingzuo?type=json&msg={sign_for_api1}"
+    url2 = f"https://service-m9yegcn9-1311248022.sh.apigw.tencentcs.com/release/star?n={sign_for_api2}"
 
     try:
         response1 = requests.get(url1)
