@@ -33,7 +33,7 @@ def format_horoscope(sign: str, data1: dict, data2: dict) -> str:
     """格式化星座运势信息，整合两个API的数据"""
     date = datetime.datetime.fromtimestamp(data1['date'] / 1000).strftime('%Y年%m月%d日')
     return (
-        f"🌟 {date}，✨✨{sign}✨✨运势：\n"
+        f"🌟 {date}，✨{sign}✨运势：\n"
         f"⏰ 幸运时间：{data1['lucklyTime'].strip()}\n"
         f"🎨 幸运颜色：{data1['lucklyColor']}\n"
         f"🍀 幸运数字：{data1['numbers']}\n"

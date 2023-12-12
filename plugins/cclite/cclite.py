@@ -80,7 +80,8 @@ class CCLite(Plugin):
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
         msg: ChatMessage = context['msg']
-        user_id = msg.from_user_id      
+        user_id = msg.from_user_id     
+        nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             # filter content no need solve
@@ -112,7 +113,7 @@ class CCLite(Plugin):
                 if match:
                     sign = match.group(2)  # 获取匹配到的星座名称
                     logger.debug(f"正在获取 {sign} 星座运势数据")
-                    _send_info(e_context, f"✅ {sign}今日运势即将来临")
+                    _send_info(e_context, f"💰🧧 {sign}今日运势即将来临...")
                     try:
                         horoscope_data = horo.fetch_horoscope(sign)
                         logger.debug(f"星座运势响应：{horoscope_data}")
@@ -126,13 +127,17 @@ class CCLite(Plugin):
 
             elif "求签" in context.content:
                 divination = horo.fetch_divination()
+                logger.debug(f"求签结果：{divination}")
                 if divination and divination['code'] == 200:
                     # 存储用户的抽签结果
                     self.user_divinations[user_id] = divination
-                    response = f"📜 签号：{divination['title']}\n⏰ 抽签时间：{divination['time']}\n💬 签诗：{divination['qian']}"
+                    logger.debug(f"用户{user_id}的抽签结果字典：{divination}")
+                    response = f"📜 {nickname}的{divination['title']}\n⏰ {divination['time']}\n💬 {divination['qian']}"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                    return
                 else:
                     _set_reply_text("获取签文失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    return
 
             elif "解签" in context.content:
                 # 检查用户是否已经抽过签
@@ -142,8 +147,10 @@ class CCLite(Plugin):
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
                     # 删除存储的抽签结果
                     del self.user_divinations[user_id]
+                    return
                 else:
                     _set_reply_text("请先抽签后再请求解签。", e_context, level=ReplyType.TEXT)
+                    return
                     
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
