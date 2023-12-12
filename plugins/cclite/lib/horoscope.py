@@ -33,7 +33,7 @@ def format_horoscope(sign: str, data1: dict, data2: dict) -> str:
     """格式化星座运势信息，整合两个API的数据"""
     date = datetime.datetime.fromtimestamp(data1['date'] / 1000).strftime('%Y年%m月%d日')
     return (
-        f"🌟 {date}，{sign}运势：\n"
+        f"🌟 {date}，✨✨{sign}✨✨运势：\n"
         f"⏰ 幸运时间：{data1['lucklyTime'].strip()}\n"
         f"🎨 幸运颜色：{data1['lucklyColor']}\n"
         f"🍀 幸运数字：{data1['numbers']}\n"
@@ -53,6 +53,18 @@ def format_horoscope(sign: str, data1: dict, data2: dict) -> str:
         f"💰 财运：{data1['contentFortune'].strip()}\n"
         f"❤️ 爱情运势：{data1['contentLove'].strip()}\n"
     )
+    
+
+def fetch_divination() -> dict:
+    """调用第三方接口进行求签，并返回结果"""
+    url = "https://api.t1qq.com/api/tool/cq?key=s8sMrfY2iUpYQXuHlXVXOXtwRN"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+    except requests.RequestException:
+        pass
+    return None
 
 # 示例调用
 # sign = "白羊座"

@@ -31,6 +31,7 @@ class CCLite(Plugin):
     def __init__(self):
         super().__init__()
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
+        self.user_divinations = {}  # 将 user_divinations 作为类的属性
         curdir = os.path.dirname(__file__)
         config_path = os.path.join(curdir, "config.json")
         logger.info(f"[cclite] current directory: {curdir}")
@@ -78,6 +79,8 @@ class CCLite(Plugin):
 
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
+        msg: ChatMessage = context['msg']
+        user_id = msg.from_user_id      
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             # filter content no need solve
@@ -108,12 +111,12 @@ class CCLite(Plugin):
                 match = re.search(r"(今日)?\s*(白羊座|金牛座|双子座|巨蟹座|狮子座|处女座|天秤座|天蝎座|射手座|摩羯座|水瓶座|双鱼座)\s*(运势|今日运势)?", context.content)
                 if match:
                     sign = match.group(2)  # 获取匹配到的星座名称
-                    logger.debug(f"正在获取 {sign} 的星座运势数据")
-                    _send_info(e_context, f"✅ {sign} 的今日运势即将呈现")
+                    logger.debug(f"正在获取 {sign} 星座运势数据")
+                    _send_info(e_context, f"✅ {sign}今日运势即将来临")
                     try:
                         horoscope_data = horo.fetch_horoscope(sign)
                         logger.debug(f"星座运势响应：{horoscope_data}")
-                        final_response = f"{horoscope_data}\n\n🔮 发送‘求签’, 让诸葛神数签诗为你今日算上一卦。"
+                        final_response = f"{horoscope_data}\n🔮 发送‘求签’, 让诸葛神数签诗为你今日算上一卦。"
                         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
                         return
                     except Exception as e:
@@ -121,6 +124,27 @@ class CCLite(Plugin):
                         _set_reply_text(f"获取星座运势失败，请稍后再试", e_context, level=ReplyType.TEXT)
                         return
 
+            elif "求签" in context.content:
+                divination = horo.fetch_divination()
+                if divination and divination['code'] == 200:
+                    # 存储用户的抽签结果
+                    self.user_divinations[user_id] = divination
+                    response = f"📜 签号：{divination['title']}\n⏰ 抽签时间：{divination['time']}\n💬 签诗：{divination['qian']}"
+                    _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                else:
+                    _set_reply_text("获取签文失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+
+            elif "解签" in context.content:
+                # 检查用户是否已经抽过签
+                if user_id in self.user_divinations:
+                    divination = self.user_divinations[user_id]
+                    response = f"📖 解签：{divination['jie']}"
+                    _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                    # 删除存储的抽签结果
+                    del self.user_divinations[user_id]
+                else:
+                    _set_reply_text("请先抽签后再请求解签。", e_context, level=ReplyType.TEXT)
+                    
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
                 msg = context.kwargs.get('msg')  # 这是WechatMessage实例
