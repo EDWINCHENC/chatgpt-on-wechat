@@ -70,6 +70,9 @@ def fetch_divination() -> dict:
         pass
     return None
 
+
+
+
 # 示例调用
 # sign = "白羊座"
 # result = fetch_horoscope(sign)

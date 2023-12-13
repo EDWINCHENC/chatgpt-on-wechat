@@ -80,7 +80,7 @@ def find_birthday(name=None):
 
 
 # # 加载数据
-# data = load_data('people_data.json')
+# data = load_data(filepath)
 
 # 用户输入
 # name = input("请输入人名查询生日信息，直接回车则查询最近一个即将过生日的人：").strip()
