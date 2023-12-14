@@ -323,6 +323,7 @@ class CCLite(Plugin):
                     logger.error(f"Request to API failed: {e}")
                     _set_reply_text("获取最新新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                return called_function_name, function_response
                 
             elif function_name == "fetch_financial_news":  # 2.获取财经新闻
                 api_url = f"{self.base_url()}/financial_news/"
@@ -347,7 +348,8 @@ class CCLite(Plugin):
                     logger.error(f"Request to API failed: {e}")
                     _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-
+                return called_function_name, function_response
+            
             elif function_name == "get_weather_by_city_name":  # 3.获取天气
                 # 从message里提取函数调用参数
                 function_args_str = message["function_call"].get("arguments", "{}")
@@ -526,6 +528,7 @@ class CCLite(Plugin):
                     logger.error(f"Traceback:\n{traceback.format_exc()}")
 
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                return called_function_name, function_response
                 
             elif function_name == "fetch_dyvideo_sources":  # 抖音视频源获取
                 # 从message里提取函数调用参数
@@ -598,7 +601,7 @@ class CCLite(Plugin):
                     logger.error(f"Traceback:\n{traceback.format_exc()}")
 
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
-
+                return called_function_name, function_response
                 
                                        
             elif function_name == "fetch_hero_trending":  # 8.获取英雄热度趋势

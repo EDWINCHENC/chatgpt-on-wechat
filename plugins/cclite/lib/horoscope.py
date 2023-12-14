@@ -53,9 +53,9 @@ def format_horoscope(sign: str, data1: dict, data2: dict) -> str:
         f"🚫 避免：{data2['avoid']}\n"
         f"📌 小贴士：{data1['shorts'].strip()}\n"
         f"🔮 综合运势：{data1['contentAll'].strip()}\n"
-        f"💼 事业运势：{data1['contentCareer'].strip()}\n"
-        f"💰 财运：{data1['contentFortune'].strip()}\n"
-        f"❤️ 爱情运势：{data1['contentLove'].strip()}\n"
+        # f"💼 事业运势：{data1['contentCareer'].strip()}\n"
+        # f"💰 财运：{data1['contentFortune'].strip()}\n"
+        # f"❤️ 爱情运势：{data1['contentLove'].strip()}\n"
     )
     
 
