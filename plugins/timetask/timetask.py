@@ -20,6 +20,10 @@ import io
 import time
 import gc
 from channel import channel_factory
+from dateutil.parser import parse
+import os
+import json
+from datetime import datetime
 
 class TimeTaskRemindType(Enum):
     NO_Task = 1           #无任务
@@ -35,7 +39,7 @@ class TimeTaskRemindType(Enum):
     desire_priority=950,
     hidden=True,
     desc="定时任务系统，可定时处理事件",
-    version="2.7",
+    version="2.8",
     author="haikerwang",
 )
     
@@ -63,6 +67,17 @@ class timetask(Plugin):
         #查询内容
         query = e_context["context"].content
         logging.info("定时任务的输入信息为:{}".format(query))
+
+        # 处理倒计时查询
+        if query == "倒计时":
+            logging.debug("倒计时开启成功")
+            countdown_results = self.countdown_from_config()
+            reply_text = ""
+            logging.debug(f"倒计时结果：{countdown_results}")
+            reply_text = countdown_results
+            # _set_reply_text(countdown_results, e_context, level=ReplyType.TEXT)
+            self.replay_use_default(reply_text, e_context)  
+
         #指令前缀
         command_prefix = self.conf.get("command_prefix", "$time")
         
@@ -72,9 +87,34 @@ class timetask(Plugin):
             print("[timetask] 捕获到定时任务:{}".format(query))
             #移除指令
             #示例：$time 明天 十点十分 提醒我健身
-            content = query.replace(f"{command_prefix} ", "")
-            content = content.replace(command_prefix, "")
+            content = query.replace(f"{command_prefix}", "", 1).strip()
             self.deal_timeTask(content, e_context)
+
+    def countdown_from_config(self):
+        curdir = os.path.dirname(__file__)
+        config_path = os.path.join(curdir, "config.json")
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+
+        # 获取并格式化当前日期
+        current_datetime = datetime.now()
+        today_str = current_datetime.strftime("%Y年%m月%d日")
+        today_str = f"📅 今天是{today_str}"
+
+        results = [today_str]
+        for event in config["events"]:
+            event_date = parse(event["date"])
+            delta = event_date - current_datetime
+
+            # 为过去的事件添加特别处理
+            if delta.days < 0:
+                time_str = f"🕒 距离{event['name']}已过去 {-delta.days} 天"
+            else:
+                time_str = f"⏳ 距离{event['name']}还有 {delta.days} 天"
+
+            results.append(time_str)
+
+        return "\n".join(results)
 
     #处理时间任务
     def deal_timeTask(self, content, e_context: EventContext):
@@ -348,19 +388,70 @@ class timetask(Plugin):
         content_dict["session_id"] = other_user_id
         content_dict["isgroup"] = isGroup
         msg : ChatMessage = ChatMessage(content_dict)
+        #信息映射
+        for key, value in content_dict.items():
+            if hasattr(msg, key):
+                setattr(msg, key, value)
+        #处理message的is_group
+        msg.is_group = isGroup
         content_dict["msg"] = msg
         context = Context(ContextType.TEXT, eventStr, content_dict)
-                
+        
+        #处理GPT
+        event_content = eventStr
+        key_word = "GPT"
+        isGPT = event_content.startswith(key_word)
+    
+        #GPT处理
+        if isGPT:
+            index = event_content.find(key_word)
+            #内容体      
+            event_content = event_content[:index] + event_content[index+len(key_word):]
+            event_content = event_content.strip()
+            #替换源消息中的指令
+            content_dict["content"] = event_content
+            msg.content = event_content
+            context.__setitem__("content",event_content)
+        
+            content = context.content.strip()
+            imgPrefix = RobotConfig.conf().get("image_create_prefix")
+            img_match_prefix = self.check_prefix(content, imgPrefix)
+            if img_match_prefix:
+                content = content.replace(img_match_prefix, "", 1)
+                context.type = ContextType.IMAGE_CREATE
+            
+            #获取回复信息
+            replay :Reply = Bridge().fetch_reply_content(content, context)
+            self.replay_use_custom(model,replay.content,replay.type, context)
+            return
+
+        #变量
+        e_context = None
+        # 是否开启了所有回复路由
+        is_open_route_everyReply = self.conf.get("is_open_route_everyReply", True)
+        if is_open_route_everyReply:
+            try:
+                # 检测插件是否会消费该消息
+                e_context = PluginManager().emit_event(
+                    EventContext(
+                        Event.ON_HANDLE_CONTEXT,
+                        {"channel": self.channel, "context": context, "reply": Reply()},
+                    )
+                )
+            except  Exception as e:
+                print(f"开启了所有回复均路由，但是消息路由插件异常！后续会继续查询是否开启拓展功能。错误信息：{e}")
+
         #查看配置中是否开启拓展功能
         is_open_extension_function = self.conf.get("is_open_extension_function", True)
-        #需要拓展功能
-        if is_open_extension_function:
+        #需要拓展功能 & 未被路由消费
+        route_replyType = None
+        if e_context:
+            route_replyType = e_context["reply"].type
+        if is_open_extension_function and route_replyType is None:
             #事件字符串
             event_content = eventStr
             #支持的功能
             funcArray = self.conf.get("extension_function", [])
-            #是否是GPT消息
-            isGPT = False
             for item in funcArray:
               key_word = item["key_word"]
               func_command_prefix = item["func_command_prefix"]
@@ -369,36 +460,18 @@ class timetask(Plugin):
               if event_content.startswith(key_word):
                 index = event_content.find(key_word)
                 insertStr = func_command_prefix + key_word 
-                if func_command_prefix == "GPT":
-                      isGPT = True
-                      insertStr = ""
                 #内容体      
                 event_content = event_content[:index] + insertStr + event_content[index+len(key_word):]
+                event_content = event_content.strip()
                 isFindExFuc = True
                 break
             
             #找到了拓展功能
-            e_context = None
             if isFindExFuc:
                 #替换源消息中的指令
                 content_dict["content"] = event_content
-                msg : ChatMessage = ChatMessage(content_dict)
-                content_dict["msg"] = msg
-                context = Context(ContextType.TEXT, event_content, content_dict)
-                
-                #GPT处理
-                if isGPT:
-                    content = context.content.strip()
-                    imgPrefix = RobotConfig.conf().get("image_create_prefix")
-                    img_match_prefix = self.check_prefix(content, imgPrefix)
-                    if img_match_prefix:
-                        content = content.replace(img_match_prefix, "", 1)
-                        context.type = ContextType.IMAGE_CREATE
-                    
-                    #获取回复信息
-                    replay :Reply = Bridge().fetch_reply_content(content, context)
-                    self.replay_use_custom(model,replay.content,replay.type, context)
-                    return
+                msg.content = event_content
+                context.__setitem__("content",event_content)
                 
                 try:
                     #检测插件是否会消费该消息
@@ -549,3 +622,4 @@ class timetask(Plugin):
         headStr = "📌 功能介绍：添加定时任务、取消定时任务、获取任务列表。\n\n"
         help_text = headStr + tempStr + tempStr1 + tempStr2
         return help_text
+

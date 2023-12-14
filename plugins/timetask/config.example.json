@@ -1,0 +1,53 @@
+{
+  "command_prefix": "$time",
+  "debug": false,
+  "time_check_rate": 1,
+  "move_historyTask_time": "04:00:00",
+  "is_open_route_everyReply": true,
+  "is_open_extension_function": true,
+  "is_need_title_whenNormalReply": true,
+  "is_need_currentTime_whenNormalReply": true,
+  "is_need_identifier_whenNormalReply": true,
+  "is_need_detailDeccription_whenNormalReply": true,
+  "events": [
+    {
+      "name": "高考",
+      "date": "2024-06-07"
+    },
+    {
+      "name": "2024春节",
+      "date": "2024-02-02"
+    },
+    {
+      "name": "这个周末",
+      "date": "2023-12-15"
+    },
+    {
+      "name": "圣诞节",
+      "date": "2023-12-15"
+    },
+    {
+      "name": "元旦",
+      "date": "2024-01-01"
+    }
+],
+  "extension_function":
+  [
+    {
+      "key_word": "倒计时",
+      "func_command_prefix":""
+    },
+    {
+      "key_word": "点歌",
+      "func_command_prefix": "$"
+    },
+    {
+      "key_word": "搜索",
+      "func_command_prefix": "$tool google "
+    },
+    {
+      "key_word": "GPT",
+      "func_command_prefix": "GPT"
+    }
+  ]
+}
