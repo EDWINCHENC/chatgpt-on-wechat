@@ -193,45 +193,26 @@ class ChatStatistics(Plugin):
                 e_context.action = EventAction.CONTINUE
 
 
-    def summarize_group_chat(self, session_id, count):
-        # 从 _get_records 方法获取当天的所有聊天记录
-        all_records = self._get_records(session_id)
-        # 从所有记录中提取最新的 count 条记录，并只获取 user, content, timestamp 字段
-        recent_records = [{"user": record[2], "content": record[3], "timestamp": record[5]} for record in all_records[:count]]
-        logger.debug("recent_records: {}".format(recent_records))
         
-        # 将所有聊天记录合并成一个字符串
-        combined_content = "\n".join(
-            f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"
-            for record in recent_records
-        )
-        
+    def _generate_model_analysis(self, prompt, combined_content):
         if self.ai_model == "OpenAI":
-            messages = self._build_openai_messages(combined_content)
-            function_response = self._generate_summary_with_openai(messages)
-            logger.debug(f"Summary response from Openai: {json.dumps(function_response, ensure_ascii=False)}")
-            # 返回 ChatGPT 生成的总结
-            return function_response
-            
-        elif self.ai_model == "Gemini":
-            messages = self._build_gemini_messages(combined_content)
-            function_response = self._generate_summary_with_gemini_pro(messages)
-            logger.debug(f"Summary response from Gemini_pro: {json.dumps(function_response, ensure_ascii=False)}")
-            return function_response
+            messages = self._build_openai_messages(prompt, combined_content)
+            return self._generate_summary_with_openai(messages)
 
-    def _build_openai_messages(self, content):
-        # 构建 ChatGPT 需要的消息格式
+        elif self.ai_model == "Gemini":
+            messages = self._build_gemini_messages(prompt, combined_content)
+            return self._generate_summary_with_gemini_pro(messages)
+
+    def _build_openai_messages(self, prompt, content):
         return [
-            {"role": "system", "content": "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": content}
         ]
-    
-    def _build_gemini_messages(self, content):
-        # 构建 Gemini 需要的消息格式
-        prompt_parts = [
-            "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。现在需要你分析的聊天记录如下:\n" + content
-        ]
+
+    def _build_gemini_messages(self, prompt, content):
+        prompt_parts = [prompt + "\n" + content]
         return prompt_parts
+
 
 
     def _generate_summary_with_openai(self, messages):
@@ -245,7 +226,7 @@ class ChatStatistics(Plugin):
 
             # 调用 OpenAI ChatGPT
             response = openai.ChatCompletion.create(
-                model="gpt-4-1106-preview",
+                model="gpt-3.5-turbo-1106",
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
@@ -282,6 +263,24 @@ class ChatStatistics(Plugin):
             return "生成总结时出错，请稍后再试。"
 
 
+
+    def summarize_group_chat(self, session_id, count):
+        # 从 _get_records 方法获取当天的所有聊天记录
+        all_records = self._get_records(session_id)
+        # 从所有记录中提取最新的 count 条记录，并只获取 user, content, timestamp 字段
+        recent_records = [{"user": record[2], "content": record[3], "timestamp": record[5]} for record in all_records[:count]]
+        logger.debug("recent_records: {}".format(recent_records))
+        
+        # 将所有聊天记录合并成一个字符串
+        combined_content = "\n".join(
+            f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"
+            for record in recent_records
+        )
+        prompt = "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"
+        function_response = self._generate_model_analysis(prompt, combined_content)           
+        logger.debug(f"Summary response from {self.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
+        return function_response
+
     def get_chat_activity_ranking(self, session_id):
         """获取聊天活跃度排名前6位（当天）"""
         try:
@@ -297,20 +296,17 @@ class ChatStatistics(Plugin):
             # 提取排名第一的用户的聊天内容
             top_user_messages = [record[3] for record in daily_records if record[2] == top_user]
             logger.debug(f"最活跃的用户的聊天内容: {top_user_messages[:5]}")
-            # 如果有消息，将其发送给 OpenAI
+            # 如果有消息，将其发送给 Model
             if top_user_messages:
                 # 构建消息格式
                 formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
-                messages_to_openai = [
-                    {"role": "system", "content": "你是一个群聊小助手，对获取到的群内最活跃的群员的聊天记录，进行适当的总结，并进行一句话点评（添加emoji)。总字数50字以内"},
-                    {"role": "user", "content": formatted_top_user_messages}
-                ]
 
-                # 调用 OpenAI 进行分析
-                openai_analysis = self._generate_summary_with_openai(messages_to_openai)
+                prompt = "你是一个群聊小助手，对获取到的群内最活跃的群员的聊天记录，进行适当的总结，并进行一句话点评（添加emoji)。总字数50字以内"
+                messages_to_model = formatted_top_user_messages
+                # 调用 Model 进行分析
+                model_analysis = self._generate_model_analysis(prompt, messages_to_model)
                 logger.debug(f"已完成群聊分析")
-                # 处理 OpenAI 的回复...
-
+                # 处理 Model 的回复...
             # 生成排名信息
             ranking = ["😈 今日群员聊天榜🔝", "----------------"]  # 添加标题和分割线
             for idx, (user, count) in enumerate(sorted_users, start=1):
@@ -318,10 +314,10 @@ class ChatStatistics(Plugin):
                 special_emoji = self.get_special_emoji_for_top_three(idx)
                 ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
             logger.debug(f"活跃度排名成功: {ranking}")
-            # 将 OpenAI 的分析结果附加到排名信息之后
+            # 将 Model 的分析结果附加到排名信息之后
             final_result = "\n".join(ranking)
-            if openai_analysis:
-                final_result += "\n\n🔍点评时刻:\n" + openai_analysis
+            if model_analysis:
+                final_result += "\n\n🔍点评时刻:\n" + model_analysis
             return final_result
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")

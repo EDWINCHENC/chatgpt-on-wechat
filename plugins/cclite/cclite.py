@@ -196,7 +196,7 @@ class CCLite(Plugin):
                                 {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超60字。"},
                             ]
                             # 调用OpenAI处理函数
-                            openai_response = self.generate_summary_with_openai(messages)
+                            openai_response = self._generate_summary_with_openai(messages)
                             logger.debug(f"openai美食建议点评：{openai_response}")
                             # 构建最终的回复消息
                             final_response = (
@@ -240,7 +240,7 @@ class CCLite(Plugin):
 
                 logger.debug(f"Conversation output: {conversation_output}")
 
-    def generate_summary_with_openai(self, messages):
+    def _generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
         try:
             # 设置 OpenAI API 密钥和基础 URL
@@ -832,7 +832,7 @@ class CCLite(Plugin):
             return called_function_name, second_response['choices'][0]['message']['content']
         else:
             # 如果模型不希望调用函数，直接打印其响应
-            logger.debug(f"未调用函数，原始模型响应: {message['content']}")  # 打印模型的响应
+            logger.debug(f"模型未调用函数，原始模型响应: {message['content']}")  # 打印模型的响应
             return     
 
     def get_help_text(self, verbose=False, **kwargs):
