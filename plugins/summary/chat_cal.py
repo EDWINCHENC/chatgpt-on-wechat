@@ -15,6 +15,7 @@ import openai
 from collections import Counter
 from .lib import wxmsg as wx
 import re
+import google.generativeai as genai
 
 
 @plugins.register(
@@ -35,6 +36,8 @@ class ChatStatistics(Plugin):
         self.db_path = os.path.join(curdir, "chat.db")
         self.openai_api_key = conf().get("open_ai_api_key")
         self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
+        self.ai_model = conf().get("ai_model", "OpenAI")
+        self.gemini_api_key = conf().get("gemini_api_key")
 
         # 初始化数据库
         self.initialize_database()
@@ -197,17 +200,80 @@ class ChatStatistics(Plugin):
             f"[{datetime.datetime.fromtimestamp(record['timestamp']).strftime('%Y-%m-%d %H:%M:%S')}] {record['user']} said: {record['content']}"
             for record in recent_records
         )
+        
+        if self.ai_model == "OpenAI":
+            messages = self._build_openai_messages(combined_content)
+            function_response = self._generate_summary_with_openai(messages)
+            logger.debug(f"Summary response from Openai: {json.dumps(function_response, ensure_ascii=False)}")
+            # 返回 ChatGPT 生成的总结
+            return function_response
+            
+        elif self.ai_model == "Gemini":
+            messages = self._build_gemini_messages(combined_content)
+            function_response = self._generate_summary_with_gemini_pro(messages)
+            logger.debug(f"Summary response from Gemini_pro: {json.dumps(function_response, ensure_ascii=False)}")
+            return function_response
+
+    def _build_openai_messages(self, content):
         # 构建 ChatGPT 需要的消息格式
-        messages = [
+        return [
             {"role": "system", "content": "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"},
-            {"role": "user", "content": combined_content}
+            {"role": "user", "content": content}
+        ]
+    
+    def _build_gemini_messages(self, content):
+        # 构建 Gemini 需要的消息格式
+        return [
+            {
+                "role": "model",
+                "parts": [{"text": "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"}]
+            },
+            {
+                "role": "user",
+                "parts": [{"text": content}]
+            }
         ]
 
-        # 使用封装的方法调用 OpenAI
-        function_response = self.generate_summary_with_openai(messages)
-        logger.debug(f"Summary response: {json.dumps(function_response, ensure_ascii=False)}")
-        # 返回 ChatGPT 生成的总结
-        return function_response
+
+    def _generate_summary_with_openai(self, messages):
+        """使用 OpenAI ChatGPT 生成总结"""
+        try:
+            # 设置 OpenAI API 密钥和基础 URL
+            openai.api_key = self.openai_api_key
+            openai.api_base = self.openai_api_base
+
+            logger.debug(f"向 OpenAI 发送消息: {messages}")
+
+            # 调用 OpenAI ChatGPT
+            response = openai.ChatCompletion.create(
+                model="gpt-4-1106-preview",
+                messages=messages
+            )
+            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
+            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
+        except Exception as e:
+            logger.error(f"Error generating summary with OpenAI: {e}")
+            return "生成总结时出错，请稍后再试。"
+
+
+    def _generate_summary_with_gemini_pro(self, messages):
+        """使用 Gemini Pro 生成总结"""
+        try:
+            # 配置 Gemini Pro API 密钥
+            genai.configure(api_key=self.gemini_api_key)
+
+            # 创建 Gemini Pro 模型实例
+            model = genai.GenerativeModel('gemini-pro')
+
+            # 调用 Gemini Pro 生成内容
+            response = model.generate_content(messages)
+            reply_text = response.text
+            logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
+            return f"[Gemini_pro] {reply_text}"
+
+        except Exception as e:
+            logger.error(f"Error generating summary with Gemini Pro: {e}")
+            return "生成总结时出错，请稍后再试。"
 
 
     def get_chat_activity_ranking(self, session_id):
@@ -299,28 +365,6 @@ class ChatStatistics(Plugin):
             return openai_analysis
         else:
             return "没有找到关于此用户的信息。"
-
-
-    def generate_summary_with_openai(self, messages):
-        """使用 OpenAI ChatGPT 生成总结"""
-        try:
-            # 设置 OpenAI API 密钥和基础 URL
-            openai.api_key = self.openai_api_key
-            openai.api_base = self.openai_api_base
-
-            logger.debug(f"向 OpenAI 发送消息: {messages}")
-
-            # 调用 OpenAI ChatGPT
-            response = openai.ChatCompletion.create(
-                model="gpt-4-1106-preview",
-                messages=messages
-            )
-            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
-            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
-        except Exception as e:
-            logger.error(f"Error generating summary with OpenAI: {e}")
-            return "生成总结时出错，请稍后再试。"
-
 
 
     def get_help_text(self, verbose=False, **kwargs):
