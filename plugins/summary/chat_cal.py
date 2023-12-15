@@ -228,16 +228,10 @@ class ChatStatistics(Plugin):
     
     def _build_gemini_messages(self, content):
         # 构建 Gemini 需要的消息格式
-        return [
-            {
-                "role": "model",
-                "parts": [{"text": "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。"}]
-            },
-            {
-                "role": "user",
-                "parts": [{"text": content}]
-            }
+        prompt_parts = [
+            "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。其次，对群聊聊天记录的内容要有深入的理解，可以适当提炼、分类你认为最精华的聊天主题，也可通过总结群聊记录来适当讨论群聊参与者的交互行为（总结的文本要连贯、排版要段落结构清晰、总体字数不超过150字。在总结的末尾单独一行，搭配emoji展示几个核心关键词（可以是活跃的群友名字、聊天数量、频次、主要话题等）,并进行一句话精华点评（搭配emoji)，约30字。现在需要你分析的聊天记录如下:\n" + content
         ]
+        return prompt_parts
 
 
     def _generate_summary_with_openai(self, messages):
@@ -266,13 +260,20 @@ class ChatStatistics(Plugin):
         try:
             # 配置 Gemini Pro API 密钥
             genai.configure(api_key=self.gemini_api_key)
+            # Set up the model
+            generation_config = {
+            "temperature": 0.9,
+            "top_p": 1,
+            "top_k": 1,
+            "max_output_tokens": 2048,
+            }
 
             # 创建 Gemini Pro 模型实例
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel(model_name="gemini-pro",generation_config=generation_config)
 
             # 调用 Gemini Pro 生成内容
             response = model.generate_content(messages)
-            reply_text = response.text
+            reply_text = remove_markdown(response.text)
             logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
             return f"[Gemini_pro] {reply_text}"
 
@@ -306,7 +307,7 @@ class ChatStatistics(Plugin):
                 ]
 
                 # 调用 OpenAI 进行分析
-                openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+                openai_analysis = self._generate_summary_with_openai(messages_to_openai)
                 logger.debug(f"已完成群聊分析")
                 # 处理 OpenAI 的回复...
 
@@ -349,7 +350,7 @@ class ChatStatistics(Plugin):
                 {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
             ]
             # 调用 OpenAI 生成总结
-            openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+            openai_analysis = self._generate_summary_with_openai(messages_to_openai)
             return openai_analysis
         else:
             return "没有找到关于此关键词的信息。"
@@ -366,7 +367,7 @@ class ChatStatistics(Plugin):
             ]
 
             # 调用 OpenAI 生成总结
-            openai_analysis = self.generate_summary_with_openai(messages_to_openai)
+            openai_analysis = self._generate_summary_with_openai(messages_to_openai)
             return openai_analysis
         else:
             return "没有找到关于此用户的信息。"
