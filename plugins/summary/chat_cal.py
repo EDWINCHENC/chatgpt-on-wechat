@@ -36,8 +36,13 @@ class ChatStatistics(Plugin):
         self.db_path = os.path.join(curdir, "chat.db")
         self.openai_api_key = conf().get("open_ai_api_key")
         self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
-        self.ai_model = conf().get("ai_model", "OpenAI")
         self.gemini_api_key = conf().get("gemini_api_key")
+
+        config_path = os.path.join(curdir, "config.json")
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            logger.info(f"[c_summary] config content: {config}")
+        self.ai_model = config.get("ai_model", "OpenAI")
 
         # 初始化数据库
         self.initialize_database()
