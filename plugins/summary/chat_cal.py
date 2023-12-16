@@ -246,12 +246,12 @@ class ChatStatistics(Plugin):
             "temperature": 0.9,
             "top_p": 1,
             "top_k": 1,
-            "max_output_tokens": 2048,
+            "max_output_tokens": 4096,
             }
 
             # 创建 Gemini Pro 模型实例
             model = genai.GenerativeModel(model_name="gemini-pro",generation_config=generation_config)
-
+            logger.debug(f"向 Gemini Pro 发送消息: {messages}")
             # 调用 Gemini Pro 生成内容
             response = model.generate_content(messages)
             reply_text = remove_markdown(response.text)
