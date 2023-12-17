@@ -150,11 +150,11 @@ class ChatStatistics(Plugin):
         content_lower = content.lower()  # 将用户输入转换为小写
 
         # 检查是否有切换模型的命令
-        if "#set openai" in content_lower:  # 使用转换后的小写字符串进行比较
+        if "cset openai" in content_lower:  # 使用转换后的小写字符串进行比较
             self.ai_model = "OpenAI"
             _set_reply_text("已切换到 OpenAI 模型。", e_context, level=ReplyType.TEXT)
             return
-        elif "#set gemini" in content_lower:  # 使用转换后的小写字符串进行比较
+        elif "cset gemini" in content_lower:  # 使用转换后的小写字符串进行比较
             self.ai_model = "Gemini"
             _set_reply_text("已切换到 Gemini 模型。", e_context, level=ReplyType.TEXT)
             return

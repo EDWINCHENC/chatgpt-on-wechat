@@ -12,6 +12,8 @@ class ModelGenerator:
         self.openai_api_key = conf().get("open_ai_api_key")
         self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
         self.gemini_api_key = conf().get("gemini_api_key")
+        logger.debug(f"[ModelGenerator] openai_api_key: {self.openai_api_key}")
+        logger.debug(f"[ModelGenerator] gemini_api_key: {self.gemini_api_key}")
 
         # 从配置文件中加载模型类型
         config_path = os.path.join(curdir, "config.json")
@@ -87,7 +89,7 @@ class ModelGenerator:
             response = model.generate_content(messages)
             reply_text = self.remove_markdown(response.text)
             logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
-            return f"[Gemini_pro] {reply_text}"
+            return f"[Gemini-pro] {reply_text}"
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")
