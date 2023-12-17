@@ -96,7 +96,7 @@ class ModelGenerator:
             return "生成总结时出错，请稍后再试。"
 
 
-    def remove_markdown(text):
+    def remove_markdown(self, text):
         # 替换Markdown的粗体标记
         text = text.replace("**", "")
         # 替换Markdown的标题标记
