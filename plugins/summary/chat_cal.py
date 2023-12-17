@@ -243,10 +243,10 @@ class ChatStatistics(Plugin):
             genai.configure(api_key=self.gemini_api_key)
             # Set up the model
             generation_config = {
-            "temperature": 0.9,
+            "temperature": 0.7,
             "top_p": 1,
             "top_k": 1,
-            "max_output_tokens": 4096,
+            "max_output_tokens": 8192,
             }
 
             # 创建 Gemini Pro 模型实例
