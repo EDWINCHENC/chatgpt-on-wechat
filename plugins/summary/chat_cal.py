@@ -146,8 +146,21 @@ class ChatStatistics(Plugin):
         session_id = self._get_session_id(chat_message)
         prefix = "查群聊关键词"
 
+        # 检查是否有切换模型的命令
+        content_lower = content.lower()  # 将用户输入转换为小写
+
+        # 检查是否有切换模型的命令
+        if "#set openai" in content_lower:  # 使用转换后的小写字符串进行比较
+            self.ai_model = "OpenAI"
+            _set_reply_text("已切换到 OpenAI 模型。", e_context, level=ReplyType.TEXT)
+            return
+        elif "#set gemini" in content_lower:  # 使用转换后的小写字符串进行比较
+            self.ai_model = "Gemini"
+            _set_reply_text("已切换到 Gemini 模型。", e_context, level=ReplyType.TEXT)
+            return
+
         # 解析用户请求
-        if "总结群聊" in content:
+        elif "总结群聊" in content:
             logger.debug("开始总结群聊...")
             result = remove_markdown(self.summarize_group_chat(session_id, 100) ) # 总结最近100条群聊消息
             logger.debug("总结群聊结果: {}".format(result))
@@ -181,7 +194,6 @@ class ChatStatistics(Plugin):
 
         else:
             # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
-            # 使用正则表达式检查是否符合 "@xxx 的聊天" 格式
             match = re.match(r"@([\w\s]+)的聊天$", content)
             if match:
                 nickname = match.group(1).strip()
@@ -203,14 +215,18 @@ class ChatStatistics(Plugin):
             messages = self._build_gemini_messages(prompt, combined_content)
             return self._generate_summary_with_gemini_pro(messages)
 
-    def _build_openai_messages(self, prompt, content):
+    def _build_openai_messages(self, prompt, user_input):
         return [
             {"role": "system", "content": prompt},
-            {"role": "user", "content": content}
+            {"role": "user", "content": user_input}
         ]
 
-    def _build_gemini_messages(self, prompt, content):
-        prompt_parts = [prompt + "\n" + content]
+    def _build_gemini_messages(self, prompt, user_input):
+        prompt_parts = [
+            prompt,
+            "input: " + user_input,
+            "output: "
+        ]
         return prompt_parts
 
 
@@ -243,7 +259,7 @@ class ChatStatistics(Plugin):
             genai.configure(api_key=self.gemini_api_key)
             # Set up the model
             generation_config = {
-            "temperature": 0.7,
+            "temperature": 0.8,
             "top_p": 1,
             "top_k": 1,
             "max_output_tokens": 8192,

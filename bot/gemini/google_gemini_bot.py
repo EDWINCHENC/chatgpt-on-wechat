@@ -37,13 +37,20 @@ class GoogleGeminiBot(Bot):
             genai.configure(api_key=self.api_key)
             model = genai.GenerativeModel('gemini-pro')
             response = model.generate_content(gemini_messages)
-            reply_text = response.text
+            reply_text = self.remove_markdown(response.text)
             self.sessions.session_reply(reply_text, session_id)
             logger.info(f"[Gemini] reply={reply_text}")
             return Reply(ReplyType.TEXT, reply_text)
         except Exception as e:
             logger.error("[Gemini] fetch reply error, may contain unsafe content")
             logger.error(e)
+
+    def remove_markdown(text):
+        # 替换Markdown的粗体标记
+        text = text.replace("**", "")
+        # 替换Markdown的标题标记
+        text = text.replace("### ", "").replace("## ", "").replace("# ", "")
+        return text
 
     def _convert_to_gemini_messages(self, messages: list):
         res = []

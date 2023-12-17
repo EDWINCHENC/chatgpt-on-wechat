@@ -18,6 +18,7 @@ import time
 import traceback
 import re
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
+from .lib.model_factory import ModelGenerator
 
 
 @plugins.register(
@@ -84,6 +85,7 @@ class CCLite(Plugin):
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
+        Model_G = ModelGenerator()
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             # filter content no need solve
@@ -91,26 +93,9 @@ class CCLite(Plugin):
 
         if context.type == ContextType.TEXT:
             
-            if "倒计时" in context.content:
-                logger.debug("正倒计时获取数据")
-                url = "https://dayu.qqsuu.cn/moyurili/apis.php?type=json" 
-                try:
-                    response = requests.get(url)
-                    logger.debug(f"response响应：{response}")
-                    if response.status_code == 200:
-                        json_data = response.json()
-                        if json_data['code'] == 200 and 'data' in json_data:
-                            countdown_data = json_data['data']
-                            _set_reply_text(countdown_data, e_context, level=ReplyType.IMAGE_URL)
-                            return
-                        else:
-                            _set_reply_text(f"获取数据失败，请稍后再试", e_context, level=ReplyType.TEXT)
-                            return
-                except requests.RequestException as e:
-                    logger.error(f"Request failed: {e}")
 
             # 使用正则表达式来匹配星座运势的请求
-            elif "运势" in context.content:
+            if "运势" in context.content:
                 match = re.search(r"(今日)?\s*(白羊座|金牛座|双子座|巨蟹座|狮子座|处女座|天秤座|天蝎座|射手座|摩羯座|水瓶座|双鱼座)\s*(运势|今日运势)?", context.content)
                 if match:
                     sign = match.group(2)  # 获取匹配到的星座名称
@@ -196,7 +181,7 @@ class CCLite(Plugin):
                                 {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超60字。"},
                             ]
                             # 调用OpenAI处理函数
-                            openai_response = self._generate_summary_with_openai(messages)
+                            openai_response = Model_G._generate_summary_with_openai(messages)
                             logger.debug(f"openai美食建议点评：{openai_response}")
                             # 构建最终的回复消息
                             final_response = (
@@ -206,7 +191,7 @@ class CCLite(Plugin):
                                 f"😊 奉上我的推荐理由：\n"
                                 f"{openai_response}"
                             )
-                            logger.debug(f"最终回复：{final_response}")
+                            logger.debug(f"_最终回复：{final_response}")
                             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
                             return
                 except requests.RequestException as e:
