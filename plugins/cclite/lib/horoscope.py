@@ -59,16 +59,16 @@
 #     )
     
 
-# def fetch_divination() -> dict:
-#     """调用第三方接口进行求签，并返回结果"""
-#     url = "https://api.t1qq.com/api/tool/cq?key=s8sMrfY2iUpYQXuHlXVXOXtwRN"
-#     try:
-#         response = requests.get(url)
-#         if response.status_code == 200:
-#             return response.json()
-#     except requests.RequestException:
-#         pass
-#     return None
+def fetch_divination() -> dict:
+    """调用第三方接口进行求签，并返回结果"""
+    url = "https://api.t1qq.com/api/tool/cq?key=s8sMrfY2iUpYQXuHlXVXOXtwRN"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+    except requests.RequestException:
+        pass
+    return None
 
 
 
