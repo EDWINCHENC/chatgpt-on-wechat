@@ -1,7 +1,6 @@
 import json
 import os
 import random
-# from ..cclite.lib.model_factory import ModelGenerator
 
 class VirtualPet:
     def __init__(self, name, hunger=50, happiness=50, health=50, level=1, experience=0):
@@ -72,19 +71,6 @@ class VirtualPet:
 # 用户ID到宠物的映射
 user_pets = {}
 
-def handle_message(user_id, message):
-    if user_id not in user_pets:
-        # 如果用户没有宠物，提供领养选项
-        return adopt_pet(user_id, message)
-    else:
-        # 处理与宠物的互动
-        return interact_with_pet(user_pets[user_id], message)
-
-def adopt_pet(user_id, pet_name):
-    # 创建新宠物实例
-    user_pets[user_id] = VirtualPet(pet_name)
-    return f"恭喜你领养了宠物 {pet_name}!"
-
 def interact_with_pet(pet, command):
     if command == "feed":
         pet.feed()
@@ -136,43 +122,3 @@ def load_pets_from_json(filename="pets.json"):
         pets_data = json.load(file)
         return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
 
-
-def simulate_interaction():
-    # 模拟用户互动
-    user_actions = [
-        ("user123", "小宝"),
-        ("user123", "feed"),
-        ("user123", "play"),
-        ("user123", "checkup"),
-        ("user123", "walk"),
-        ("user123", "train"),
-        ("user123", "bathe"),
-        ("user123", "status"),
-        ("user456", "小花"),
-        ("user456", "feed")
-    ]
-
-    for user_id, action in user_actions:
-        print(f"用户{user_id}执行操作: {action}")
-        response = handle_message(user_id, action)
-        print("反馈:", response)
-        print()
-
-    # 模拟随机事件
-    print("触发随机事件:")
-    for _ in range(3):
-        print(random_event(user_pets["user123"]))
-        print()
-
-    # 保存宠物状态
-    save_pets_to_json(user_pets)
-    print("宠物状态已保存。")
-
-    # 加载宠物状态
-    loaded_pets = load_pets_from_json()
-    print("加载宠物状态：")
-    for user_id, pet in loaded_pets.items():
-        print(f"用户{user_id}的宠物{pet.name}状态: {pet.status()}")
-
-# 运行模拟互动
-simulate_interaction()

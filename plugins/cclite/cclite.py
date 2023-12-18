@@ -65,7 +65,7 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
-                self.c_pet = VirtualPet()
+                self.user_pets = {}  # 用于存储用户的宠物
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
         except Exception as e:
@@ -80,6 +80,14 @@ class CCLite(Plugin):
     
     def base_url(self):
         return self.cc_api_base
+    
+    # 修改 adopt_pet 函数以接受 user_pets 字典
+    def adopt_pet(self, user_id, pet_name):
+        if user_id not in self.user_pets:
+            self.user_pets[user_id] = VirtualPet(pet_name)
+            return f"恭喜你领养了宠物 {pet_name}!"
+        else:
+            return f"您已经有一个宠物了，它的名字是 {self.user_pets[user_id].name}。"
 
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
@@ -207,12 +215,11 @@ class CCLite(Plugin):
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
                 
-            
             elif "领养宠物" in context.content:
                 logger.debug("开始进行宠物领养...")
-                pet_name = context.content.split("领养宠物")[1].strip()  # 获取宠物名字
+                pet_name = context.content.split("领养宠物")[1].strip()
                 if pet_name:
-                    adoption_response = self.c_pet.adopt_pet(user_id, pet_name)
+                    adoption_response = self.adopt_pet(self.user_pets, user_id, pet_name)
                     logger.debug("宠物领养结果: {}".format(adoption_response))
                     _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
                 else:

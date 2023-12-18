@@ -16,7 +16,6 @@ from collections import Counter
 from .lib import wxmsg as wx
 import re
 import google.generativeai as genai
-from ..cc_vpets.pets_genuis import VirtualPet
 
 
 @plugins.register(
@@ -44,7 +43,6 @@ class ChatStatistics(Plugin):
             config = json.load(f)
             logger.info(f"[c_summary] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
-        self.pet = VirtualPet()
 
         # 初始化数据库
         self.initialize_database()
@@ -193,17 +191,7 @@ class ChatStatistics(Plugin):
             user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
             logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
             _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
-            
-        elif "领养宠物" in content:
-            logger.debug("开始进行宠物领养...")
-            pet_name = content.split("领养宠物")[1].strip()  # 获取宠物名字
-            user_id = chat_message.actual_user_nickname or chat_message.from_user_id
-            if pet_name:
-                adoption_response = self.pet.adopt_pet(user_id, pet_name)
-                logger.debug("宠物领养结果: {}".format(adoption_response))
-                _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
-            else:
-                _set_reply_text("请提供一个宠物的名字。", e_context, level=ReplyType.TEXT)
+
 
         else:
             # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
