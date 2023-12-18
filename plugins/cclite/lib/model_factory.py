@@ -22,7 +22,24 @@ class ModelGenerator:
             logger.info(f"[ModelGenerator] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
 
-        
+
+    def set_ai_model(self, model_name):
+        """设置 AI 模型"""
+        # 将输入的模型名称转换为全部小写，以便进行不区分大小写的比较
+        model_name_lower = model_name.lower()
+        if model_name_lower == "openai":
+            self.ai_model = "OpenAI"  # 使用规范的模型名称
+            return "已切换到 OpenAI 模型。"
+        elif model_name_lower == "gemini":
+            self.ai_model = "Gemini"  # 使用规范的模型名称
+            return "已切换到 Gemini 模型。"
+        else:
+            return "无效的模型名称。请使用 'OpenAI' 或 'Gemini'。"
+
+    def get_current_model(self):
+        """获取当前 AI 模型"""
+        return f"当前模型为: {self.ai_model}"
+
     def _generate_model_analysis(self, prompt, combined_content):
         if self.ai_model == "OpenAI":
             messages = self._build_openai_messages(prompt, combined_content)
@@ -63,7 +80,8 @@ class ModelGenerator:
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
-            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
+            reply_text = response["choices"][0]["message"]['content']  # 获取模型返回的消息
+            return f"[O] {reply_text}"
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
             return "生成总结时出错，请稍后再试。"
@@ -75,21 +93,21 @@ class ModelGenerator:
             # 配置 Gemini Pro API 密钥
             genai.configure(api_key=self.gemini_api_key)
             # Set up the model
-            generation_config = {
-            "temperature": 0.8,
-            "top_p": 1,
-            "top_k": 1,
-            "max_output_tokens": 8192,
-            }
+            # generation_config = {
+            # "temperature": 0.8,
+            # "top_p": 1,
+            # "top_k": 1,
+            # "max_output_tokens": 8192,
+            # }
 
             # 创建 Gemini Pro 模型实例
-            model = genai.GenerativeModel(model_name="gemini-pro",generation_config=generation_config)
+            model = genai.GenerativeModel(model_name="gemini-pro")    # optionally: generation_config=generation_config
             logger.debug(f"向 Gemini Pro 发送消息: {messages}")
             # 调用 Gemini Pro 生成内容
             response = model.generate_content(messages)
             reply_text = self.remove_markdown(response.text)
-            logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
-            return f"[Gemini-pro] {reply_text}"
+            logger.debug(f"从 Gemini Pro 获取的回复: {reply_text}")
+            return f"[G] {reply_text}"
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")

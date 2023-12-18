@@ -85,17 +85,30 @@ class CCLite(Plugin):
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
-        Model_G = ModelGenerator()
+        c_model = ModelGenerator()
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             # filter content no need solve
             return
 
         if context.type == ContextType.TEXT:
-            
+
+            content_lower = context.content.lower()
+            if "cset openai" in content_lower:
+                response = c_model.set_ai_model("OpenAI")
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                return
+            elif "cset gemini" in content_lower:
+                response = c_model.set_ai_model("Gemini")
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                return
+            elif "cmodel" in content_lower:
+                response = c_model.get_current_model()
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                return
 
             # 使用正则表达式来匹配星座运势的请求
-            if "运势" in context.content:
+            elif "运势" in context.content:
                 match = re.search(r"(今日)?\s*(白羊座|金牛座|双子座|巨蟹座|狮子座|处女座|天秤座|天蝎座|射手座|摩羯座|水瓶座|双鱼座)\s*(运势|今日运势)?", context.content)
                 if match:
                     sign = match.group(2)  # 获取匹配到的星座名称
@@ -173,23 +186,18 @@ class CCLite(Plugin):
                         data = response.json()
                         logger.debug(f"data数据：{data}")
                         if data['code'] == 200:
-                            # 将数据整合为一个消息列表，用于发送给OpenAI
-                            messages = [
-                                {"role": "system", "content": "你是每日饮食建议专家，会根据用户的烦恼给出合理的饮食建议。"},
-                                {"role": "user", "content": "今天该吃些什么好呢？"},
-                                {"role": "assistant", "content": f"你可以试试{data.get('meal1', '')}，或者{data.get('meal2', '')}。"},
-                                {"role": "user", "content": "用两段文字（每段30字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超60字。"},
-                            ]
+                            # 构建消息
+                            prompt = "你是中国著名的美食专家，走遍全国各大城市品尝过各种当地代表性的、小众的美食，对美食有深刻且独到的见解。你会基于背景信息，给用户随机推荐2道国内地域美食，会根据用户的烦恼给出合理的饮食建议和推荐的美食点评或推荐理由。"
+                            user_input = f"对于今天该吃些什么好呢？你推荐了{data.get('meal1', '')}，和{data.get('meal2', '')}。现在需要你用两段文字（每段35字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超70字。"
                             # 调用OpenAI处理函数
-                            openai_response = Model_G._generate_summary_with_openai(messages)
-                            logger.debug(f"openai美食建议点评：{openai_response}")
+                            model_response = c_model._generate_model_analysis(prompt, user_input)
                             # 构建最终的回复消息
                             final_response = (
                                 f"🌟 你好呀！{nickname}，\n"
                                 f"🍽️ 今天推荐给你的美食有：\n\n"
                                 f"🍴 {data.get('meal1', '精选美食')} 或者 🍴 {data.get('meal2', '精选美食')}\n\n"
                                 f"😊 奉上我的推荐理由：\n"
-                                f"{openai_response}"
+                                f"{model_response}"
                             )
                             logger.debug(f"_最终回复：{final_response}")
                             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
@@ -211,7 +219,7 @@ class CCLite(Plugin):
                 爆炒牛肉香嫩多汁，富含蛋白质；咖喱饭口感浓郁，提供碳水化合物能量。可加配蔬菜丰富营养。牛肉可搭配青椒、洋葱爆炒，咖喱饭可配土豆、红萝卜，促进均衡饮食。🍲
                 """
                 user_input = context.content
-                Model_response = Model_G._generate_model_analysis(prompt, user_input)
+                Model_response = c_model._generate_model_analysis(prompt, user_input)
 
                 # 将生成的回答发送回用户
                 _set_reply_text(Model_response, e_context, level=ReplyType.TEXT)
@@ -244,26 +252,6 @@ class CCLite(Plugin):
                     _set_reply_text(conversation_output, e_context, level=reply_type)
 
                 logger.debug(f"Conversation output: {conversation_output}")
-
-    def _generate_summary_with_openai(self, messages):
-        """使用 OpenAI ChatGPT 生成总结"""
-        try:
-            # 设置 OpenAI API 密钥和基础 URL
-            openai.api_key = self.openai_api_key
-            openai.api_base = self.openai_api_base
-
-            logger.debug(f"向 OpenAI 发送消息: {messages}")
-
-            # 调用 OpenAI ChatGPT
-            response = openai.ChatCompletion.create(
-                model=self.assistant_openai_model,
-                messages=messages
-            )
-            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
-            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
-        except Exception as e:
-            logger.error(f"Error generating summary with OpenAI: {e}")
-            return "生成总结时出错，请稍后再试。"
 
 
     def has_user_drawn_today(self, user_id):
