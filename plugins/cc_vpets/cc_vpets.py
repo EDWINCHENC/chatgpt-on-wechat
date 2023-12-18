@@ -77,8 +77,6 @@ class CCVPETS(Plugin):
             _set_reply_text(response, e_context, level=ReplyType.TEXT)
             return
         else:
-            response = "我不明白你想要做什么。"
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)
             return
 
     def adopt_pet(self, user_id, pet_name):
