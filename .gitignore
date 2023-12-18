@@ -35,3 +35,5 @@ plugins/banwords/lib/__pycache__
 !plugins/cclite/**/
 !plugins/timetask
 !plugins/timetask/**/
+!plugins/cc_vpets
+!plugins/cc_vpets/**/
