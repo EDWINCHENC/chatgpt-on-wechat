@@ -94,11 +94,11 @@ class CCLite(Plugin):
         if context.type == ContextType.TEXT:
 
             content_lower = context.content.lower()
-            if "cset openai" in content_lower:
+            if "ccset openai" in content_lower:
                 response = c_model.set_ai_model("OpenAI")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
-            elif "cset gemini" in content_lower:
+            elif "ccset gemini" in content_lower:
                 response = c_model.set_ai_model("Gemini")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return

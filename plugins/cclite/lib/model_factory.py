@@ -81,7 +81,7 @@ class ModelGenerator:
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
             reply_text = response["choices"][0]["message"]['content']  # 获取模型返回的消息
-            return f"[O] {reply_text}"
+            return f"{reply_text}[O]"
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
             return "生成总结时出错，请稍后再试。"
@@ -107,7 +107,7 @@ class ModelGenerator:
             response = model.generate_content(messages)
             reply_text = self.remove_markdown(response.text)
             logger.debug(f"从 Gemini Pro 获取的回复: {reply_text}")
-            return f"[G] {reply_text}"
+            return f"{reply_text}[G]"
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")
