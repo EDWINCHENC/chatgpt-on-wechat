@@ -219,7 +219,7 @@ class CCLite(Plugin):
                 logger.debug("开始进行宠物领养...")
                 pet_name = context.content.split("领养宠物")[1].strip()
                 if pet_name:
-                    adoption_response = self.adopt_pet(self.user_pets, user_id, pet_name)
+                    adoption_response = self.adopt_pet(user_id, pet_name)
                     logger.debug("宠物领养结果: {}".format(adoption_response))
                     _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
                 else:
