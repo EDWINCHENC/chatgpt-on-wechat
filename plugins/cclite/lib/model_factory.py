@@ -23,15 +23,18 @@ class ModelGenerator:
         self.ai_model = config.get("ai_model", "OpenAI")
 
 
+
     def set_ai_model(self, model_name):
         """设置 AI 模型"""
         # 将输入的模型名称转换为全部小写，以便进行不区分大小写的比较
         model_name_lower = model_name.lower()
         if model_name_lower == "openai":
             self.ai_model = "OpenAI"  # 使用规范的模型名称
+            logger.debug(f"[ModelGenerator] ai_model: {self.ai_model}")
             return "已切换到 OpenAI 模型。"
         elif model_name_lower == "gemini":
             self.ai_model = "Gemini"  # 使用规范的模型名称
+            logger.debug(f"[ModelGenerator] ai_model: {self.ai_model}")
             return "已切换到 Gemini 模型。"
         else:
             return "无效的模型名称。请使用 'OpenAI' 或 'Gemini'。"
