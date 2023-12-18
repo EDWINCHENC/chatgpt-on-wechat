@@ -16,6 +16,7 @@ from collections import Counter
 from .lib import wxmsg as wx
 import re
 import google.generativeai as genai
+from ..cc_vpets.pets_genuis import VirtualPet
 
 
 @plugins.register(
@@ -43,6 +44,7 @@ class ChatStatistics(Plugin):
             config = json.load(f)
             logger.info(f"[c_summary] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
+        self.pet = VirtualPet()
 
         # 初始化数据库
         self.initialize_database()
@@ -191,6 +193,17 @@ class ChatStatistics(Plugin):
             user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
             logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
             _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
+            
+        elif "领养宠物" in content:
+            logger.debug("开始进行宠物领养...")
+            pet_name = content.split("领养宠物")[1].strip()  # 获取宠物名字
+            user_id = chat_message.actual_user_nickname or chat_message.from_user_id
+            if pet_name:
+                adoption_response = self.pet.adopt_pet(user_id, pet_name)
+                logger.debug("宠物领养结果: {}".format(adoption_response))
+                _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
+            else:
+                _set_reply_text("请提供一个宠物的名字。", e_context, level=ReplyType.TEXT)
 
         else:
             # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
@@ -204,8 +217,6 @@ class ChatStatistics(Plugin):
             else:
                 e_context.action = EventAction.CONTINUE
 
-
-        
     def _generate_model_analysis(self, prompt, combined_content):
         if self.ai_model == "OpenAI":
             messages = self._build_openai_messages(prompt, combined_content)
@@ -229,8 +240,6 @@ class ChatStatistics(Plugin):
         ]
         return prompt_parts
 
-
-
     def _generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
         try:
@@ -246,7 +255,8 @@ class ChatStatistics(Plugin):
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
-            return response["choices"][0]["message"]['content']  # 获取模型返回的消息
+            reply_text = response["choices"][0]["message"]['content']  # 获取模型返回的消息
+            return f"{reply_text}[O]"
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
             return "生成总结时出错，请稍后再试。"
@@ -272,13 +282,11 @@ class ChatStatistics(Plugin):
             response = model.generate_content(messages)
             reply_text = remove_markdown(response.text)
             logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
-            return f"[Gemini_pro] {reply_text}"
+            return f"{reply_text}[G]"
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")
             return "生成总结时出错，请稍后再试。"
-
-
 
     def summarize_group_chat(self, session_id, count):
         # 从 _get_records 方法获取当天的所有聊天记录
