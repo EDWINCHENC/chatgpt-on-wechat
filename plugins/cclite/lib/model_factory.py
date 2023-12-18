@@ -16,13 +16,11 @@ class ModelGenerator:
         logger.debug(f"[ModelGenerator] gemini_api_key: {self.gemini_api_key}")
 
         # 从配置文件中加载模型类型
-        config_path = os.path.join(curdir, "config.json")
-        with open(config_path, "r", encoding="utf-8") as f:
+        self.config_path = os.path.join(curdir, "config.json")
+        with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
             logger.info(f"[ModelGenerator] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
-
-
 
     def set_ai_model(self, model_name):
         """设置 AI 模型"""
@@ -66,8 +64,6 @@ class ModelGenerator:
         ]
         return prompt_parts
 
-
-
     def _generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
         try:
@@ -88,7 +84,6 @@ class ModelGenerator:
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
             return "生成总结时出错，请稍后再试。"
-
 
     def _generate_summary_with_gemini_pro(self, messages):
         """使用 Gemini Pro 生成总结"""
