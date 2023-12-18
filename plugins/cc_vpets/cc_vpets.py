@@ -8,6 +8,7 @@ from plugins import *
 from common.log import logger
 import os
 from .lib.pets_genuis import VirtualPet, interact_with_pet
+from .lib.model_factory import ModelGenerator
 
 
 @plugins.register(
@@ -33,7 +34,7 @@ class CCVPETS(Plugin):
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 logger.info(f"[cc_vpets] 配置内容: {config}")
-                # self.c_model = ModelGenerator()
+                self.c_model = ModelGenerator()
                 self.user_pets = {}  # 用于存储用户的宠物
                 logger.info("[cc_vpets] inited")
         except Exception as e:
@@ -51,6 +52,7 @@ class CCVPETS(Plugin):
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
         pet = self.user_pets.get(user_id)
+        pet_interaction_commands = ["喂食", "玩耍", "体检", "散步", "训练", "洗澡", "状态"]
         # 过滤不需要处理的内容类型
         if context.type != ContextType.TEXT:
             return
@@ -66,17 +68,22 @@ class CCVPETS(Plugin):
             _set_reply_text(response, e_context, level=ReplyType.TEXT)
             return
 
-            # 处理其他宠物互动命令
-        elif pet and content in ["喂食", "玩耍", "体检", "散步", "训练", "洗澡", "状态"]:
-            response = interact_with_pet(pet, content)
-            self.save_pets_to_json(self.user_pets)  # 保存宠物状态
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)
-            return
-        elif not pet:
-            response = "你还没有领养宠物。输入 '领养宠物 [宠物名]' 来领养一个宠物。"
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)
-            return
-        else:
+        # 处理其他宠物互动命令
+        elif content in pet_interaction_commands:
+            if pet:
+                response = interact_with_pet(pet, content)
+                prompt = f"""你是由{nickname}领养的虚拟电子宠物，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"），你需要和他用简短的语言（30字以内）进行交互，使主人感受到你的陪伴。"""
+                user_input = content
+                # 调用OpenAI处理函数
+                model_response = self.c_model._generate_model_analysis(prompt, user_input)
+                self.save_pets_to_json(self.user_pets)  # 保存宠物状态
+            else:
+                response = "你还没有领养宠物。输入 '领养宠物 [宠物名]' 来领养一个宠物。"
+            final_response = (
+                f"🌟 {response}\n"
+                f"{model_response}"
+            )
+            _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
             return
 
     def adopt_pet(self, user_id, pet_name):
