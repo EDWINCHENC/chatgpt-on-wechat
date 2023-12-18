@@ -72,25 +72,25 @@ class VirtualPet:
 user_pets = {}
 
 def interact_with_pet(pet, command):
-    if command == "feed":
+    if command == "喂食":
         pet.feed()
         return f"你喂了{pet.name}，{pet.status()}"
-    elif command == "play":
+    elif command == "玩耍":
         pet.play()
         return f"你和{pet.name}玩耍了，{pet.status()}"
-    elif command == "checkup":
+    elif command == "体检":
         pet.checkup()
         return f"你为{pet.name}做了健康检查，{pet.status()}"
-    elif command == "walk":
+    elif command == "散步":
         pet.walk()
         return f"你带{pet.name}去散步了，{pet.status()}"
-    elif command == "train":
+    elif command == "训练":
         pet.train()
         return f"你训练了{pet.name}，{pet.status()}"
-    elif command == "bathe":
+    elif command == "洗澡":
         pet.bathe()
         return f"你给{pet.name}洗了澡，{pet.status()}"
-    elif command == "status":
+    elif command == "状态":
         return pet.status()
     else:
         return "我不明白你想要做什么。"
@@ -106,19 +106,5 @@ def random_event(pet):
     else:
         return f"今天是平凡的一天。"
 
-    
-def save_pets_to_json(user_pets, filename="pets.json"):
-    """将所有宠物的状态保存到 JSON 文件中"""
-    with open(filename, "w") as file:
-        pets_data = {user_id: pet.__dict__ for user_id, pet in user_pets.items()}
-        json.dump(pets_data, file, indent=4)
 
-def load_pets_from_json(filename="pets.json"):
-    """从 JSON 文件中加载宠物的状态"""
-    if not os.path.exists(filename):
-        return {}
-
-    with open(filename, "r") as file:
-        pets_data = json.load(file)
-        return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
 

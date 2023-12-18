@@ -19,7 +19,6 @@ import traceback
 import re
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
 from .lib.model_factory import ModelGenerator
-from .lib.pets_genuis import VirtualPet
 
 
 @plugins.register(
@@ -81,14 +80,6 @@ class CCLite(Plugin):
     def base_url(self):
         return self.cc_api_base
     
-    # 修改 adopt_pet 函数以接受 user_pets 字典
-    def adopt_pet(self, user_id, pet_name):
-        if user_id not in self.user_pets:
-            self.user_pets[user_id] = VirtualPet(pet_name)
-            return f"恭喜你领养了宠物 {pet_name}!"
-        else:
-            return f"您已经有一个宠物了，它的名字是 {self.user_pets[user_id].name}。"
-
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
         msg: ChatMessage = context['msg']
@@ -214,16 +205,6 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
-                
-            elif "领养宠物" in context.content:
-                logger.debug("开始进行宠物领养...")
-                pet_name = context.content.split("领养宠物")[1].strip()
-                if pet_name:
-                    adoption_response = self.adopt_pet(user_id, pet_name)
-                    logger.debug("宠物领养结果: {}".format(adoption_response))
-                    _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
-                else:
-                    _set_reply_text("请提供一个宠物的名字。", e_context, level=ReplyType.TEXT)
 
     #====================================================================================================
             #以下处理可能的函数调用逻辑
@@ -872,12 +853,10 @@ class CCLite(Plugin):
         # 返回帮助文本
         return help_text
 
-
 def _send_info(e_context: EventContext, content: str):
     reply = Reply(ReplyType.TEXT, content)
     channel = e_context["channel"]
     channel.send(reply, e_context["context"])
-
 
 def _set_reply_text(content: str, e_context: EventContext, level: ReplyType = ReplyType.ERROR):
     reply = Reply(level, content)
