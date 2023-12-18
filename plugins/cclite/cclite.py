@@ -19,6 +19,7 @@ import traceback
 import re
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
 from .lib.model_factory import ModelGenerator
+from .lib.pets_genuis import VirtualPet
 
 
 @plugins.register(
@@ -64,6 +65,7 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
+                self.c_pet = VirtualPet()
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
         except Exception as e:
@@ -204,6 +206,17 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
+                
+            
+            elif "领养宠物" in context.content:
+                logger.debug("开始进行宠物领养...")
+                pet_name = context.content.split("领养宠物")[1].strip()  # 获取宠物名字
+                if pet_name:
+                    adoption_response = self.c_pet.adopt_pet(user_id, pet_name)
+                    logger.debug("宠物领养结果: {}".format(adoption_response))
+                    _set_reply_text(adoption_response, e_context, level=ReplyType.TEXT)
+                else:
+                    _set_reply_text("请提供一个宠物的名字。", e_context, level=ReplyType.TEXT)
 
     #====================================================================================================
             #以下处理可能的函数调用逻辑
