@@ -104,15 +104,13 @@ class CCVPETS(Plugin):
             json.dump(pets_data, file, indent=4)
 
     def load_pets_from_json(self, filename="pets.json"):
-        if not os.path.exists(filename):
-            return {}  # 如果文件不存在，则返回空字典
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+            return {}  # 如果文件不存在或为空，则返回空字典
 
         with open(filename, "r") as file:
             pets_data = json.load(file)
-            user_pets = {}
-            for user_id, data in pets_data.items():
-                user_pets[user_id] = VirtualPet(**data)
-            return user_pets
+            return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
+
 
 
 def _send_info(e_context: EventContext, content: str):
