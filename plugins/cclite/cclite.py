@@ -63,6 +63,7 @@ class CCLite(Plugin):
                 self.assistant_openai_model = config["assistant_openai_model"]
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
+                self.c_model = ModelGenerator()
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
         except Exception as e:
@@ -85,7 +86,6 @@ class CCLite(Plugin):
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
-        c_model = ModelGenerator()
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             # filter content no need solve
@@ -95,15 +95,15 @@ class CCLite(Plugin):
 
             content_lower = context.content.lower()
             if "ccset openai" in content_lower:
-                response = c_model.set_ai_model("OpenAI")
+                response = self.c_model.set_ai_model("OpenAI")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
             elif "ccset gemini" in content_lower:
-                response = c_model.set_ai_model("Gemini")
+                response = self.c_model.set_ai_model("Gemini")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
             elif "cmodel" in content_lower:
-                response = c_model.get_current_model()
+                response = self.c_model.get_current_model()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
 
@@ -190,7 +190,7 @@ class CCLite(Plugin):
                             prompt = "你是中国著名的美食专家，走遍全国各大城市品尝过各种当地代表性的、小众的美食，对美食有深刻且独到的见解。你会基于背景信息，给用户随机推荐2道国内地域美食，会根据用户的烦恼给出合理的饮食建议和推荐的美食点评或推荐理由。"
                             user_input = f"对于今天该吃些什么好呢？你推荐了{data.get('meal1', '')}，和{data.get('meal2', '')}。现在需要你用两段文字（每段35字以内）简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超70字。"
                             # 调用OpenAI处理函数
-                            model_response = c_model._generate_model_analysis(prompt, user_input)
+                            model_response = self.c_model._generate_model_analysis(prompt, user_input)
                             # 构建最终的回复消息
                             final_response = (
                                 f"🌟 你好呀！{nickname}，\n"
@@ -219,7 +219,7 @@ class CCLite(Plugin):
                 爆炒牛肉香嫩多汁，富含蛋白质；咖喱饭口感浓郁，提供碳水化合物能量。可加配蔬菜丰富营养。牛肉可搭配青椒、洋葱爆炒，咖喱饭可配土豆、红萝卜，促进均衡饮食。🍲
                 """
                 user_input = context.content
-                Model_response = c_model._generate_model_analysis(prompt, user_input)
+                Model_response = self.c_model._generate_model_analysis(prompt, user_input)
 
                 # 将生成的回答发送回用户
                 _set_reply_text(Model_response, e_context, level=ReplyType.TEXT)
