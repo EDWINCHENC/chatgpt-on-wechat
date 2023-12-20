@@ -37,7 +37,8 @@ class CCVPETS(Plugin):
                 config = json.load(f)
                 logger.info(f"[cc_vpets] 配置内容: {config}")
                 self.c_model = ModelGenerator()
-                self.user_pets = {}  # 用于存储用户的宠物
+                # 加载宠物数据
+                self.user_pets = self.load_pets_from_json()
                 logger.info("[cc_vpets] inited")
         except Exception as e:
             if isinstance(e, FileNotFoundError):
@@ -184,19 +185,26 @@ class CCVPETS(Plugin):
         # 构造完整的文件路径
         filepath = os.path.join(curdir, filename)
 
-        if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
-            return {}  # 如果文件不存在或为空，则返回空字典
-        with open(filepath, "r", encoding='utf-8') as file:
-            pets_data = json.load(file)
-            # 转换日期字符串回 date 对象
-            for user_id, data in pets_data.items():
-                if data['birth_date'] is not None:
-                    data['birth_date'] = datetime.fromisoformat(data['birth_date']).date()
-                if data.get('last_sign_in_date') is not None:  # 使用 get 方法以防这个键不存在
-                    data['last_sign_in_date'] = datetime.fromisoformat(data['last_sign_in_date']).date()
-            return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
-
-
+        try:
+            with open(filepath, "r", encoding='utf-8') as file:
+                pets_data = json.load(file)
+                
+                # 转换日期字符串回 datetime.date 对象
+                for user_id, data in pets_data.items():
+                    if 'birth_date' in data and data['birth_date'] is not None:
+                        data['birth_date'] = datetime.fromisoformat(data['birth_date']).date()
+                    if 'last_sign_in_date' in data and data.get('last_sign_in_date') is not None:
+                        data['last_sign_in_date'] = datetime.fromisoformat(data['last_sign_in_date']).date()               
+                return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
+        except FileNotFoundError:
+            logger.info(f"[cc_vpets] 宠物数据文件 {filename} 未找到，将初始化空数据。")
+            return {}
+        except json.JSONDecodeError:
+            logger.error(f"[cc_vpets] 宠物数据文件 {filename} 格式错误，无法加载数据。")
+            return {}
+        except Exception as e:
+            logger.error(f"[cc_vpets] 加载宠物数据时出现未知错误：{e}")
+            return {}
 
 
 def _send_info(e_context: EventContext, content: str):
