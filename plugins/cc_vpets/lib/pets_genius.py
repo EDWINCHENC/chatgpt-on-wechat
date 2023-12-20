@@ -313,7 +313,7 @@ class VirtualPet:
             # 如果没有特定的反馈信息（比如金币不足），则直接返回
             return f"{activity_emoji} {self.species}{self.name} {action}失败。原因：{action_feedback}"
         # 添加总体状态信息
-        detailed_result += f"\n当前状态：{self.status()}"
+        detailed_result += f"\n🔔宠物当前状态🔔：{self.status()}"
         # 有效的交互，增加计数器
         self.interaction_count += 1
         self.last_interaction_time = current_time

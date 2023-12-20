@@ -64,11 +64,15 @@ class CCVPETS(Plugin):
             response = self.adopt_pet(user_id, nickname)  # 直接调用领养方法，不需提供宠物名
             logger.info(f"[cc_vpets] {user_id} {nickname} 领养了宠物")
             _send_info(e_context, response)
-            prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他相处，使他感受到你的陪伴，和他成为真正的朋友。"""
-            user_input = f"你是数码宝贝{pet.species}，现在以{pet.species}的角色向主人打招呼，完整地介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数大概在100字以内。"
-            model_response = self.c_model._generate_model_analysis(prompt, user_input)
-            _set_reply_text(f"{pet.species}:{model_response}", e_context, level=ReplyType.TEXT)
-            return
+
+            # 确保 user_id 在 self.user_pets 中，并且 pet 实例不是 None
+            if user_id in self.user_pets and self.user_pets[user_id] is not None:
+                pet = self.user_pets[user_id]
+                prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他相处，使他感受到你的陪伴，和他成为真正的朋友。"""
+                user_input = f"你是数码宝贝{pet.species}，现在以{pet.species}的角色向主人打招呼，完整地介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数大概在100字以内。"
+                model_response = self.c_model._generate_model_analysis(prompt, user_input)
+                _set_reply_text(f"{pet.species}:{model_response}", e_context, level=ReplyType.TEXT)
+                return
 
         elif "宠物命名" in content:
             if user_id in self.user_pets:
@@ -99,8 +103,8 @@ class CCVPETS(Plugin):
             else:
                 response = "你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。"
             final_response = (
-                f"🌟 {response}\n"
-                f"{model_response}"
+                f"🌟 {response}"
+                f"\n\n{pet.species}:{model_response}"
             )
             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
             return
