@@ -42,6 +42,28 @@ class VirtualPet:
         self.interaction_cooldown = 600  # 单位是秒
         self.last_sign_in_date = None  # 用于跟踪上次签到的日期
 
+
+    def to_json(self):
+        # 创建一个代表宠物状态的字典
+        return {
+            "name": self.name,
+            "owner": self.owner,
+            "species": self.species,
+            "birth_date": self.birth_date.isoformat() if self.birth_date else None,
+            "level": self.level,
+            "experience": self.experience,
+            "coins": self.coins,
+            "max_level": self.max_level,
+            "skill_level": self.skill_level,
+            "intelligence": self.intelligence,
+            "stamina": self.stamina,
+            "stats": self.stats,
+            "last_interaction_time": self.last_interaction_time,
+            "interaction_cooldown": self.interaction_cooldown,
+            "last_sign_in_date": self.last_sign_in_date.isoformat() if self.last_sign_in_date else None,
+        }
+
+
     @staticmethod
     def get_available_species():
         # 确保进化路线数据已加载

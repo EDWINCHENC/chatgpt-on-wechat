@@ -78,7 +78,7 @@ class ChatStatistics(Plugin):
                 c = conn.cursor()
                 c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", 
                           (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
-            logger.debug("insert chat record to db: %s", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
+            # logger.debug("insert chat record to db: %s", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 

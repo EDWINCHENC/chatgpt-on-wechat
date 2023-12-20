@@ -10,6 +10,7 @@ import os
 from .lib.pets_genius import VirtualPet
 from .lib.model_factory import ModelGenerator
 import random
+import datetime
 
 
 @plugins.register(
@@ -66,7 +67,7 @@ class CCVPETS(Plugin):
             return
 
         elif "宠物命名" in content:
-            pet_name = content.split("命名宠物")[1].strip()
+            pet_name = content.split("宠物命名")[1].strip()
             if pet_name:
                 response = self.name_pet(user_id, pet_name)
                 logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
@@ -123,19 +124,26 @@ class CCVPETS(Plugin):
             return "你还没有宠物。输入 '领养宠物' 来领养一只数码宝贝。"
 
         
-    # 数据保存方法
-    def save_pets_to_json(self, user_pets, filename="pets.json"):
-        pets_data = {user_id: pet.__dict__ for user_id, pet in user_pets.items()}
+    # 在外部类或函数中
+    def save_pets_to_json(user_pets, filename="pets.json"):
+        # 使用 to_json 方法转换所有 VirtualPet 实例
+        pets_data = {user_id: pet.to_json() for user_id, pet in user_pets.items()}
         with open(filename, "w") as file:
             json.dump(pets_data, file, indent=4)
 
-    # 数据加载方法
-    def load_pets_from_json(self, filename="pets.json"):
+    # 在外部类或函数中
+    def load_pets_from_json(filename="pets.json"):
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return {}  # 如果文件不存在或为空，则返回空字典
 
         with open(filename, "r") as file:
             pets_data = json.load(file)
+            # 转换日期字符串回 date 对象
+            for user_id, data in pets_data.items():
+                if data['birth_date'] is not None:
+                    data['birth_date'] = datetime.fromisoformat(data['birth_date']).date()
+                if data.get('last_sign_in_date') is not None:  # 使用 get 方法以防这个键不存在
+                    data['last_sign_in_date'] = datetime.fromisoformat(data['last_sign_in_date']).date()
             return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
 
 
