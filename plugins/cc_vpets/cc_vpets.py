@@ -125,14 +125,14 @@ class CCVPETS(Plugin):
 
         
     # 在外部类或函数中
-    def save_pets_to_json(user_pets, filename="pets.json"):
+    def save_pets_to_json(self, user_pets, filename="pets.json"):
         # 使用 to_json 方法转换所有 VirtualPet 实例
         pets_data = {user_id: pet.to_json() for user_id, pet in user_pets.items()}
         with open(filename, "w") as file:
             json.dump(pets_data, file, indent=4)
 
     # 在外部类或函数中
-    def load_pets_from_json(filename="pets.json"):
+    def load_pets_from_json(self, filename="pets.json"):
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return {}  # 如果文件不存在或为空，则返回空字典
 
