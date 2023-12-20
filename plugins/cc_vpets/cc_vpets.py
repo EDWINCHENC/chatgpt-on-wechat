@@ -88,28 +88,29 @@ class CCVPETS(Plugin):
             else:
                 _set_reply_text("你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
                 return
-
-
+            
         # 处理其他宠物互动命令
         elif content in pet_interaction_commands:
             model_response = ""
-            if user_id in self.user_pets and self.user_pets[user_id] is not None:
-                pet = self.user_pets[user_id]  # 确保宠物已经被领养
+            pet = self.user_pets.get(user_id)  # 使用 .get() 来避免 KeyError
+            if pet is not None:  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
                 user_input = content
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
+                final_response = (
+                    f"🌟 {response}"
+                    f"\n\n{pet.species}:{model_response}"
+                )
             else:
                 response = "你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。"
-            final_response = (
-                f"🌟 {response}"
-                f"\n\n{pet.species}:{model_response}"
-            )
+                final_response = response  # 不包含 pet.species
+
             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
             return
-        
+
         elif "宠物签到" in content:
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]
