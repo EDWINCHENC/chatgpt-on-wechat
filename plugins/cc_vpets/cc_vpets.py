@@ -7,8 +7,9 @@ from config import conf
 from plugins import *
 from common.log import logger
 import os
-from .lib.pets_genuis import VirtualPet, interact_with_pet
+from .lib.pets_genius import VirtualPet, interact_with_pet
 from .lib.model_factory import ModelGenerator
+import random
 
 
 @plugins.register(
@@ -58,21 +59,28 @@ class CCVPETS(Plugin):
             return
 
         content = context.content.strip()
-        if "领养宠物" in content:
-            pet_name = content.split("领养宠物")[1].strip()
-            if pet_name:
-                response = self.adopt_pet(user_id, pet_name)
-            else:
-                response = "请提供一个宠物的名字。"
-            logger.info(f"[cc_vpets] {user_id} adopt pet {pet_name}")
+        if "宠物领养" in content:
+            response = self.adopt_pet(user_id, nickname)  # 直接调用领养方法，不需提供宠物名
+            logger.info(f"[cc_vpets] {user_id} {nickname} 领养了宠物")
             _set_reply_text(response, e_context, level=ReplyType.TEXT)
             return
+
+        elif "宠物命名" in content:
+            pet_name = content.split("命名宠物")[1].strip()
+            if pet_name:
+                response = self.name_pet(user_id, pet_name)
+                logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
+            else:
+                response = "请提供一个宠物的名字。"
+            _set_reply_text(response, e_context, level=ReplyType.TEXT)
+            return
+
 
         # 处理其他宠物互动命令
         elif content in pet_interaction_commands:
             if pet:
                 response = interact_with_pet(pet, content)
-                prompt = f"""你是由{nickname}领养的虚拟电子宠物，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"），你需要和他用简短的语言（30字以内）进行交互，使主人感受到你的陪伴。"""
+                prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使主人感受到你的陪伴。"""
                 user_input = content
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
@@ -86,28 +94,42 @@ class CCVPETS(Plugin):
             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
             return
 
-    def adopt_pet(self, user_id, pet_name):
+    def adopt_pet(self, user_id, nickname):
         if user_id not in self.user_pets:
-            self.user_pets[user_id] = VirtualPet(pet_name)
-            self.save_pets_to_json(self.user_pets)  # 保存宠物状态
-            return f"恭喜你领养了宠物 {pet_name}!"
+            try:
+                available_species = VirtualPet.get_available_species()
+                random_species = random.choice(available_species)
+                species = random_species["species"]
+                logger.info(f"{nickname}领养了{random_species['species']}")
+                # 初始时不设置宠物名字
+                self.user_pets[user_id] = VirtualPet(name=None, owner=nickname, species=species)
+                self.save_pets_to_json(self.user_pets)  # 保存宠物状态
+                logger.debug(f"数据已存储")
+                return f"恭喜你领养到了数码宝贝，它是一只{species}！你可以随时为它取一个名字。"
+            except Exception as e:
+                logger.error(f"领养宠物时出错: {str(e)}")
+                return "抱歉，领养过程中出现了一些问题，请稍后再试。"
         else:
-            return f"您已经有一个宠物了，它的名字是 {self.user_pets[user_id].name}。"
+            pet = self.user_pets[user_id]
+            return f"你已经有一只数码宝贝了，它是一只{pet.species}。"
 
-    def save_pets_to_json(self,user_pets, filename="pets.json"):
-        pets_data = {}
-        for user_id, pet in user_pets.items():
-            pets_data[user_id] = {
-                "name": pet.name,
-                "hunger": pet.hunger,
-                "happiness": pet.happiness,
-                "health": pet.health,
-                "level": pet.level,
-                "experience": pet.experience
-            }
+    def name_pet(self, user_id, pet_name):
+        if user_id in self.user_pets:
+            pet = self.user_pets[user_id]
+            pet.name = pet_name
+            self.save_pets_to_json(self.user_pets)  # 保存新名字
+            return f"你的宠物名字为 {pet_name}。"
+        else:
+            return "你还没有宠物。输入 '领养宠物' 来领养一只数码宝贝。"
+
+        
+    # 数据保存方法
+    def save_pets_to_json(self, user_pets, filename="pets.json"):
+        pets_data = {user_id: pet.__dict__ for user_id, pet in user_pets.items()}
         with open(filename, "w") as file:
             json.dump(pets_data, file, indent=4)
 
+    # 数据加载方法
     def load_pets_from_json(self, filename="pets.json"):
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return {}  # 如果文件不存在或为空，则返回空字典
@@ -115,7 +137,6 @@ class CCVPETS(Plugin):
         with open(filename, "r") as file:
             pets_data = json.load(file)
             return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
-
 
 
 def _send_info(e_context: EventContext, content: str):
