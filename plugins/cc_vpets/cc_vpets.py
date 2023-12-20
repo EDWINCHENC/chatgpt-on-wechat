@@ -118,8 +118,8 @@ class CCVPETS(Plugin):
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 final_response = (
-                    f"🌟 {response}"
-                    f"\n\n{pet.species}:{model_response}"
+                    f"{pet.species}: {model_response}"
+                    f"\n\n🌟 {response}"
                 )
             else:
                 response = "你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。"
