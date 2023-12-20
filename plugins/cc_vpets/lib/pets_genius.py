@@ -36,7 +36,7 @@ class VirtualPet:
             "hunger": 50,
             "happiness": 50,
             "health": 50,
-            "loyalty": 20,
+            "loyalty": 50,
         }
         self.interaction_count = 0
         self.interaction_window_start = time.time()  # 设置交互窗口的开始时间
@@ -82,10 +82,10 @@ class VirtualPet:
     def decay_stats_over_time(self):
         # 每小时减少的状态值
         decay_amount = {
-            "hunger": -5,  # 每小时饥饿度减少5点
-            "happiness": -3,  # 每小时快乐值减少3点
-            "health": -2,  # 每小时健康值减少2点
-            # "loyalty" 可以选择不减少，因为忠诚度通常不会因时间而降低
+            "hunger": -8,  # 每小时饥饿度减少5点
+            "happiness": -6,  # 每小时快乐值减少3点
+            "health": -5,  # 每小时健康值减少2点
+            "loyalty": -4
         }
 
         for stat, decay in decay_amount.items():
@@ -190,11 +190,13 @@ class VirtualPet:
     def feed(self):
         changes = {}
         if self.coins >= 50:
-            changes["hunger"] = 10  # 饱食度增加
-            changes["happiness"] = 5  # 快乐值增加
-            changes["loyalty"] = 2   # 忠诚度增加
-            self.coins -= 50  # 扣除金币
+            changes["hunger"] = 10
+            changes["happiness"] = 5
+            changes["loyalty"] = 2
+            self.coins -= 50
+            changes["coins"] = -50  # 金币减少
 
+            # 更新状态
             self.stats["hunger"] += changes["hunger"]
             self.stats["happiness"] += changes["happiness"]
             self.stats["loyalty"] += changes["loyalty"]
@@ -204,19 +206,29 @@ class VirtualPet:
         else:
             return "金币不足，无法喂食。"
 
+
     def play(self):
         changes = {}
         if self.coins >= 50:
+            # 状态变化
             changes["happiness"] = 15  # 快乐值增加
-            changes["hunger"] = -5    # 饱食度减少
-            changes["loyalty"] = 2    # 忠诚度增加
-            self.coins -= 50  # 扣除金币
+            changes["hunger"] = -5     # 饱食度减少
+            changes["loyalty"] = 2     # 忠诚度增加
 
+            # 金币和经验值变化
+            self.coins -= 50  # 扣除金币
+            gained_exp = 15   # 获得经验值
+            self.gain_experience(gained_exp)
+
+            changes["coins"] = -50    # 金币变化
+            changes["exp"] = gained_exp  # 经验值变化
+
+            # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["hunger"] += changes["hunger"]
             self.stats["loyalty"] += changes["loyalty"]
-            self.gain_experience(15)
             self.normalize_stats()
+
             return changes
         else:
             return "金币不足，无法玩耍。"
@@ -224,10 +236,19 @@ class VirtualPet:
     def checkup(self):
         changes = {}
         if self.coins >= 50:
-            changes["health"] = 10  # 健康值增加
+            # 状态变化
+            changes["health"] = 10   # 健康值增加
             changes["loyalty"] = 2   # 忠诚度增加
-            self.coins -= 50  # 扣除金币
 
+            # 金币和经验值变化
+            self.coins -= 50  # 扣除金币
+            gained_exp = 5   # 假设体检获得10点经验值
+            self.gain_experience(gained_exp)
+
+            changes["coins"] = -50    # 金币变化
+            changes["exp"] = gained_exp  # 经验值变化
+
+            # 更新状态
             self.stats["health"] += changes["health"]
             self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
@@ -240,17 +261,21 @@ class VirtualPet:
     def walk(self):
         changes = {}
         if self.coins >= 50:
-            changes["happiness"] = 10
-            changes["health"] = 5
-            changes["loyalty"] = 2
+            # 状态变化
+            changes["happiness"] = 10  # 快乐值增加
+            changes["health"] = 5      # 健康值增加
+            changes["loyalty"] = 2     # 忠诚度增加
+            # 金币和经验值变化
             self.coins -= 50  # 扣除金币
-            self.gain_experience(10)
-
+            gained_exp = 10   # 获得经验值
+            self.gain_experience(gained_exp)
+            changes["coins"] = -50    # 金币变化
+            changes["exp"] = gained_exp  # 经验值变化
+            # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
             self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
-
             return changes
         else:
             return "金币不足，无法散步。"
@@ -258,15 +283,23 @@ class VirtualPet:
     def train(self):
         changes = {}
         if self.coins >= 50:
+            # 状态变化
             changes["happiness"] = -5  # 快乐值减少
             changes["health"] = 10    # 健康值增加
             changes["loyalty"] = 2    # 忠诚度增加
-            self.coins -= 50  # 扣除金币
 
+            # 金币和经验值变化
+            self.coins -= 50  # 扣除金币
+            gained_exp = 20   # 获得经验值
+            self.gain_experience(gained_exp)
+
+            changes["coins"] = -50    # 金币变化
+            changes["exp"] = gained_exp  # 经验值变化
+
+            # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
             self.stats["loyalty"] += changes["loyalty"]
-            self.gain_experience(15)
             self.normalize_stats()
 
             return changes
@@ -276,11 +309,20 @@ class VirtualPet:
     def bathe(self):
         changes = {}
         if self.coins >= 50:
-            changes["happiness"] = -10  # 快乐值减少
-            changes["health"] = 10      # 健康值增加
-            changes["loyalty"] = 2      # 忠诚度增加
-            self.coins -= 50  # 扣除金币
+            # 状态变化
+            changes["happiness"] = -10 # 快乐值减少
+            changes["health"] = 10     # 健康值增加
+            changes["loyalty"] = 2     # 忠诚度增加
 
+            # 金币和经验值变化
+            self.coins -= 50  # 扣除金币
+            gained_exp = 5   # 假设洗澡获得5点经验值
+            self.gain_experience(gained_exp)
+
+            changes["coins"] = -50    # 金币变化
+            changes["exp"] = gained_exp  # 经验值变化
+
+            # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
             self.stats["loyalty"] += changes["loyalty"]
@@ -290,24 +332,47 @@ class VirtualPet:
         else:
             return "金币不足，无法洗澡。"
 
+
     def normalize_stats(self):
         for stat in self.stats:
             self.stats[stat] = min(100, max(0, self.stats[stat]))
-        
+
+
     def status(self):
-        status_str = ""
+        status_str = "🐾 | 宠物状态 | 🐾\n"
         for stat, value in self.stats.items():
-            status_str += f" {VirtualPet.status_names[stat]} {value},"
-        return status_str.rstrip(',')
+            filled_bars = '█' * (value // 10)   # 每10点代表一个填充的条
+            empty_bars = '░' * (10 - len(filled_bars))  # 剩余的未填充条
+            status_str += f"{VirtualPet.status_names[stat]}：[{filled_bars}{empty_bars}] {value}/100\n"
+
+            # 根据状态值给出提示
+            if value < 50:
+                status_str += f"⚠️ 哎呀：{VirtualPet.status_names[stat]}有些低，请及时关注！\n"
+            elif value > 80:
+                status_str += f"👍 {VirtualPet.status_names[stat]}状态很好，战斗力很强！\n"
+
+        # 添加一般提示信息
+        status_str += "\n💡 提示：你可以通过['喂食', '玩耍', '体检', '散步', '训练', '洗澡']等指令，来保持数码宝贝处于健康的成长状态哦。"
+
+        # 随机事件触发
+        if random.random() < 0.15:  # 假设有10%的概率触发随机事件
+            random_event_result = self.random_event()
+            status_str += f"\n\n🌟 触发随机事件：{random_event_result}"
+
+        return status_str
+
     
     def format_status_changes(self, changes):
         status_str = ""
         for stat, change in changes.items():
-            current_value = self.stats[stat]
-            # 当 change 为正数时，在前面添加 "+" 符号
-            sign = "+" if change >= 0 else ""
-            status_str += f"{VirtualPet.status_names[stat]} {current_value} ({sign}{change}), "
+            # 跳过金币和经验值的变化
+            if stat not in ["coins", "exp"]:
+                current_value = self.stats[stat]
+                # 当 change 为正数时，在前面添加 "+" 符号
+                sign = "+" if change >= 0 else ""
+                status_str += f"{VirtualPet.status_names[stat]} {current_value} ({sign}{change}), "
         return status_str.rstrip(', ')
+
 
 
     def interact_with_user(self, action):
@@ -323,7 +388,7 @@ class VirtualPet:
         if self.interaction_count >= 3:
             next_interaction_time = self.interaction_window_start + 900  # 下一个互动窗口的开始时间
             wait_time = int(next_interaction_time - current_time)  # 等待时间
-            return f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再试。"
+            return f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
         
         if action in ["喂食", "玩耍", "体检", "散步", "训练", "洗澡"]:
             self.last_interaction_time = current_time
@@ -353,7 +418,21 @@ class VirtualPet:
         action_feedback = action_method()
         if isinstance(action_feedback, dict):  # 检查是否返回了状态变化字典
             status_changes = self.format_status_changes(action_feedback)
-            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emoji}{action}！\n🌟{self.species}状态更新：{status_changes}"
+            coins_change = action_feedback.get("coins", 0)
+            exp_change = action_feedback.get("exp", 0)
+            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emoji}{action}！\n\n{self.species}状态更新：{status_changes}\n💰金币变化：{coins_change}，⚡经验值增长了{exp_change}！"
+
+            # 在这里添加进化检查
+            evolution_message = self.update_species()
+            if evolution_message:
+                detailed_result += f"\n\n🌟 {evolution_message}"
+            
+            # 在这里添加随机事件的概率性触发
+            if random.random() < 0.15:  # 20%的概率触发随机事件
+                random_event_result = self.random_event()
+                detailed_result += f"\n\n🌟 出现随机事件：{random_event_result}"
+
+            
         elif isinstance(action_feedback, str):  # 检查是否返回了字符串（如金币不足）
             return f"{activity_emoji} {self.species}{self.name} {action}失败。原因：{action_feedback}"
 
@@ -363,18 +442,31 @@ class VirtualPet:
         return detailed_result
 
     def random_event(self):
-        event = random.choice(["find_food", "get_sick", "nothing", "find_treasure"])
+        event = random.choice(["find_food", "get_sick", "nothing", "find_treasure", "meet_friend", "lose_coins", "find_toy"])
         if event == "find_food":
-            self.stats["hunger"] += 20
+            self.stats["hunger"] += 10
             self.normalize_stats()
-            return f"{self.species}{self.name}意外发现了食物！增加了20点饱食度。"
+            return f"{self.species}{self.name}意外发现了食物！增加了10点饱食度。"
         elif event == "get_sick":
             self.stats["health"] -= 15
             self.normalize_stats()
-            return f"不幸的是，{self.species}{self.name}生病了。健康值减少了15点。"
+            return f"{self.species}{self.name}生病了。健康值减少了15点。"
         elif event == "find_treasure":
             self.coins += random.randint(10, 50)
             return f"{self.species}{self.name}发现了一个宝藏，获得了 {random.randint(10, 50)} 金币！"
+        elif event == "meet_friend":
+            self.stats["happiness"] += 15
+            self.normalize_stats()
+            return f"{self.species}{self.name}在外出时遇到了朋友！快乐值增加了15点。"
+        elif event == "lose_coins":
+            lost_coins = random.randint(5, 30)
+            self.coins = max(0, self.coins - lost_coins)  # 防止金币变成负数
+            return f"{self.species}{self.name}不小心丢失了 {lost_coins} 金币。"
+        elif event == "find_toy":
+            self.stats["happiness"] += 10
+            self.stats["loyalty"] += 5
+            self.normalize_stats()
+            return f"{self.species}{self.name}找到了一个玩具！快乐值增加了10点，忠诚度增加了5点。"
         else:
             return f"今天是平凡的一天。"
 
@@ -389,6 +481,7 @@ class VirtualPet:
         card += f"🔧 技能等级：{self.skill_level}\n"
         card += f"🧠 智力：{self.intelligence}\n"
         card += f"💪 耐力：{self.stamina}\n"
+        card += f"🎂 出生日期：{self.birth_date.strftime('%Y-%m-%d')}\n"  # 添加生日信息
         
         status_names = {
             "hunger": "🍔 饱食度",
@@ -409,7 +502,7 @@ class VirtualPet:
         # 添加下一进化阶段信息
         if self.species in self.upgrade_routes and self.level < self.max_level:
             next_species_info = self.upgrade_routes[self.species]
-            card += f"🔄 下一进化阶段：{next_species_info['name']} (等级 {next_species_info['level']})\n"
+            card += f"🔄 下一进化阶段：{next_species_info['name']} (等级 {next_species_info['level']})"
         else:
             card += "🏆 当前已是最终进化形态。\n"
         return card
