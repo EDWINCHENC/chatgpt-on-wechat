@@ -7,7 +7,7 @@ from config import conf
 from plugins import *
 from common.log import logger
 import os
-from .lib.pets_genius import VirtualPet, interact_with_pet
+from .lib.pets_genius import VirtualPet
 from .lib.model_factory import ModelGenerator
 import random
 
