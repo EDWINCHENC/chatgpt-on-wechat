@@ -116,7 +116,7 @@ class ChatStatistics(Plugin):
         session_id = cmsg.from_user_id
         if conf().get('channel_type', 'wx') == 'wx' and cmsg.from_user_nickname is not None:
             session_id = cmsg.from_user_nickname # itchat channel id会变动，只好用群名作为session id
-        logger.debug(f"session_id: {session_id}")
+        # logger.debug(f"session_id: {session_id}")
         if context.get("isgroup", False):
             username = cmsg.actual_user_nickname
             if username is None:

@@ -165,21 +165,28 @@ class CCVPETS(Plugin):
             self.save_pets_to_json(self.user_pets)  # 保存新名字
             return f"你的宠物名字现在是 {pet_name}。"
 
-
-        
     # 在外部类或函数中
     def save_pets_to_json(self, user_pets, filename="pets.json"):
+        # 获取当前文件的目录
+        curdir = os.path.dirname(__file__)
+        # 构造完整的文件路径
+        filepath = os.path.join(curdir, filename)
+
         # 使用 to_json 方法转换所有 VirtualPet 实例
         pets_data = {user_id: pet.to_json() for user_id, pet in user_pets.items()}
-        with open(filename, "w") as file:
-            json.dump(pets_data, file, indent=4)
+        with open(filepath, "w", encoding='utf-8') as file:
+            json.dump(pets_data, file, indent=4, ensure_ascii=False)
 
     # 在外部类或函数中
     def load_pets_from_json(self, filename="pets.json"):
-        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-            return {}  # 如果文件不存在或为空，则返回空字典
+        # 获取当前文件的目录
+        curdir = os.path.dirname(__file__)
+        # 构造完整的文件路径
+        filepath = os.path.join(curdir, filename)
 
-        with open(filename, "r") as file:
+        if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+            return {}  # 如果文件不存在或为空，则返回空字典
+        with open(filepath, "r", encoding='utf-8') as file:
             pets_data = json.load(file)
             # 转换日期字符串回 date 对象
             for user_id, data in pets_data.items():
@@ -188,6 +195,8 @@ class CCVPETS(Plugin):
                 if data.get('last_sign_in_date') is not None:  # 使用 get 方法以防这个键不存在
                     data['last_sign_in_date'] = datetime.fromisoformat(data['last_sign_in_date']).date()
             return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
+
+
 
 
 def _send_info(e_context: EventContext, content: str):

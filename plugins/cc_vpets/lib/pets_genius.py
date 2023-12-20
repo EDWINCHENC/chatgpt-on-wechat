@@ -353,11 +353,10 @@ class VirtualPet:
         action_feedback = action_method()
         if isinstance(action_feedback, dict):  # 检查是否返回了状态变化字典
             status_changes = self.format_status_changes(action_feedback)
-            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emojis}{action}！{status_changes}"
+            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emoji}{action}！{status_changes}"
         elif isinstance(action_feedback, str):  # 检查是否返回了字符串（如金币不足）
             return f"{activity_emoji} {self.species}{self.name} {action}失败。原因：{action_feedback}"
-        # 添加总体状态信息
-        detailed_result += f"\n🔔宠物当前状态🔔：{self.status()}"
+
         # 有效的交互，增加计数器
         self.interaction_count += 1
         self.last_interaction_time = current_time
