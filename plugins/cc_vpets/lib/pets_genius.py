@@ -420,7 +420,7 @@ class VirtualPet:
             status_changes = self.format_status_changes(action_feedback)
             coins_change = action_feedback.get("coins", 0)
             exp_change = action_feedback.get("exp", 0)
-            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emoji}{action}！\n\n{self.species}状态更新：{status_changes}\n💰金币变化：{coins_change}!"
+            detailed_result = f"{self.species}{self.name} 完成了{activity_emoji}{action}！\n\n{self.species}状态更新：{status_changes}\n💰金币变化：{coins_change}!"
             if exp_change > 0:
                 detailed_result += f"⚡获得了{exp_change}点经验值！"
 
