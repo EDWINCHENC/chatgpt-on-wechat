@@ -71,20 +71,25 @@ class CCVPETS(Plugin):
             return
 
         elif "宠物命名" in content:
-            pet_name = content.split("宠物命名")[1].strip()
-            if pet_name:
-                response = self.name_pet(user_id, pet_name)
-                logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
+            if user_id in self.user_pets:
+                pet_name = content.split("宠物命名")[1].strip()
+                if pet_name:
+                    response = self.name_pet(user_id, pet_name)
+                    logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
+                else:
+                    response = "请提供一个宠物的名字。"
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                return
             else:
-                response = "请提供一个宠物的名字。"
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)
-            return
+                _set_reply_text("你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
+                return
 
 
         # 处理其他宠物互动命令
         elif content in pet_interaction_commands:
             model_response = ""
             if user_id in self.user_pets:
+                pet = self.user_pets[user_id]  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
                 user_input = content
@@ -92,7 +97,7 @@ class CCVPETS(Plugin):
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
             else:
-                response = "你还没有领养宠物。输入 '领养宠物 [宠物名]' 来领养一个宠物。"
+                response = "你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。"
             final_response = (
                 f"🌟 {response}\n"
                 f"{model_response}"
@@ -131,7 +136,8 @@ class CCVPETS(Plugin):
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 logger.debug(f"数据已存储")
                 # 调用 display_pet_card 方法并获取宠物信息卡片
-                pet_card = self.display_pet_card(user_id)
+                pet = self.user_pets[user_id]  # 获取新创建的宠物实例
+                pet_card = pet.display_pet_card()  # 从宠物实例调用 display_pet_card 方法
                 logger.debug(f"数据已获取:{pet_card}")
                 adopt_message = f"恭喜你领养到了数码宝贝，它是一只{species}！\n\n{pet_card}\n\n你可以随时为它取一个名字。"
                 # 添加查看宠物信息的提示
