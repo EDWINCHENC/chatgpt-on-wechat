@@ -41,6 +41,7 @@ class VirtualPet:
         self.interaction_count = 0
         self.interaction_window_start = time.time()  # 设置交互窗口的开始时间
         self.last_sign_in_date = None  # 用于跟踪上次签到的日期
+        self.last_interaction_time = time.time()
 
 
     def to_json(self):
@@ -58,10 +59,11 @@ class VirtualPet:
             "intelligence": self.intelligence,
             "stamina": self.stamina,
             "stats": self.stats,
-            "last_interaction_time": self.last_interaction_time,
-            "interaction_cooldown": self.interaction_cooldown,
+            "last_interaction_time": datetime.datetime.fromtimestamp(self.last_interaction_time).isoformat() if self.last_interaction_time else None,
             "last_sign_in_date": self.last_sign_in_date.isoformat() if self.last_sign_in_date else None,
+            "interaction_window_start": datetime.datetime.fromtimestamp(self.interaction_window_start).isoformat() if self.interaction_window_start else None,
         }
+
     
     # 类属性，用于映射状态名称到中文
     status_names = {

@@ -63,7 +63,7 @@ class CCVPETS(Plugin):
         if "宠物领养" in content:
             response = self.adopt_pet(user_id, nickname)  # 直接调用领养方法，不需提供宠物名
             logger.info(f"[cc_vpets] {user_id} {nickname} 领养了宠物")
-            _send_info(e_context, {response})
+            _send_info(e_context, response)
             prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他相处，使他感受到你的陪伴，和他成为真正的朋友。"""
             user_input = f"你是数码宝贝{pet.species}，现在以{pet.species}的角色向主人打招呼，完整地介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数大概在100字以内。"
             model_response = self.c_model._generate_model_analysis(prompt, user_input)
@@ -83,6 +83,7 @@ class CCVPETS(Plugin):
 
         # 处理其他宠物互动命令
         elif content in pet_interaction_commands:
+            model_response = ""
             if user_id in self.user_pets:
                 response = pet.interact_with_user(content)
                 prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
