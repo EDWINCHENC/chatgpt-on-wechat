@@ -188,70 +188,105 @@ class VirtualPet:
         return f"📅 {self.species}{self.name} 已完成签到，获得了 10 点经验值！\n当前状态：{self.status()}"
     
     def feed(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["hunger"] += 10
-            self.stats["happiness"] += 5
-            self.stats["loyalty"] += 2
+            changes["hunger"] = 10  # 饱食度增加
+            changes["happiness"] = 5  # 快乐值增加
+            changes["loyalty"] = 2   # 忠诚度增加
             self.coins -= 50  # 扣除金币
+
+            self.stats["hunger"] += changes["hunger"]
+            self.stats["happiness"] += changes["happiness"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
-            return "饱食度+10点，快乐值+5点，忠诚度+2点，花费了50金币。"
+
+            return changes
         else:
             return "金币不足，无法喂食。"
 
     def play(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["happiness"] += 15
-            self.stats["hunger"] -= 5
-            self.stats["loyalty"] += 2
+            changes["happiness"] = 15  # 快乐值增加
+            changes["hunger"] = -5    # 饱食度减少
+            changes["loyalty"] = 2    # 忠诚度增加
             self.coins -= 50  # 扣除金币
+
+            self.stats["happiness"] += changes["happiness"]
+            self.stats["hunger"] += changes["hunger"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.gain_experience(15)
             self.normalize_stats()
-            return "饱食度-10点，快乐值+5点，忠诚度+2点，增加15点经验值，花费了50金币。"
+            return changes
         else:
             return "金币不足，无法玩耍。"
 
     def checkup(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["health"] += 10
-            self.stats["loyalty"] += 2
+            changes["health"] = 10  # 健康值增加
+            changes["loyalty"] = 2   # 忠诚度增加
             self.coins -= 50  # 扣除金币
+
+            self.stats["health"] += changes["health"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
-            return "健康值+10点，忠诚度+2点，花费了50金币。"
+
+            return changes
         else:
             return "金币不足，无法进行体检。"
 
+
     def walk(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["happiness"] += 10
-            self.stats["health"] += 5
-            self.stats["loyalty"] += 2
+            changes["happiness"] = 10
+            changes["health"] = 5
+            changes["loyalty"] = 2
             self.coins -= 50  # 扣除金币
             self.gain_experience(10)
+
+            self.stats["happiness"] += changes["happiness"]
+            self.stats["health"] += changes["health"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
-            return "快乐值+10点，忠诚度+2点，健康值+5点，增加10点经验值，花费了50金币。"
+
+            return changes
         else:
             return "金币不足，无法散步。"
 
     def train(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["happiness"] -= 5
-            self.stats["health"] += 10
+            changes["happiness"] = -5  # 快乐值减少
+            changes["health"] = 10    # 健康值增加
+            changes["loyalty"] = 2    # 忠诚度增加
             self.coins -= 50  # 扣除金币
+
+            self.stats["happiness"] += changes["happiness"]
+            self.stats["health"] += changes["health"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.gain_experience(15)
-            self.stats["loyalty"] += 2
             self.normalize_stats()
-            return "快乐值+5点，忠诚度+2点，健康值+10点，增加15点经验值，花费了50金币。"
+
+            return changes
         else:
             return "金币不足，无法训练。"
 
     def bathe(self):
+        changes = {}
         if self.coins >= 50:
-            self.stats["happiness"] -= 10
-            self.stats["health"] += 10
-            self.stats["loyalty"] += 2
+            changes["happiness"] = -10  # 快乐值减少
+            changes["health"] = 10      # 健康值增加
+            changes["loyalty"] = 2      # 忠诚度增加
             self.coins -= 50  # 扣除金币
+
+            self.stats["happiness"] += changes["happiness"]
+            self.stats["health"] += changes["health"]
+            self.stats["loyalty"] += changes["loyalty"]
             self.normalize_stats()
-            return "快乐值+10点，忠诚度+2点，健康值+10点，花费了50金币。"
+
+            return changes
         else:
             return "金币不足，无法洗澡。"
 
@@ -264,6 +299,16 @@ class VirtualPet:
         for stat, value in self.stats.items():
             status_str += f" {VirtualPet.status_names[stat]} {value},"
         return status_str.rstrip(',')
+    
+    def format_status_changes(self, changes):
+        status_str = ""
+        for stat, change in changes.items():
+            current_value = self.stats[stat]
+            # 当 change 为正数时，在前面添加 "+" 符号
+            sign = "+" if change >= 0 else ""
+            status_str += f"{VirtualPet.status_names[stat]} {current_value} ({sign}{change}), "
+        return status_str.rstrip(', ')
+
 
     def interact_with_user(self, action):
         # 确保动作名称是小写
@@ -306,11 +351,10 @@ class VirtualPet:
 
         # 执行找到的方法并获取反馈
         action_feedback = action_method()
-        if action_feedback:
-            # 直接使用动作方法返回的信息
-            detailed_result = f"{self.species}{self.name} 完成了{activity_emoji}{action}！{action_feedback}"
-        else:
-            # 如果没有特定的反馈信息（比如金币不足），则直接返回
+        if isinstance(action_feedback, dict):  # 检查是否返回了状态变化字典
+            status_changes = self.format_status_changes(action_feedback)
+            detailed_result = f"🌟 {self.species}{self.name} 完成了{activity_emojis}{action}！{status_changes}"
+        elif isinstance(action_feedback, str):  # 检查是否返回了字符串（如金币不足）
             return f"{activity_emoji} {self.species}{self.name} {action}失败。原因：{action_feedback}"
         # 添加总体状态信息
         detailed_result += f"\n🔔宠物当前状态🔔：{self.status()}"

@@ -92,7 +92,7 @@ class CCVPETS(Plugin):
         # 处理其他宠物互动命令
         elif content in pet_interaction_commands:
             model_response = ""
-            if user_id in self.user_pets:
+            if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 prompt = f"""你是一只数码宝贝，是由{nickname}领养的，他将在今后陪伴你，你的主人会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
@@ -110,7 +110,7 @@ class CCVPETS(Plugin):
             return
         
         elif "宠物签到" in content:
-            if user_id in self.user_pets:
+            if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]
                 response = pet.daily_sign_in()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
