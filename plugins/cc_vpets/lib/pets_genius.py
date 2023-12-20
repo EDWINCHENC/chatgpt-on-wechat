@@ -292,29 +292,29 @@ class VirtualPet:
 
 
 
-# 创建一个 VirtualPet 实例
-my_pet = VirtualPet(name="cc", owner="小明", species="滚球兽")
+# # 创建一个 VirtualPet 实例
+# my_pet = VirtualPet(name="cc", owner="小明", species="滚球兽")
 
-# 打印初始状态
-print("初始状态:")
-print(my_pet.display_pet_card())
+# # 打印初始状态
+# print("初始状态:")
+# print(my_pet.display_pet_card())
 
-# 给宠物足够的经验进行几次升级
-experience_to_gain = 3000
-print(f"\n给宠物增加 {experience_to_gain} 点经验.")
-my_pet.gain_experience(experience_to_gain)
+# # 给宠物足够的经验进行几次升级
+# experience_to_gain = 3000
+# print(f"\n给宠物增加 {experience_to_gain} 点经验.")
+# my_pet.gain_experience(experience_to_gain)
 
-# 打印升级后的状态
-print("\n升级后状态:")
-print(my_pet.display_pet_card())
+# # 打印升级后的状态
+# print("\n升级后状态:")
+# print(my_pet.display_pet_card())
 
 
 
-# 测试代码
-pet = VirtualPet(name="xiaoxiao", owner="小明", species="滚球兽")
+# # 测试代码
+# pet = VirtualPet(name="xiaoxiao", owner="小明", species="滚球兽")
 
-# 尝试与宠物互动
-print(pet.interact_with_user("喂食"))
-time.sleep(6)  # 等待冷却时间过去
-print(pet.interact_with_user("玩耍"))
-print(pet.interact_with_user("状态"))
+# # 尝试与宠物互动
+# print(pet.interact_with_user("喂食"))
+# time.sleep(6)  # 等待冷却时间过去
+# print(pet.interact_with_user("玩耍"))
+# print(pet.interact_with_user("状态"))
