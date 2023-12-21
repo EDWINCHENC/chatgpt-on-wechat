@@ -18,7 +18,7 @@ class VirtualPet:
                 config = json.load(f)
             cls.upgrade_routes = config['routes']
 
-    def __init__(self, name, owner, species, birth_date=None, level=1, experience=0, coins=1000, last_interaction_time=None, last_sign_in_date=None, interaction_window_start=None):
+    def __init__(self, name, owner, species, birth_date=None, level=1, experience=0, coins=1000, last_sign_in_date=None):
         # 确保进化路线数据已加载
         VirtualPet.load_upgrade_routes()
         self.name = name
@@ -39,9 +39,10 @@ class VirtualPet:
             "combat_power": 50,
         }
         self.interaction_count = 0
-        self.last_interaction_time = last_interaction_time if last_interaction_time is not None else time.time()
+        self.last_interaction_time = None
+        self.last_task_time = None  # 上一次执行任务的时间
         self.last_sign_in_date = last_sign_in_date
-        self.interaction_window_start = interaction_window_start if interaction_window_start is not None else time.time()
+        self.interaction_window_start = None
 
 
     def to_json(self):
@@ -59,12 +60,9 @@ class VirtualPet:
             "intelligence": self.intelligence,
             "stamina": self.stamina,
             "stats": self.stats,
-            "last_interaction_time": datetime.datetime.fromtimestamp(self.last_interaction_time).isoformat() if self.last_interaction_time else None,
             "last_sign_in_date": self.last_sign_in_date.isoformat() if self.last_sign_in_date else None,
-            "interaction_window_start": datetime.datetime.fromtimestamp(self.interaction_window_start).isoformat() if self.interaction_window_start else None,
         }
 
-    
     # 类属性，用于映射状态名称到中文
     status_names = {
         "hunger": "🍔 饱食度",
@@ -431,10 +429,11 @@ class VirtualPet:
         current_time = time.time()
 
         # 检查是否进入新的15分钟窗口
-        if current_time - self.interaction_window_start > window_length:  # 
+        # 如果是第一次交互或者已经超过了设定的时间窗口
+        if self.interaction_window_start is None or current_time - self.interaction_window_start > window_length:
             self.interaction_count = 0  # 重置计数器
-            self.interaction_window_start = current_time  # 更新窗口开始时间
-
+            self.interaction_window_start = current_time  # 设置窗口开始时间
+            
         # 检查交互次数是否已达上限
         if self.interaction_count >= max_interactions:
             next_interaction_time = self.interaction_window_start + window_length  # 下一个互动窗口的开始时间
@@ -442,6 +441,20 @@ class VirtualPet:
             return False, f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
         
         return True, ""
+
+
+    def can_interact_once(self, window_length=3600):
+        """检查是否可以在指定时间窗口内进行一次交互或执行任务。"""
+        current_time = time.time()
+
+        if self.last_task_time is None or current_time - self.last_task_time > window_length:
+            # 如果还没有进行过交互，或者自上次交互以来已经过去了足够的时间
+            self.last_task_time = current_time  # 更新上次交互时间
+            return True, ""
+        else:
+            # 如果时间窗口内已经进行过交互
+            wait_time = int((self.last_task_time + window_length) - current_time)
+            return False, f"您需要等待 {wait_time // 60} 分钟 {wait_time % 60} 秒后才能再次执行任务。"
 
     def interact_with_user(self, action):
         # 确保动作名称是小写

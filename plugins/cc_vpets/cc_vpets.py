@@ -137,7 +137,7 @@ class CCVPETS(Plugin):
         elif content in "宠物任务":
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
 
-                can_do_task, message = pet.can_interact(1800, 1)  # 0.5小时1次
+                can_do_task, message = pet.can_interact_once(1800, 1)  # 0.5小时1次
                 if not can_do_task:
                     _set_reply_text(message, e_context, level=ReplyType.TEXT)
                     return
@@ -255,8 +255,6 @@ class CCVPETS(Plugin):
                 # 处理日期格式
                 birth_date = datetime.date.fromisoformat(data['birth_date']) if data['birth_date'] else None
                 last_sign_in_date = datetime.date.fromisoformat(data['last_sign_in_date']) if data.get('last_sign_in_date') else None
-                last_interaction_time = datetime.datetime.fromisoformat(data['last_interaction_time']).timestamp() if data.get('last_interaction_time') else None
-                interaction_window_start = datetime.datetime.fromisoformat(data['interaction_window_start']).timestamp() if data.get('interaction_window_start') else None
 
                 # 创建 VirtualPet 实例
                 pet = VirtualPet(
@@ -268,8 +266,6 @@ class CCVPETS(Plugin):
                     experience=data['experience'],
                     coins=data['coins'],
                     last_sign_in_date=last_sign_in_date,
-                    last_interaction_time=last_interaction_time,
-                    interaction_window_start=interaction_window_start
                 )
 
                 # 设置额外的属性
