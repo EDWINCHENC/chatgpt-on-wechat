@@ -40,7 +40,7 @@ class CCVPETS(Plugin):
                 self.c_model = ModelGenerator()
                 # 加载宠物数据
                 self.user_pets = self.load_pets_from_json()
-                logger.debug(f"[cc_vpets] 初始化宠物数据: {self.user_pets}")
+                logger.debug(f"[cc_vpets] 初始化加载宠物数据: {self.user_pets}")
                 self.last_decay_time = time.time()
                 logger.info("[cc_vpets] inited")
         except Exception as e:
@@ -59,6 +59,7 @@ class CCVPETS(Plugin):
         logger.debug(f"获取到的user_id: {user_id}")
         nickname = msg.actual_user_nickname if isgroup else msg.from_user_nickname # 获取nickname
         pet = self.user_pets.get(user_id)
+        logger.debug(f"获取到的实例化数据加载: |||||{pet}|||||")
         pet_interaction_commands = ["喂食", "玩耍", "体检", "散步", "训练", "洗澡", "状态"]
         # 过滤不需要处理的内容类型
         if context.type != ContextType.TEXT:
@@ -213,35 +214,6 @@ class CCVPETS(Plugin):
         logger.info(f"保存宠物数据到 {filepath}")
         with open(filepath, "w", encoding='utf-8') as file:
             json.dump(pets_data, file, indent=4, ensure_ascii=False)
-
-    # 在外部类或函数中
-    def load_pets_from_json(self, filename="pets.json"):
-        # 获取当前文件的目录
-        curdir = os.path.dirname(__file__)
-        # 构造完整的文件路径
-        filepath = os.path.join(curdir, filename)
-        logger.debug(f"读取宠物数据 {filepath}")
-        try:
-            with open(filepath, "r", encoding='utf-8') as file:
-                pets_data = json.load(file)
-                logger.debug(f"读取宠物数据 {pets_data}")
-                # 转换日期字符串回 datetime.date 对象
-                for user_id, data in pets_data.items():
-                    if 'birth_date' in data and data['birth_date'] is not None:
-                        data['birth_date'] = datetime.datetime.fromisoformat(data['birth_date']).date()
-                    if 'last_sign_in_date' in data and data.get('last_sign_in_date') is not None:
-                        data['last_sign_in_date'] = datetime.datetime.fromisoformat(data['last_sign_in_date']).date()               
-                return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
-        except FileNotFoundError:
-            logger.info(f"[cc_vpets] 宠物数据文件 {filename} 未找到，将初始化空数据。")
-            return {}
-        except json.JSONDecodeError:
-            logger.error(f"[cc_vpets] 宠物数据文件 {filename} 格式错误，无法加载数据。")
-            return {}
-        except Exception as e:
-            logger.error(f"[cc_vpets] 加载宠物数据时出现未知错误：{e}")
-            return {}
-
 
     def load_pets_from_json(self, filename="pets.json"):
         # 获取当前文件的目录
