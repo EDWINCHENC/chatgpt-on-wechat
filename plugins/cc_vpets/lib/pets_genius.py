@@ -80,11 +80,11 @@ class VirtualPet:
     }    
 
     def decay_stats_over_time(self):
-        # 每小时减少的状态值
+        # 每次减少的状态值
         decay_amount = {
-            "hunger": -5,  # 每小时饥饿度减少5点
-            "happiness": -4,  # 每小时快乐值减少4点
-            "health": -3,  # 每小时健康值减少2点
+            "hunger": -5,  # 每次饥饿度减少5点
+            "happiness": -4,  # 每次快乐值减少4点
+            "health": -3,  # 每次健康值减少2点
             "loyalty": -3
         }
 
@@ -173,9 +173,25 @@ class VirtualPet:
 
     # 例如，一个宠物可以通过完成任务来增加金币
     def complete_task(self):
-        earned_coins = random.randint(100, 200)  # 生成100到200之间的随机数
-        self.coins += earned_coins  # 将随机数加到宠物的金币总数
-        return f"{self.species}{self.name} 完成了任务，获得了 {earned_coins} 金币！"
+        # 金币奖励
+        earned_coins = random.randint(100, 200)
+        self.coins += earned_coins
+
+        # 随机消耗状态值
+        hunger_loss = random.randint(2, 6)  # 饱食度随机消耗
+        happiness_loss = random.randint(2, 6)  # 快乐值随机消耗
+        health_loss = random.randint(2, 6)  # 健康值随机消耗
+
+        self.hunger -= hunger_loss
+        self.happiness -= happiness_loss
+        self.health -= health_loss
+
+        # 确保状态值不低于0
+        self.normalize_stats()
+
+        # 返回宠物状态信息
+        return f"\n\n{self.species}{self.name} 宠物任务完成🎉，消耗了一些状态，获得了💰 {earned_coins} 金币！\n"
+
 
     # 新增日常签到方法
     def daily_sign_in(self,nickname):
@@ -389,7 +405,7 @@ class VirtualPet:
                 status_str += f"👍 {VirtualPet.status_names2[stat]}状态很好，战斗力很强！\n"
 
         # 添加一般提示信息
-        status_str += "\n💡 提示：你可以通过['喂食', '玩耍', '体检', '散步', '训练', '洗澡']等指令，来保持数码宝贝处于健康的成长状态哦。"
+        status_str += "\n💡 提示：你可以通过['喂食', '玩耍', '体检', '散步', '训练', '洗澡']指令，来保持数码宝贝健康的成长状态哦。更好的状态将帮助数码宝贝在【战斗】和【任务】中获得更多经验和金币！"
 
         # 随机事件触发
         if random.random() < 0.22:  # 假设有20%的概率触发随机事件

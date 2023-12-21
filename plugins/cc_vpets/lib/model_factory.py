@@ -83,7 +83,7 @@ class ModelGenerator:
             return f"{reply_text}[O]"
         except Exception as e:
             logger.error(f"Error generating summary with OpenAI: {e}")
-            return "生成总结时出错，请稍后再试。"
+            return "思想放空，眺望远方，有些累了..."
 
     def _generate_summary_with_gemini_pro(self, messages):
         """使用 Gemini Pro 生成总结"""
@@ -109,7 +109,7 @@ class ModelGenerator:
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")
-            return "生成总结时出错，请稍后再试。"
+            return "思想放空，眺望远方，有些累了..."
 
 
     def remove_markdown(self, text):
