@@ -42,7 +42,6 @@ class CCVPETS(Plugin):
                 self.user_pets = self.load_pets_from_json()
                 logger.debug(f"[cc_vpets] 初始化加载宠物数据: {self.user_pets}")
                 self.last_decay_time = time.time()
-                self.last_task_time = None  # 初始时设置为None
                 logger.info("[cc_vpets] inited")
         except Exception as e:
             if isinstance(e, FileNotFoundError):
@@ -137,28 +136,23 @@ class CCVPETS(Plugin):
         # 识别“开启任务”指令
         elif content in "宠物任务":
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
-                current_time = time.time()
-                if self.last_task_time is None or current_time - self.last_task_time >= 1800:  # 半小时 = 3600秒
+
+                can_do_task, message = pet.can_interact(1800, 1)  # 0.5小时1次
+                if not can_do_task:
+                    _set_reply_text(message, e_context, level=ReplyType.TEXT)
+                    return
+                else:     
                     # 设置prompt和user_input
                     prompt = "你是一个任务生成器，每次需要生成和描述数码宝贝完成的一个有趣的任务的具体情况。"
                     user_input = f"用户{nickname}想要给数码宝贝{pet.species}一个任务，数码宝贝顺利完成了。现在你只要给出一个简短的任务内容和完成情况的描述即可（大约35字左右即可）。例如：{pet.species}去哪里完成了什么样的任务，遇到了什么情况..."
                     
                     # 调用模型生成任务
                     task_description = self.c_model._generate_model_analysis(prompt, user_input)
-
-                    # 处理任务并获取结果
-                # 如果pet实例存在，则调用其complete_task方法
+                    # 如果pet实例存在，则调用其complete_task方法
                     if pet:
                         task_result = pet.complete_task()  # 调用宠物的complete_task方法
-                        pet.last_task_time = current_time  # 更新任务时间
-                    
                     # 反馈任务结果
                     response = f"{task_description}{task_result}"
-                    _set_reply_text(response, e_context, level=ReplyType.TEXT)
-                else:
-                    next_allowed_time = pet.last_task_time + 3600
-                    next_allowed_timestamp = datetime.datetime.fromtimestamp(next_allowed_time).strftime('%Y-%m-%d %H:%M:%S')
-                    response = f"宠物任务已完成。下次可开启任务时间为: {next_allowed_timestamp}。"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
                 _set_reply_text("你还没有领养宠物。", e_context, level=ReplyType.TEXT)

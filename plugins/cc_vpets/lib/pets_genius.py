@@ -36,7 +36,7 @@ class VirtualPet:
             "hunger": 50,
             "happiness": 50,
             "health": 50,
-            "loyalty": 50,
+            "combat_power": 50,
         }
         self.interaction_count = 0
         self.last_interaction_time = last_interaction_time if last_interaction_time is not None else time.time()
@@ -70,13 +70,13 @@ class VirtualPet:
         "hunger": "🍔 饱食度",
         "happiness": "😊 快乐值",
         "health": "💖 健康值",
-        "loyalty": "💕 忠诚度"
+        "combat_power": "💕 战斗值"
     }
     status_names2 = {
         "hunger": "饱食度",
         "happiness": "快乐值",
         "health": "健康值",
-        "loyalty": "忠诚度"
+        "combat_power": "战斗值"
     }    
 
     def decay_stats_over_time(self):
@@ -85,7 +85,7 @@ class VirtualPet:
             "hunger": -5,  # 每次饥饿度减少5点
             "happiness": -4,  # 每次快乐值减少4点
             "health": -3,  # 每次健康值减少2点
-            "loyalty": -3
+            "combat_power": -3
         }
 
         for stat, decay in decay_amount.items():
@@ -171,8 +171,9 @@ class VirtualPet:
         return evolution_message
 
     def complete_task(self):
+         
         # 金币奖励
-        earned_coins = random.randint(100, 200)
+        earned_coins = random.randint(100, 300)
         self.coins += earned_coins
 
         # 随机消耗状态值
@@ -200,7 +201,7 @@ class VirtualPet:
 
         # 签到逻辑
         level_up_message = self.gain_experience(20)  # 获得经验和处理升级
-        self.stats["loyalty"] += 5
+        self.stats["combat_power"] += 5
         self.coins += 100  # 增加100金币
         self.last_sign_in_date = current_date
 
@@ -223,14 +224,14 @@ class VirtualPet:
         if self.coins >= 50:
             changes["hunger"] = 10
             changes["happiness"] = 5
-            changes["loyalty"] = 2
+            changes["combat_power"] = 2
             self.coins -= 50
             changes["coins"] = -50  # 金币减少
 
             # 更新状态
             self.stats["hunger"] += changes["hunger"]
             self.stats["happiness"] += changes["happiness"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.normalize_stats()
 
             # 假设喂食获得一定经验值
@@ -250,7 +251,7 @@ class VirtualPet:
             # 状态变化
             changes["happiness"] = 15  # 快乐值增加
             changes["hunger"] = -5     # 饱食度减少
-            changes["loyalty"] = 2     # 忠诚度增加
+            changes["combat_power"] = 2     # 战斗值增加
 
             # 金币和经验值变化
             self.coins -= 50  # 扣除金币
@@ -264,7 +265,7 @@ class VirtualPet:
             # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["hunger"] += changes["hunger"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.normalize_stats()
 
             return changes
@@ -277,7 +278,7 @@ class VirtualPet:
         if self.coins >= 50:
             # 状态变化
             changes["health"] = 20   # 健康值增加
-            changes["loyalty"] = 2   # 忠诚度增加
+            changes["combat_power"] = 2   # 战斗值增加
 
             # 金币和经验值变化
             self.coins -= 50  # 扣除金币
@@ -290,7 +291,7 @@ class VirtualPet:
 
             # 更新状态
             self.stats["health"] += changes["health"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.normalize_stats()
 
             return changes
@@ -303,7 +304,7 @@ class VirtualPet:
             # 状态变化
             changes["happiness"] = 10  # 快乐值增加
             changes["health"] = 5      # 健康值增加
-            changes["loyalty"] = 2     # 忠诚度增加
+            changes["combat_power"] = 2     # 战斗值增加
             changes["hunger"] = -5     # 饱食度减少
 
             # 金币和经验值变化
@@ -318,7 +319,7 @@ class VirtualPet:
             # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.stats["hunger"] += changes["hunger"]
             self.normalize_stats()
 
@@ -331,13 +332,13 @@ class VirtualPet:
         if self.coins >= 50:
             # 状态变化
             changes["happiness"] = -5  # 快乐值减少
-            changes["health"] = 20    # 健康值增加
-            changes["loyalty"] = 2    # 忠诚度增加
+            changes["health"] = 10    # 健康值增加
+            changes["combat_power"] = 15    # 战斗值增加
             changes["hunger"] = -5    # 饱食度减少
 
             # 金币和经验值变化
             self.coins -= 50  # 扣除金币
-            gained_exp = 20   # 获得经验值
+            gained_exp = 15   # 获得经验值
             level_up_message = self.gain_experience(gained_exp)  # 处理经验值增加和升级
 
             changes["coins"] = -50    # 金币变化
@@ -347,7 +348,7 @@ class VirtualPet:
             # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.stats["hunger"] += changes["hunger"]
             self.normalize_stats()
 
@@ -361,7 +362,7 @@ class VirtualPet:
             # 状态变化
             changes["happiness"] = 10 # 快乐值增加
             changes["health"] = 10     # 健康值增加
-            changes["loyalty"] = 2     # 忠诚度增加
+            changes["combat_power"] = 2     # 战斗值增加
             changes["hunger"] = -5     # 饱食度减少
 
             # 金币和经验值变化
@@ -376,7 +377,7 @@ class VirtualPet:
             # 更新状态
             self.stats["happiness"] += changes["happiness"]
             self.stats["health"] += changes["health"]
-            self.stats["loyalty"] += changes["loyalty"]
+            self.stats["combat_power"] += changes["combat_power"]
             self.stats["hunger"] += changes["hunger"]
             self.normalize_stats()
 
@@ -425,25 +426,33 @@ class VirtualPet:
         return status_str
 
 
-
-
-    def interact_with_user(self, action):
-        # 确保动作名称是小写
-        action = action.lower()
+    def can_interact(self, window_length=900, max_interactions=3):
+        """检查是否可以进行新的交互或执行任务。"""
         current_time = time.time()
+
         # 检查是否进入新的15分钟窗口
-        if current_time - self.interaction_window_start > 900:  # 15分钟 = 900秒
+        if current_time - self.interaction_window_start > window_length:  # 
             self.interaction_count = 0  # 重置计数器
             self.interaction_window_start = current_time  # 更新窗口开始时间
 
         # 检查交互次数是否已达上限
-        if self.interaction_count >= 3:
-            next_interaction_time = self.interaction_window_start + 900  # 下一个互动窗口的开始时间
+        if self.interaction_count >= max_interactions:
+            next_interaction_time = self.interaction_window_start + window_length  # 下一个互动窗口的开始时间
             wait_time = int(next_interaction_time - current_time)  # 等待时间
-            return f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
+            return False, f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
+        
+        return True, ""
+
+    def interact_with_user(self, action):
+        # 确保动作名称是小写
+        action = action.lower()
+        
+        can_interact, message = self.can_interact()
+        if not can_interact:
+            return message
         
         if action in ["喂食", "玩耍", "体检", "散步", "训练", "洗澡"]:
-            self.last_interaction_time = current_time
+            self.last_interaction_time = time.time()
 
         # 动作名称需要与方法名完全匹配，这里假设方法名是中文
         action_method = {
@@ -500,7 +509,6 @@ class VirtualPet:
 
         # 有效的交互，增加计数器
         self.interaction_count += 1
-        self.last_interaction_time = current_time
         return detailed_result
 
     def random_event(self):
@@ -526,9 +534,9 @@ class VirtualPet:
             return f"{self.species}{self.name}不小心丢失了 {lost_coins} 金币。"
         elif event == "find_toy":
             self.stats["happiness"] += 10
-            self.stats["loyalty"] += 5
+            self.stats["combat_power"] += 5
             self.normalize_stats()
-            return f"{self.species}{self.name}找到了一个玩具！快乐值增加了10点，忠诚度增加了5点。"
+            return f"{self.species}{self.name}找到了一个玩具！快乐值增加了10点，战斗值增加了5点。"
         else:
             return f"今天是平凡的一天。"
 
@@ -549,7 +557,7 @@ class VirtualPet:
             "hunger": "🍔 饱食度",
             "happiness": "😊 快乐值",
             "health": "💖 健康值",
-            "loyalty": "💕 忠诚度"
+            "combat_power": "💕 战斗值"
         }
 
         for stat, value in self.stats.items():
