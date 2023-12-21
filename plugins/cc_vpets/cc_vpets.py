@@ -62,9 +62,11 @@ class CCVPETS(Plugin):
         logger.debug(f"获取到的实例化数据加载: |||||{pet}|||||")
         pet_interaction_commands = ["喂食", "玩耍", "体检", "散步", "训练", "洗澡", "状态"]
         # 过滤不需要处理的内容类型
-        if context.type != ContextType.TEXT:
+        if e_context["context"].type not in [
+            ContextType.TEXT,
+            ContextType.PATPAT,
+        ]:
             return
-
         # 在处理用户请求之前调用状态衰减方法
         self.decay_pets_stats_if_needed()
         content = context.content.strip()
@@ -99,7 +101,7 @@ class CCVPETS(Plugin):
                 return
 
         # 处理宠物状态查看命令
-        elif content == "宠物状态":
+        elif content == "宠物状态" or context.type == ContextType.PATPAT:
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 # pet = self.user_pets[user_id]
                 response = pet.status(nickname)
