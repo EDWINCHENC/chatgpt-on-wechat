@@ -70,12 +70,12 @@ class CCVPETS(Plugin):
         content = context.content.strip()
         if "宠物领养" in content:
             response = self.adopt_pet(user_id, nickname)  # 直接调用领养方法，不需提供宠物名
-            logger.info(f"[cc_vpets] {user_id} {nickname} 领养了宠物")
+            logger.info(f"[cc_vpets] {nickname} 领养了宠物")
             _send_info(e_context, response)
 
             # 确保 user_id 在 self.user_pets 中，并且 pet 实例不是 None
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
-                # pet = self.user_pets[user_id]
+                pet = self.user_pets[user_id]
                 logger.debug(f"[cc_vpets] {nickname} 领养了宠物 {pet.species}")
                 prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你是数码宝贝{pet.species}，你每次都会向主人介绍{pet.species}是什么，会怎么样进化等。你要以数码宝贝的身份和主人相处，使他感受到你的陪伴，和他成为真正的朋友。"""
                 user_input = f"你是数码宝贝{pet.species}，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如'喂食', '玩耍', '体检', '散步', '训练', '洗澡'）等等，现在以{pet.species}的角色向主人打招呼，简单介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数在50字以内。"
@@ -122,6 +122,7 @@ class CCVPETS(Plugin):
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
+                logger.debug("数据已保存")
                 final_response = (
                     f"{pet.species}: {model_response}"
                     f"\n\n🌟 {response}"
@@ -137,7 +138,7 @@ class CCVPETS(Plugin):
         elif content in "宠物任务":
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
 
-                can_do_task, message = pet.can_interact_once(1800, 1)  # 0.5小时1次
+                can_do_task, message = pet.can_interact_once(1800)  # 0.5小时1次
                 if not can_do_task:
                     _set_reply_text(message, e_context, level=ReplyType.TEXT)
                     return
