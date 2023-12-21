@@ -222,7 +222,7 @@ class CCVPETS(Plugin):
         filepath = os.path.join(curdir, filename)
         logger.debug(f"读取宠物数据 {filepath}")
         try:
-            with open(filepath, 'r',encoding='utf-8') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:
                 pets_data = json.load(file)
 
             pets = {}
@@ -230,7 +230,9 @@ class CCVPETS(Plugin):
                 # 处理日期格式
                 birth_date = datetime.date.fromisoformat(data['birth_date']) if data['birth_date'] else None
                 last_sign_in_date = datetime.date.fromisoformat(data['last_sign_in_date']) if data.get('last_sign_in_date') else None
-                
+                last_interaction_time = datetime.datetime.fromisoformat(data['last_interaction_time']).timestamp() if data.get('last_interaction_time') else None
+                interaction_window_start = datetime.datetime.fromisoformat(data['interaction_window_start']).timestamp() if data.get('interaction_window_start') else None
+
                 # 创建 VirtualPet 实例
                 pet = VirtualPet(
                     name=data['name'],
@@ -240,17 +242,17 @@ class CCVPETS(Plugin):
                     level=data['level'],
                     experience=data['experience'],
                     coins=data['coins'],
-                    last_sign_in_date=last_sign_in_date  # 添加这一行
+                    last_sign_in_date=last_sign_in_date,
+                    last_interaction_time=last_interaction_time,
+                    interaction_window_start=interaction_window_start
                 )
-                
+
                 # 设置额外的属性
                 pet.max_level = data.get('max_level', pet.max_level)
                 pet.skill_level = data.get('skill_level', pet.skill_level)
                 pet.intelligence = data.get('intelligence', pet.intelligence)
                 pet.stamina = data.get('stamina', pet.stamina)
                 pet.stats = data.get('stats', pet.stats)
-                pet.last_interaction_time = datetime.datetime.fromisoformat(data['last_interaction_time']).timestamp() if data.get('last_interaction_time') else pet.last_interaction_time
-                pet.interaction_window_start = datetime.datetime.fromisoformat(data['interaction_window_start']).timestamp() if data.get('interaction_window_start') else pet.interaction_window_start
                 
                 pets[user_id] = pet
 

@@ -17,8 +17,8 @@ class VirtualPet:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
             cls.upgrade_routes = config['routes']
-            
-    def __init__(self, name, owner, species, birth_date=None, level=1, experience=0, coins=1000):
+
+    def __init__(self, name, owner, species, birth_date=None, level=1, experience=0, coins=1000, last_interaction_time=None, last_sign_in_date=None, interaction_window_start=None):
         # 确保进化路线数据已加载
         VirtualPet.load_upgrade_routes()
         self.name = name
@@ -39,9 +39,9 @@ class VirtualPet:
             "loyalty": 50,
         }
         self.interaction_count = 0
-        self.interaction_window_start = time.time()  # 设置交互窗口的开始时间
-        self.last_sign_in_date = None  # 用于跟踪上次签到的日期
-        self.last_interaction_time = time.time()
+        self.last_interaction_time = last_interaction_time if last_interaction_time is not None else time.time()
+        self.last_sign_in_date = last_sign_in_date
+        self.interaction_window_start = interaction_window_start if interaction_window_start is not None else time.time()
 
 
     def to_json(self):
