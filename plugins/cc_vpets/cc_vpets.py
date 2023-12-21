@@ -126,7 +126,7 @@ class CCVPETS(Plugin):
                     f"\n\n🌟 {response}"
                 )
             else:
-                response = "你还没有领养宠物。输入 '领养宠物' 来领养一只数码宝贝。"
+                response = "你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。"
                 final_response = response  # 不包含 pet.species
 
             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
@@ -193,7 +193,7 @@ class CCVPETS(Plugin):
 
     def name_pet(self, user_id, pet_name):
         if user_id not in self.user_pets:
-            return "你还没有领养宠物。请先领养一只数码宝贝。"
+            return "你还没有领养宠物。请先通过'宠物领养'领养一只数码宝贝。"
         elif not pet_name:
             return "请提供一个宠物的名字。"
         else:
@@ -228,9 +228,9 @@ class CCVPETS(Plugin):
                 # 转换日期字符串回 datetime.date 对象
                 for user_id, data in pets_data.items():
                     if 'birth_date' in data and data['birth_date'] is not None:
-                        data['birth_date'] = datetime.fromisoformat(data['birth_date']).date()
+                        data['birth_date'] = datetime.datetime.fromisoformat(data['birth_date']).date()
                     if 'last_sign_in_date' in data and data.get('last_sign_in_date') is not None:
-                        data['last_sign_in_date'] = datetime.fromisoformat(data['last_sign_in_date']).date()               
+                        data['last_sign_in_date'] = datetime.datetime.fromisoformat(data['last_sign_in_date']).date()               
                 return {user_id: VirtualPet(**data) for user_id, data in pets_data.items()}
         except FileNotFoundError:
             logger.info(f"[cc_vpets] 宠物数据文件 {filename} 未找到，将初始化空数据。")
@@ -241,6 +241,58 @@ class CCVPETS(Plugin):
         except Exception as e:
             logger.error(f"[cc_vpets] 加载宠物数据时出现未知错误：{e}")
             return {}
+
+
+    def load_pets_from_json(self, filename="pets.json"):
+        # 获取当前文件的目录
+        curdir = os.path.dirname(__file__)
+        # 构造完整的文件路径
+        filepath = os.path.join(curdir, filename)
+        logger.debug(f"读取宠物数据 {filepath}")
+        try:
+            with open(filepath, 'r',encoding='utf-8') as file:
+                pets_data = json.load(file)
+
+            pets = {}
+            for user_id, data in pets_data.items():
+                # 处理日期格式
+                birth_date = datetime.date.fromisoformat(data['birth_date']) if data['birth_date'] else None
+                last_sign_in_date = datetime.date.fromisoformat(data['last_sign_in_date']) if data.get('last_sign_in_date') else None
+                
+                # 创建 VirtualPet 实例
+                pet = VirtualPet(
+                    name=data['name'],
+                    owner=data['owner'],
+                    species=data['species'],
+                    birth_date=birth_date,
+                    level=data['level'],
+                    experience=data['experience'],
+                    coins=data['coins'],
+                    last_sign_in_date=last_sign_in_date  # 添加这一行
+                )
+                
+                # 设置额外的属性
+                pet.max_level = data.get('max_level', pet.max_level)
+                pet.skill_level = data.get('skill_level', pet.skill_level)
+                pet.intelligence = data.get('intelligence', pet.intelligence)
+                pet.stamina = data.get('stamina', pet.stamina)
+                pet.stats = data.get('stats', pet.stats)
+                pet.last_interaction_time = datetime.datetime.fromisoformat(data['last_interaction_time']).timestamp() if data.get('last_interaction_time') else pet.last_interaction_time
+                pet.interaction_window_start = datetime.datetime.fromisoformat(data['interaction_window_start']).timestamp() if data.get('interaction_window_start') else pet.interaction_window_start
+                
+                pets[user_id] = pet
+
+            return pets
+        except FileNotFoundError:
+            logger.error(f"File not found: {filepath}")
+            return {}
+        except json.JSONDecodeError:
+            logger.error(f"Error decoding JSON from file: {filepath}")
+            return {}
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return {}
+
 
 
 def _send_info(e_context: EventContext, content: str):

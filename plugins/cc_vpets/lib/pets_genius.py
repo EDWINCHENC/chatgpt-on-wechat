@@ -82,10 +82,10 @@ class VirtualPet:
     def decay_stats_over_time(self):
         # 每小时减少的状态值
         decay_amount = {
-            "hunger": -8,  # 每小时饥饿度减少5点
-            "happiness": -6,  # 每小时快乐值减少3点
-            "health": -5,  # 每小时健康值减少2点
-            "loyalty": -4
+            "hunger": -5,  # 每小时饥饿度减少5点
+            "happiness": -4,  # 每小时快乐值减少4点
+            "health": -3,  # 每小时健康值减少2点
+            "loyalty": -3
         }
 
         for stat, decay in decay_amount.items():
@@ -159,7 +159,7 @@ class VirtualPet:
             # 更新种类
             self.species = next_species["name"]
             # 构建进化消息
-            evolution_message += f"\n✨🌟✨{self.name}从[{original_species}]进化成了【{self.species}】!!✨🌟✨"
+            evolution_message += f"\n✨🌟✨{self.name}从--{original_species}--进化成了【{self.species}】!!✨🌟✨"
 
         # 检查是否存在下一个进化阶段
         if self.species in self.upgrade_routes:
