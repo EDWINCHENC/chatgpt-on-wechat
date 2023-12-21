@@ -88,6 +88,7 @@ class CCVPETS(Plugin):
                 if pet_name:
                     response = self.name_pet(user_id, pet_name)
                     logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
+                    self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 else:
                     response = "请提供一个宠物的名字。"
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
@@ -100,7 +101,7 @@ class CCVPETS(Plugin):
         elif content == "宠物状态":
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]
-                response = pet.status()
+                response = pet.status(nickname)
                 logger.debug(f"[cc_vpets]{nickname} 查看了宠物状态:{response}")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
@@ -134,7 +135,7 @@ class CCVPETS(Plugin):
         elif "宠物签到" in content:
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]
-                response = pet.daily_sign_in()
+                response = pet.daily_sign_in(nickname)
                 logger.debug(f"[cc_vpets]{nickname} 进行了签到:{response}")
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
@@ -207,7 +208,6 @@ class CCVPETS(Plugin):
         curdir = os.path.dirname(__file__)
         # 构造完整的文件路径
         filepath = os.path.join(curdir, filename)
-
         # 使用 to_json 方法转换所有 VirtualPet 实例
         pets_data = {user_id: pet.to_json() for user_id, pet in user_pets.items()}
         logger.info(f"保存宠物数据到 {filepath}")
@@ -220,7 +220,7 @@ class CCVPETS(Plugin):
         curdir = os.path.dirname(__file__)
         # 构造完整的文件路径
         filepath = os.path.join(curdir, filename)
-
+        logger.debug(f"读取宠物数据 {filepath}")
         try:
             with open(filepath, "r", encoding='utf-8') as file:
                 pets_data = json.load(file)

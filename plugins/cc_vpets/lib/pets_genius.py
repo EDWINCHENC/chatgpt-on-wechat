@@ -112,7 +112,7 @@ class VirtualPet:
                 # print(f"等级提升后的消息: {level_up_message}")  # 打印消息
 
             # 返回一个包含所有升级消息的字符串
-            return '\n'.join(level_up_messages) if level_up_messages else f"当前经验值：{self.experience}, 等级：{self.level}"
+            return '\n'.join(level_up_messages) if level_up_messages else f"----当前经验值：{self.experience}, 等级：{self.level}----"
         else:
             return "已达到最大等级。"
 
@@ -159,12 +159,12 @@ class VirtualPet:
             # 更新种类
             self.species = next_species["name"]
             # 构建进化消息
-            evolution_message += f"✨🌟✨{self.name}从[{original_species}]进化成了【{self.species}】!!✨🌟✨"
+            evolution_message += f"\n✨🌟✨{self.name}从[{original_species}]进化成了【{self.species}】!!✨🌟✨"
 
         # 检查是否存在下一个进化阶段
         if self.species in self.upgrade_routes:
             next_level_species = self.upgrade_routes[self.species]
-            evolution_message += f"下一次进化：{next_level_species['name']}, 需要等级 {next_level_species['level']}"
+            evolution_message += f"\n🌟下一次进化：{next_level_species['name']}, 需要等级 {next_level_species['level']}"
         else:
             evolution_message += " 当前已是最终进化形态。"
 
@@ -178,7 +178,7 @@ class VirtualPet:
         return f"{self.species}{self.name} 完成了任务，获得了 {earned_coins} 金币！"
 
     # 新增日常签到方法
-    def daily_sign_in(self):
+    def daily_sign_in(self,nickname):
         current_date = datetime.date.today()
         if self.last_sign_in_date == current_date:
             return f"{self.species}{self.name} 今天已经签到过了。"
@@ -198,7 +198,7 @@ class VirtualPet:
         else:
             sign_in_message += f" 还需 {exp_to_next_level} 点经验升级到下一级。"
 
-        sign_in_message += f"\n🔵当前：{self.status()}"
+        sign_in_message += f"\n🔵当前：{self.status(nickname)}"
         return sign_in_message
 
 
@@ -375,8 +375,8 @@ class VirtualPet:
             self.stats[stat] = min(100, max(0, self.stats[stat]))
 
 
-    def status(self):
-        status_str = "🐾 | 宠物状态 | 🐾\n"
+    def status(self, nickname):
+        status_str =  f"{nickname}的{self.species}🐾 | 宠物状态 | 🐾\n"
         for stat, value in self.stats.items():
             filled_bars = '█' * (value // 10)   # 每10点代表一个填充的条
             empty_bars = '░' * (10 - len(filled_bars))  # 剩余的未填充条
@@ -465,14 +465,14 @@ class VirtualPet:
             exp_to_next_level = int(self.next_level_exp()) - int(self.experience)
 
             detailed_result = f"{self.species}{self.name}状态更新：\n{status_changes}"
-            detailed_result += f"💰 金币变化: {coins_change}, 剩余金币: {current_coins}\n"
+            detailed_result += f"\n💰 金币变化: {coins_change},  剩余金币: {current_coins}\n"
 
             if exp_change > 0:
-                detailed_result += f"⚡获得了{exp_change}点经验值！下一次升级还需经验：{exp_to_next_level}"
+                detailed_result += f"⚡ 获得了{exp_change}点经验值！下一次升级还需经验：{exp_to_next_level}"
 
             # 在这里添加进化检查
             if level_up_message:
-                detailed_result += f"\n\n{level_up_message}"
+                detailed_result += f"\n\n🔧 升级信息{level_up_message}"
             
             # 在这里添加随机事件的概率性触发
             if random.random() < 0.15:  # 20%的概率触发随机事件
