@@ -40,6 +40,7 @@ class CCVPETS(Plugin):
                 self.c_model = ModelGenerator()
                 # 加载宠物数据
                 self.user_pets = self.load_pets_from_json()
+                logger.debug(f"[cc_vpets] 初始化宠物数据: {self.user_pets}")
                 self.last_decay_time = time.time()
                 logger.info("[cc_vpets] inited")
         except Exception as e:
@@ -55,6 +56,7 @@ class CCVPETS(Plugin):
         # user_id = msg.from_user_id
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_nickname if isgroup else msg.from_user_nickname
+        logger.debug(f"获取到的user_id: {user_id}")
         nickname = msg.actual_user_nickname if isgroup else msg.from_user_nickname # 获取nickname
         pet = self.user_pets.get(user_id)
         pet_interaction_commands = ["喂食", "玩耍", "体检", "散步", "训练", "洗澡", "状态"]
@@ -75,13 +77,13 @@ class CCVPETS(Plugin):
                 pet = self.user_pets[user_id]
                 logger.debug(f"[cc_vpets] {nickname} 领养了宠物 {pet.species}")
                 prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你是数码宝贝{pet.species}，你每次都会向主人介绍{pet.species}是什么，会怎么样进化等。你要以数码宝贝的身份和主人相处，使他感受到你的陪伴，和他成为真正的朋友。"""
-                user_input = f"你是数码宝贝{pet.species}，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如'喂食', '玩耍', '体检', '散步', '训练', '洗澡'）等等，现在以{pet.species}的角色向主人打招呼，简单介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数在60字以内。"
+                user_input = f"你是数码宝贝{pet.species}，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如'喂食', '玩耍', '体检', '散步', '训练', '洗澡'）等等，现在以{pet.species}的角色向主人打招呼，简单介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数在50字以内。"
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
-                _set_reply_text(f"{pet.species}:{model_response}\n\n💡 提示：试试'宠物命名[名字]'，或输入 '宠物状态' 随时查看我的最新状态！", e_context, level=ReplyType.TEXT)
+                _set_reply_text(f"{pet.species}: {model_response}\n\n💡 提示：试试'宠物命名[名字]'，或输入 '宠物状态' 随时查看我的最新状态！", e_context, level=ReplyType.TEXT)
                 return
 
         elif "宠物命名" in content:
-            if user_id in self.user_pets:
+            if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet_name = content.split("宠物命名")[1].strip()
                 if pet_name:
                     response = self.name_pet(user_id, pet_name)
@@ -109,10 +111,11 @@ class CCVPETS(Plugin):
         elif content in pet_interaction_commands:
             model_response = ""
             pet = self.user_pets.get(user_id)  # 使用 .get() 来避免 KeyError
+            logger.debug(f"{user_id}宠物实例化数据加载：{pet}")
             if pet is not None:  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 logger.debug(f"[cc_vpets]{nickname} 进行了互动:{response}")
-                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
+                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你需要以数码宝贝{pet.species}的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
                 user_input = content
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
@@ -176,9 +179,9 @@ class CCVPETS(Plugin):
                 pet = self.user_pets[user_id]  # 获取新创建的宠物实例
                 pet_card = pet.display_pet_card()  # 从宠物实例调用 display_pet_card 方法
                 logger.debug(f"数据已获取:{pet_card}")
-                adopt_message = f"恭喜你领养到了数码宝贝，它是一只{species}！\n\n{pet_card}\n\n你可以随时为它取一个名字。"
+                adopt_message = f"恭喜你领养到了数码宝贝，它是一只{species}！\n\n{pet_card}"
                 # 添加查看宠物信息的提示
-                adopt_message += "\n💡 提示：输入 '我的宠物' 随时查看最新宠物状态。"                
+                adopt_message += "\n\n💡 提示：输入 '我的宠物' 随时查看最新卡片。"                
                 return adopt_message
             except Exception as e:
                 logger.error(f"领养宠物时出错: {str(e)}")
@@ -196,7 +199,7 @@ class CCVPETS(Plugin):
             pet = self.user_pets[user_id]
             pet.name = pet_name
             self.save_pets_to_json(self.user_pets)  # 保存新名字
-            return f"你的宠物名字现在是 {pet_name}。"
+            return f"你的宠物{pet.species}的名字现在是--{pet_name}--。"
 
     # 在外部类或函数中
     def save_pets_to_json(self, user_pets, filename="pets.json"):
@@ -221,7 +224,7 @@ class CCVPETS(Plugin):
         try:
             with open(filepath, "r", encoding='utf-8') as file:
                 pets_data = json.load(file)
-                
+                logger.debug(f"读取宠物数据 {pets_data}")
                 # 转换日期字符串回 datetime.date 对象
                 for user_id, data in pets_data.items():
                     if 'birth_date' in data and data['birth_date'] is not None:
