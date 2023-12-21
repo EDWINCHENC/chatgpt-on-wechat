@@ -227,7 +227,7 @@ class CCVPETS(Plugin):
             pet = self.user_pets[user_id]
             pet.name = pet_name
             self.save_pets_to_json(self.user_pets)  # 保存新名字
-            return f"你的宠物{pet.species}的名字现在是--{pet_name}--。"
+            return f"你的宠物{pet.species}的名字现在是--{pet_name}--。输入'宠物签到'开启全新旅程吧。"
 
     # 在外部类或函数中
     def save_pets_to_json(self, user_pets, filename="pets.json"):

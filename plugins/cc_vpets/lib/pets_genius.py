@@ -80,7 +80,7 @@ class VirtualPet:
     def decay_stats_over_time(self):
         # 每次减少的状态值
         decay_amount = {
-            "hunger": -5,  # 每次饥饿度减少5点
+            "hunger": -6,  # 每次饥饿度减少5点
             "happiness": -4,  # 每次快乐值减少4点
             "health": -3,  # 每次健康值减少2点
             "combat_power": -3
@@ -169,17 +169,46 @@ class VirtualPet:
         return evolution_message
 
     def complete_task(self):
-         
-        # 金币奖励
+        # 基础金币奖励和经验值
         earned_coins = random.randint(100, 300)
+        earned_exp = random.randint(10, 50)
+
+        # 初始化加成信息
+        coin_bonus_info = ""
+        exp_bonus_info = ""
+
+        # 根据happiness值计算金币加成
+        if self.stats['happiness'] >= 80:
+            happiness_bonus = 1.2  # 20% 加成
+            coin_bonus_info = " (享受20%快乐值加成)"
+        elif self.stats['happiness'] >= 70:
+            happiness_bonus = 1.1  # 10% 加成
+            coin_bonus_info = " (享受10%快乐值加成)"
+        else:
+            happiness_bonus = 1  # 无加成
+        earned_coins = int(earned_coins * happiness_bonus)
+
+        # 根据combat_power值计算经验值加成
+        if self.stats['combat_power'] >= 80:
+            combat_power_bonus = 1.2  # 20% 加成
+            exp_bonus_info = " (享受20%战斗值加成)"
+        elif self.stats['combat_power'] >= 70:
+            combat_power_bonus = 1.1  # 10% 加成
+            exp_bonus_info = " (享受10%战斗值加成)"
+        else:
+            combat_power_bonus = 1  # 无加成
+        earned_exp = int(earned_exp * combat_power_bonus)
+
+        # 更新金币和经验值
         self.coins += earned_coins
+        self.experience += earned_exp
 
         # 随机消耗状态值
-        hunger_loss = random.randint(2, 6)  # 饱食度随机消耗
-        happiness_loss = random.randint(2, 6)  # 快乐值随机消耗
-        health_loss = random.randint(2, 6)  # 健康值随机消耗
+        hunger_loss = random.randint(2, 6)
+        happiness_loss = random.randint(2, 6)
+        health_loss = random.randint(2, 6)
 
-        # 访问和修改stats字典中的值
+        # 更新状态值
         self.stats['hunger'] -= hunger_loss
         self.stats['happiness'] -= happiness_loss
         self.stats['health'] -= health_loss
@@ -187,8 +216,9 @@ class VirtualPet:
         # 确保状态值不低于0
         self.normalize_stats()
 
-        # 返回宠物状态信息
-        return f"\n\n{self.species}{self.name} 宠物任务完成🎉，消耗了一些状态，获得了💰 {earned_coins} 金币！\n"
+        # 返回宠物状态信息，包括加成信息
+        return (f"\n\n{self.species}-{self.name}-宠物任务完成🎉，消耗了一些状态。"
+                f"获得了💰 {earned_coins} 金币{coin_bonus_info}和⚡ {earned_exp} 经验值{exp_bonus_info}！")
 
 
     # 新增日常签到方法
@@ -206,7 +236,7 @@ class VirtualPet:
         # 计算距离下一等级所需的经验
         exp_to_next_level = int(self.next_level_exp()) - int(self.experience)
 
-        sign_in_message = f"📅 {self.species}{self.name} 已完成签到，🆙获得了⚡ 20 点经验值和💰 100 金币！"
+        sign_in_message = f"📅 {self.species}{self.name} 已完成签到，🆙获得了⚡ 30 点经验值和💰 120 金币！"
         if level_up_message:  # 如果有升级消息，添加到签到消息中
             sign_in_message += f"\n✅ {level_up_message}"
         else:
@@ -403,7 +433,7 @@ class VirtualPet:
                 status_str += f"👍 {VirtualPet.status_names2[stat]}状态很好，战斗力很强！\n"
 
         # 添加一般提示信息
-        status_str += "\n💡 提示：你可以通过['喂食', '玩耍', '体检', '散步', '训练', '洗澡']指令，来保持数码宝贝健康的成长状态哦。更好的状态将帮助数码宝贝在【战斗】和【任务】中获得更多经验和金币！"
+        status_str += "\n💡 提示：你可以通过['喂食', '玩耍', '体检', '散步', '训练', '洗澡']指令，来保持数码宝贝健康的成长状态哦。更好的状态将帮助数码宝贝在【宠物任务】中获得更多经验和金币！"
 
         # 随机事件触发
         if random.random() < 0.22:  # 假设有20%的概率触发随机事件
@@ -617,20 +647,20 @@ class VirtualPet:
 
 # 假设 VirtualPet 类已经定义，且包含您之前提供的方法
 
-def main():
-    # 创建一个宠物实例
-    pet = VirtualPet(name="测试宠物", owner="测试主人", species="滚球兽")
+# def main():
+#     # 创建一个宠物实例
+#     pet = VirtualPet(name="测试宠物", owner="测试主人", species="滚球兽")
 
-    # 模拟增加不同数量的经验值
-    experience_increments = [20, 40, 60, 80, 100]  # 您可以根据需要调整这些值
+#     # 模拟增加不同数量的经验值
+#     experience_increments = [20, 40, 60, 80, 100]  # 您可以根据需要调整这些值
 
-    for exp in experience_increments:
-        print(f"\n增加 {exp} 点经验值...")
-        level_up_message = pet.gain_experience(exp)
-        print(level_up_message)
+#     for exp in experience_increments:
+#         print(f"\n增加 {exp} 点经验值...")
+#         level_up_message = pet.gain_experience(exp)
+#         print(level_up_message)
 
-        # 打印宠物当前的详细状态
-        print(pet.display_pet_card())
+#         # 打印宠物当前的详细状态
+#         print(pet.display_pet_card())
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
