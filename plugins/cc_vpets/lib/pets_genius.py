@@ -170,8 +170,6 @@ class VirtualPet:
 
         return evolution_message
 
-
-    # 例如，一个宠物可以通过完成任务来增加金币
     def complete_task(self):
         # 金币奖励
         earned_coins = random.randint(100, 200)
@@ -182,9 +180,10 @@ class VirtualPet:
         happiness_loss = random.randint(2, 6)  # 快乐值随机消耗
         health_loss = random.randint(2, 6)  # 健康值随机消耗
 
-        self.hunger -= hunger_loss
-        self.happiness -= happiness_loss
-        self.health -= health_loss
+        # 访问和修改stats字典中的值
+        self.stats['hunger'] -= hunger_loss
+        self.stats['happiness'] -= happiness_loss
+        self.stats['health'] -= health_loss
 
         # 确保状态值不低于0
         self.normalize_stats()
