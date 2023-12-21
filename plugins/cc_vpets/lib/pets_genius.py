@@ -112,7 +112,7 @@ class VirtualPet:
                 # print(f"等级提升后的消息: {level_up_message}")  # 打印消息
 
             # 返回一个包含所有升级消息的字符串
-            return '\n'.join(level_up_messages) if level_up_messages else f"----当前经验值：{self.experience}, 等级：{self.level}----"
+            return '\n'.join(level_up_messages) if level_up_messages else f"当前经验值：{self.experience}, 等级：{self.level}"
         else:
             return "已达到最大等级。"
 
@@ -192,13 +192,13 @@ class VirtualPet:
         # 计算距离下一等级所需的经验
         exp_to_next_level = int(self.next_level_exp()) - int(self.experience)
 
-        sign_in_message = f"📅 {self.species}{self.name} 已完成签到，✅获得了⚡ 20 点经验值和💰 100 金币！"
+        sign_in_message = f"📅 {self.species}{self.name} 已完成签到，🆙获得了⚡ 20 点经验值和💰 100 金币！"
         if level_up_message:  # 如果有升级消息，添加到签到消息中
-            sign_in_message += f"\n🆙 {level_up_message}"
+            sign_in_message += f"\n✅ {level_up_message}"
         else:
             sign_in_message += f" 还需 {exp_to_next_level} 点经验升级到下一级。"
 
-        sign_in_message += f"\n🔵当前：{self.status(nickname)}"
+        sign_in_message += f"\n\n🔵 {self.status(nickname)}"
         return sign_in_message
 
 
@@ -376,7 +376,7 @@ class VirtualPet:
 
 
     def status(self, nickname):
-        status_str =  f"{nickname}的{self.species}🐾 | 宠物状态 | 🐾\n"
+        status_str =  f"{nickname}的{self.species}🐾 | 宠物状态 | 🐾\n\n"
         for stat, value in self.stats.items():
             filled_bars = '█' * (value // 10)   # 每10点代表一个填充的条
             empty_bars = '░' * (10 - len(filled_bars))  # 剩余的未填充条
@@ -472,7 +472,7 @@ class VirtualPet:
 
             # 在这里添加进化检查
             if level_up_message:
-                detailed_result += f"\n\n🔧 升级信息{level_up_message}"
+                detailed_result += f"\n\n🔧 {level_up_message}"
             
             # 在这里添加随机事件的概率性触发
             if random.random() < 0.15:  # 20%的概率触发随机事件
