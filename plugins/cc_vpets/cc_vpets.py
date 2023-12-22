@@ -80,7 +80,7 @@ class CCVPETS(Plugin):
                 pet = self.user_pets[user_id]
                 logger.debug(f"[cc_vpets] {nickname} 领养了宠物 {pet.species}")
                 prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你是数码宝贝{pet.species}，你每次都会向主人介绍{pet.species}是什么，会怎么样进化等。你要以数码宝贝的身份和主人相处，使他感受到你的陪伴，和他成为真正的朋友。"""
-                user_input = f"你是数码宝贝{pet.species}，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如'喂食', '玩耍', '体检', '散步', '训练', '洗澡'）等等，现在以{pet.species}的角色向主人打招呼，简单介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数在50字以内。"
+                user_input = f"你是数码宝贝{pet.species}，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动和冒险之旅，现在以{pet.species}的角色向主人打招呼，简单介绍你自己，并且欢迎主人{nickname}来到数码宝贝的世界！字数在50字以内。"
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 _set_reply_text(f"{pet.species}: {model_response}\n\n💡 提示：试试'宠物命名[名字]'，或输入 '宠物状态' 随时查看我的最新状态！", e_context, level=ReplyType.TEXT)
                 return
@@ -108,7 +108,7 @@ class CCVPETS(Plugin):
                 logger.debug(f"[cc_vpets]{nickname} 查看了宠物状态:{response}")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("你还没有领养宠物。", e_context, level=ReplyType.TEXT)
+                _set_reply_text("你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
             return
 
         # 处理其他宠物互动命令
@@ -119,7 +119,7 @@ class CCVPETS(Plugin):
             if pet is not None:  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 logger.debug(f"[cc_vpets]{nickname} 进行了互动:{response}")
-                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你需要以数码宝贝{pet.species}的身份和他用简短的语言（50字以内）进行交流，使他感受到你的陪伴。"""
+                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你需要以数码宝贝{pet.species}的身份和他用简短的语言（50字以内）进行交流，表达你的感受。"""
                 user_input = content
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
@@ -140,7 +140,7 @@ class CCVPETS(Plugin):
         elif content in "宠物任务":
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
 
-                can_do_task, message = pet.can_interact_once(1800)  # 0.5小时1次
+                can_do_task, message = pet.can_interact_once(900)  # 15分钟1次
                 if not can_do_task:
                     _set_reply_text(message, e_context, level=ReplyType.TEXT)
                     return
@@ -158,7 +158,7 @@ class CCVPETS(Plugin):
                     response = f"{task_description}{task_result}"
                     _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("你还没有领养宠物。", e_context, level=ReplyType.TEXT)
+                _set_reply_text("你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
             return
 
         elif "宠物签到" in content:
@@ -169,7 +169,7 @@ class CCVPETS(Plugin):
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("你还没有领养宠物。", e_context, level=ReplyType.TEXT)
+                _set_reply_text("你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
             return
 
         elif "我的宠物" in content:
@@ -178,7 +178,7 @@ class CCVPETS(Plugin):
                 response = pet.display_pet_card()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
             else:
-                _set_reply_text("你还没有领养宠物。", e_context, level=ReplyType.TEXT)
+                _set_reply_text("你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
             return
 
     def decay_pets_stats(self):
@@ -202,7 +202,7 @@ class CCVPETS(Plugin):
                 species = random_species["species"]
                 logger.info(f"{nickname}领养了{random_species['species']}")
                 # 初始时不设置宠物名字
-                self.user_pets[user_id] = VirtualPet(name=None, owner=nickname, species=species)
+                self.user_pets[user_id] = VirtualPet(owner=nickname, species=species)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 logger.debug(f"数据已存储")
                 # 调用 display_pet_card 方法并获取宠物信息卡片

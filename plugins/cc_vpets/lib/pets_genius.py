@@ -18,7 +18,7 @@ class VirtualPet:
                 config = json.load(f)
             cls.upgrade_routes = config['routes']
 
-    def __init__(self, name, owner, species, birth_date=None, level=1, experience=0, coins=1000, last_sign_in_date=None):
+    def __init__(self, owner, species, name="", birth_date=None, level=1, experience=0, coins=1000, last_sign_in_date=None):
         # 确保进化路线数据已加载
         VirtualPet.load_upgrade_routes()
         self.name = name
@@ -68,7 +68,7 @@ class VirtualPet:
         "hunger": "🍔 饱食度",
         "happiness": "😊 快乐值",
         "health": "💖 健康值",
-        "combat_power": "💕 战斗值"
+        "combat_power": "⚔️ 战斗值"
     }
     status_names2 = {
         "hunger": "饱食度",
@@ -82,7 +82,7 @@ class VirtualPet:
         decay_amount = {
             "hunger": -6,  # 每次饥饿度减少5点
             "happiness": -4,  # 每次快乐值减少4点
-            "health": -3,  # 每次健康值减少2点
+            "health": -5,  # 每次健康值减少2点
             "combat_power": -3
         }
 
@@ -109,8 +109,10 @@ class VirtualPet:
                 level_up_messages.append(level_up_message)
                 # print(f"等级提升后的消息: {level_up_message}")  # 打印消息
 
+            # 计算距离下一等级所需的经验
+            exp_to_next_level = int(self.next_level_exp()) - int(self.experience)
             # 返回一个包含所有升级消息的字符串
-            return '\n'.join(level_up_messages) if level_up_messages else f"当前经验值：{self.experience}, 等级：{self.level}"
+            return '\n'.join(level_up_messages) if level_up_messages else f"当前经验值：{int(self.experience)}, 下一次升级还需经验：{exp_to_next_level} 点，当前宠物等级：{self.level}"
         else:
             return "已达到最大等级。"
 
@@ -128,7 +130,7 @@ class VirtualPet:
             # print(f"进化信息: {evolution_message}")  # 打印进化信息
 
             # 构建升级消息，包括各项属性的增加
-            level_up_message = f"🎉 {self.species}{self.name} 升级了！现在是 {self.level} 级。\n"
+            level_up_message = f"🆙 {self.species}{self.name} 升级了！当前等级为 {self.level} 级。\n"
             level_up_message += f"🔧 技能等级增加了 3 点。\n"
             level_up_message += f"🧠 智力增加了 5 点。\n"
             level_up_message += f"💪 耐力增加了 8 点。\n"
@@ -201,6 +203,7 @@ class VirtualPet:
 
         # 更新金币和经验值
         self.coins += earned_coins
+        level_up_message = self.gain_experience(earned_exp)
         self.experience += earned_exp
 
         # 随机消耗状态值
@@ -217,8 +220,13 @@ class VirtualPet:
         self.normalize_stats()
 
         # 返回宠物状态信息，包括加成信息
-        return (f"\n\n{self.species}-{self.name}-宠物任务完成🎉，消耗了一些状态。"
+        task_completion_message = (f"\n\n{self.species}-{self.name}-宠物任务完成🎉，消耗了一些状态。"
                 f"获得了💰 {earned_coins} 金币{coin_bonus_info}和⚡ {earned_exp} 经验值{exp_bonus_info}！")
+        # 如果有升级信息，则加入升级提示
+        if level_up_message:
+            task_completion_message += "\n\n" + level_up_message
+
+        return task_completion_message
 
 
     # 新增日常签到方法
@@ -242,7 +250,7 @@ class VirtualPet:
         else:
             sign_in_message += f" 还需 {exp_to_next_level} 点经验升级到下一级。"
 
-        sign_in_message += f"\n\n🔵 {self.status(nickname)}"
+        sign_in_message += f"\n\n💓 {self.status(nickname)}"
         return sign_in_message
 
 
@@ -468,7 +476,7 @@ class VirtualPet:
         if self.interaction_count >= max_interactions:
             next_interaction_time = self.interaction_window_start + window_length  # 下一个互动窗口的开始时间
             wait_time = int(next_interaction_time - current_time)  # 等待时间
-            return False, f"您已经和宠物多次互动。请在 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
+            return False, f"您已经和宠物多次互动。请在🕒 {wait_time // 60} 分钟 {wait_time % 60} 秒后再来找它吧。"
         
         return True, ""
 
@@ -484,7 +492,7 @@ class VirtualPet:
         else:
             # 如果时间窗口内已经进行过交互
             wait_time = int((self.last_task_time + window_length) - current_time)
-            return False, f"您需要等待 {wait_time // 60} 分钟 {wait_time % 60} 秒后才能再次执行任务。"
+            return False, f"✔️{self.species}已执行完本阶段任务，需要🕒 {wait_time // 60} 分钟 {wait_time % 60} 秒后才能再次执行任务。"
 
     def interact_with_user(self, action):
         # 确保动作名称是小写
@@ -528,14 +536,13 @@ class VirtualPet:
             
             # 获取当前金币余额
             current_coins = self.coins
-            # 计算距离下一等级所需的经验
-            exp_to_next_level = int(self.next_level_exp()) - int(self.experience)
+
 
             detailed_result = f"{self.species}{self.name}状态更新：\n{status_changes}"
-            detailed_result += f"\n💰 金币变化: {coins_change},  剩余金币: {current_coins}\n"
+            detailed_result += f"\n💰 金币变化: {coins_change},  剩余金币: {current_coins}，"
 
             if exp_change > 0:
-                detailed_result += f"⚡ 获得了{exp_change}点经验值！下一次升级还需经验：{exp_to_next_level}"
+                detailed_result += f"⚡ 获得了{exp_change}点经验值！"
 
             # 在这里添加进化检查
             if level_up_message:
@@ -585,7 +592,10 @@ class VirtualPet:
 
     def display_pet_card(self):
         card = f"🐾 | 宠物名片 | 🐾\n"
-        card += f"🐾 名字：{self.name}\n"
+        if self.name == "":
+            card += "🆕 提示：通过 '宠物命名' 为宠物取名！\n"
+        else:
+            card += f"🐾 名字：{self.name}\n"
         card += f"👤 主人：{self.owner}\n"
         card += f"🧬 进化阶段：{self.species}\n"
         card += f"🌟 等级：{self.level}\n"
@@ -600,7 +610,7 @@ class VirtualPet:
             "hunger": "🍔 饱食度",
             "happiness": "😊 快乐值",
             "health": "💖 健康值",
-            "combat_power": "💕 战斗值"
+            "combat_power": "⚔️ 战斗值"
         }
 
         for stat, value in self.stats.items():
