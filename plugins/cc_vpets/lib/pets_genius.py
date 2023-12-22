@@ -8,6 +8,7 @@ class VirtualPet:
     
     # 将进化路线数据作为类属性
     upgrade_routes = None
+    species_to_image_url = None
 
     @classmethod
     def load_upgrade_routes(cls):
@@ -18,9 +19,19 @@ class VirtualPet:
                 config = json.load(f)
             cls.upgrade_routes = config['routes']
 
+    @classmethod
+    def load_species_to_image_url(cls):
+        if cls.species_to_image_url is None:
+            curdir = os.path.dirname(__file__)
+            config_path = os.path.join(curdir, "config.json")
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+            cls.species_to_image_url = config.get('species_to_image_url', {})
+
     def __init__(self, owner, species, name="", birth_date=None, level=1, experience=0, coins=1000, last_sign_in_date=None):
         # 确保进化路线数据已加载
         VirtualPet.load_upgrade_routes()
+        VirtualPet.load_species_to_image_url()
         self.name = name
         self.owner = owner
         self.species = species
@@ -98,6 +109,14 @@ class VirtualPet:
         next_species_names = {info["name"] for info in VirtualPet.upgrade_routes.values()}
         available_species = [name for name in VirtualPet.upgrade_routes if name not in next_species_names]
         return [{"name": species, "species": species} for species in available_species]
+
+    @staticmethod
+    def get_pet_image_url(species):
+        # 确保物种图片URL已加载
+        VirtualPet.load_species_to_image_url()
+
+        # 从类属性中获取物种对应的图片URL
+        return VirtualPet.species_to_image_url.get(species, "默认图片URL或None")
 
     def gain_experience(self, amount):
         if self.level < self.max_level:

@@ -176,7 +176,10 @@ class CCVPETS(Plugin):
             if user_id in self.user_pets and self.user_pets[user_id] is not None:
                 pet = self.user_pets[user_id]
                 response = pet.display_pet_card()
-                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                # 获取宠物的图片URL
+                pet_image_url = VirtualPet.get_pet_image_url(pet.species)
+                _send_info(e_context, response)
+                _set_reply_text(pet_image_url, e_context, level=ReplyType.IMAGE_URL)
             else:
                 _set_reply_text("你还没有领养宠物。输入 '宠物领养' 来领养一只数码宝贝。", e_context, level=ReplyType.TEXT)
             return

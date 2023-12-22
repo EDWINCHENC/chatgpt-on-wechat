@@ -44,5 +44,60 @@
         "小狗兽": {"name": "迪路兽", "level": 5},
         "迪路兽": {"name": "天女兽", "level": 8},
         "天女兽": {"name": "神圣天女兽", "level": 12}
+    },
+    "species_to_image_url": {
+        "黑球兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+        "滚球兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+        "亚古兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+        "暴龙兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+        "机械暴龙兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+        "战斗暴龙兽": "https://p0.itc.cn/q_70/images03/20230513/d41eeb49e54948aa9f2eac243b8cf56f.jpeg",
+    
+        "布尼兽": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+        "独角兽": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+        "加布兽": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+        "加鲁鲁兽": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+        "兽人加鲁鲁": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+        "钢铁加鲁鲁": "https://p6.itc.cn/q_70/images03/20230513/e85a437d1dc748e0a0803387b0bb4399.jpeg",
+    
+        "比高兽": "https://p7.itc.cn/q_70/images03/20230513/b782bdc2edcf457787bac6faafa140ad.jpeg",
+        "比丘兽": "https://p7.itc.cn/q_70/images03/20230513/b782bdc2edcf457787bac6faafa140ad.jpeg",
+        "巴多拉兽": "https://p7.itc.cn/q_70/images03/20230513/b782bdc2edcf457787bac6faafa140ad.jpeg",
+        "伽偻达兽": "https://p7.itc.cn/q_70/images03/20230513/b782bdc2edcf457787bac6faafa140ad.jpeg",
+        "凤凰兽": "https://p7.itc.cn/q_70/images03/20230513/b782bdc2edcf457787bac6faafa140ad.jpeg",
+    
+        "种子兽": "https://p0.itc.cn/q_70/images03/20230513/9f0af2cda6af4f938efcad7c8ebaf271.jpeg",
+        "巴鲁兽": "https://p0.itc.cn/q_70/images03/20230513/9f0af2cda6af4f938efcad7c8ebaf271.jpeg",
+        "仙人掌兽": "https://p0.itc.cn/q_70/images03/20230513/9f0af2cda6af4f938efcad7c8ebaf271.jpeg",
+        "花仙兽": "https://p0.itc.cn/q_70/images03/20230513/9f0af2cda6af4f938efcad7c8ebaf271.jpeg",
+        "蔷薇兽": "https://p0.itc.cn/q_70/images03/20230513/9f0af2cda6af4f938efcad7c8ebaf271.jpeg",
+    
+        "年糕兽": "https://p4.itc.cn/q_70/images03/20230513/a9234650ec0144b8afea13edd9ae4d99.jpeg",
+        "甲虫兽": "https://p4.itc.cn/q_70/images03/20230513/a9234650ec0144b8afea13edd9ae4d99.jpeg",
+        "比多兽": "https://p4.itc.cn/q_70/images03/20230513/a9234650ec0144b8afea13edd9ae4d99.jpeg",
+        "超比多兽": "https://p4.itc.cn/q_70/images03/20230513/a9234650ec0144b8afea13edd9ae4d99.jpeg",
+        "力神比多兽": "https://p4.itc.cn/q_70/images03/20230513/a9234650ec0144b8afea13edd9ae4d99.jpeg",
+    
+        "比芝兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+        "布加兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+        "哥玛兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+        "海狮兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+        "祖顿兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+        "维京兽": "https://p1.itc.cn/q_70/images03/20230513/2da1ae4470374cb6a5481b0f6d3e40d5.jpeg",
+    
+        "皱褶兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+        "迪哥兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+        "巴达兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+        "天使兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+        "神圣天使兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+        "究极天使兽": "https://p9.itc.cn/q_70/images03/20230513/f491dd12d523413ea2ddd1a477c6a3c2.jpeg",
+    
+        "猫猫兽": "https://p9.itc.cn/q_70/images03/20230513/be3147b945204ea78e5c5d0b891ac872.jpeg",
+        "小狗兽": "https://p9.itc.cn/q_70/images03/20230513/be3147b945204ea78e5c5d0b891ac872.jpeg",
+        "迪路兽": "https://p9.itc.cn/q_70/images03/20230513/be3147b945204ea78e5c5d0b891ac872.jpeg",
+        "天女兽": "https://p9.itc.cn/q_70/images03/20230513/be3147b945204ea78e5c5d0b891ac872.jpeg",
+        "神圣天女兽": "https://p9.itc.cn/q_70/images03/20230513/be3147b945204ea78e5c5d0b891ac872.jpeg"
     }
 }
+
+
