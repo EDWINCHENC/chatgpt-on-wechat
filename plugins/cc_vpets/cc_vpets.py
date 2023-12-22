@@ -90,7 +90,7 @@ class CCVPETS(Plugin):
                 pet_name = content.split("宠物命名")[1].strip()
                 if pet_name:
                     response = self.name_pet(user_id, pet_name)
-                    logger.info(f"[cc_vpets] {user_id} {nickname} 命名了宠物")
+                    logger.info(f"[cc_vpets] {user_id} 命名了宠物")
                     self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 else:
                     response = "请提供一个宠物的名字。"
@@ -119,14 +119,14 @@ class CCVPETS(Plugin):
             if pet is not None:  # 确保宠物已经被领养
                 response = pet.interact_with_user(content)
                 logger.debug(f"[cc_vpets]{nickname} 进行了互动:{response}")
-                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后陪伴你，会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你需要以数码宝贝{pet.species}的身份和他用简短的语言（50字以内）进行交流，表达你的感受。"""
+                prompt = f"""你是一只数码宝贝(就是东映公司旗下动画工作室制作的电视动画片《数码宝贝》的原型)，你现在是由{nickname}领养的，他将在今后带你冒险，也会和你进行一系列的互动（例如"喂食", "玩耍", "体检", "散步", "训练", "洗澡"）等等，你要以数码宝贝{pet.species}的身份和他用简短的语言（25字以内即可）进行交流，表达你的感受。"""
                 user_input = content
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 self.save_pets_to_json(self.user_pets)  # 保存宠物状态
                 logger.debug("数据已保存")
                 final_response = (
-                    f"{pet.species}: {model_response}"
+                    f"{pet.species}:🗯️ {model_response}"
                     f"\n\n🌟 {response}"
                 )
             else:
@@ -245,6 +245,7 @@ class CCVPETS(Plugin):
         logger.info(f"保存宠物数据到 {filepath}")
         with open(filepath, "w", encoding='utf-8') as file:
             json.dump(pets_data, file, indent=4, ensure_ascii=False)
+        logger.debug(f"保存了 {len(pets_data)} 份玩家数据")
 
     def load_pets_from_json(self, filename="pets.json"):
         # 获取当前文件的目录
@@ -282,6 +283,7 @@ class CCVPETS(Plugin):
                 pet.stats = data.get('stats', pet.stats)
                 
                 pets[user_id] = pet
+                logger.debug(f"load_pets_from_json 已加载：{pets}")
 
             return pets
         except FileNotFoundError:
@@ -296,7 +298,7 @@ class CCVPETS(Plugin):
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述
-        help_text = "\n🤖 回归童年，来到数码宝贝地世界！\n"
+        help_text = "\n🤖 回归童年，来到数码宝贝的世界！！\n"
         
         # 如果不需要详细说明，则直接返回帮助文本
         if not verbose:
