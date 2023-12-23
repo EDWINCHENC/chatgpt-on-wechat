@@ -92,10 +92,10 @@ class VirtualPet:
     def decay_stats_over_time(self):
         # 每次减少的基础状态值
         base_decay_amount = {
-            "hunger": 8,
-            "happiness": 7,
-            "health": 6,
-            "combat_power": 5
+            "hunger": 6,
+            "happiness": 5,
+            "health": 4,
+            "combat_power": 3
         }
         for stat, base_decay in base_decay_amount.items():
             current_stat = self.stats[stat]
@@ -197,8 +197,8 @@ class VirtualPet:
 
     def complete_task(self):
         # 基础金币奖励和经验值
-        earned_coins = random.randint(100, 250)
-        earned_exp = random.randint(10, 50)
+        earned_coins = random.randint(100, 200)
+        earned_exp = random.randint(20, 50)
 
         # 初始化加成信息
         coin_bonus_info = ""

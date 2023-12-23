@@ -17,7 +17,7 @@
 
   "channel_type": "wx",
   "group_chat_reply_suffix": "",
-  "group_chat_keyword": ["总结群聊","群聊统计","求签","解签","宠物领养","宠物命名","宠物状态","宠物任务","宠物签到","我的宠物"],  
+  "group_chat_keyword": ["总结群聊","群聊统计","宠物领养","宠物命名","宠物状态","宠物任务","宠物签到","我的宠物"],  
   "group_name_white_list": [
     "ALL_GROUP"
   ],

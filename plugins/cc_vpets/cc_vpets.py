@@ -193,7 +193,7 @@ class CCVPETS(Plugin):
         """检查是否需要更新宠物的状态。"""
         current_time = time.time()
         # 检查是否已过足够的时间（例如半小时）
-        if current_time - self.last_decay_time >= 1800:  # 半小时 = 1800秒
+        if current_time - self.last_decay_time >= 3600:  # 半小时 = 1800秒
             self.decay_pets_stats()
             self.last_decay_time = current_time
 
