@@ -104,7 +104,7 @@ class VirtualPet:
             decay = base_decay * math.sqrt(current_stat / 100.0)
 
             # 更新状态值，并确保不会小于1
-            self.stats[stat] = max(1, current_stat - decay)
+            self.stats[stat] = round(max(15, current_stat - decay))
 
         self.normalize_stats()  # 规范化状态值
 
