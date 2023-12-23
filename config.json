@@ -13,6 +13,7 @@
     "@CChat",
     "@Oʀ ."
   ],
+  "nick_name_black_list": ["黄二狗²⁴⁶⁷"],
 
   "channel_type": "wx",
   "group_chat_reply_suffix": "",
