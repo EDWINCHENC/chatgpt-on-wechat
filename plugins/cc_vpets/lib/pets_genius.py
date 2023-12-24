@@ -284,8 +284,8 @@ class VirtualPet:
     def feed(self):
         changes = {}
         if self.coins >= 50:
-            changes["hunger"] = 15
-            changes["happiness"] = 3
+            changes["hunger"] = 20
+            changes["happiness"] = 5
             changes["combat_power"] = 2
             self.coins -= 50
             changes["coins"] = -50  # 金币减少
@@ -311,7 +311,7 @@ class VirtualPet:
         changes = {}
         if self.coins >= 50:
             # 状态变化
-            changes["happiness"] = 15  # 快乐值增加
+            changes["happiness"] = 20  # 快乐值增加
             changes["hunger"] = -5     # 饱食度减少
             changes["combat_power"] = 2     # 战斗值增加
 
@@ -339,7 +339,7 @@ class VirtualPet:
         changes = {}
         if self.coins >= 50:
             # 状态变化
-            changes["health"] = 18   # 健康值增加
+            changes["health"] = 25   # 健康值增加
             changes["combat_power"] = 2   # 战斗值增加
 
             # 金币和经验值变化
@@ -364,7 +364,7 @@ class VirtualPet:
         changes = {}
         if self.coins >= 50:
             # 状态变化
-            changes["happiness"] = 10  # 快乐值增加
+            changes["happiness"] = 15  # 快乐值增加
             changes["health"] = 5      # 健康值增加
             changes["combat_power"] = 2     # 战斗值增加
             changes["hunger"] = -5     # 饱食度减少
