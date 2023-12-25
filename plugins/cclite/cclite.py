@@ -64,7 +64,6 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
-                self.user_pets = {}  # 用于存储用户的宠物
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
         except Exception as e:
