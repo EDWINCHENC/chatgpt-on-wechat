@@ -222,7 +222,7 @@ class CCLite(Plugin):
                     {"role": "model", "content": "**解析：**\n\nB. 猫咪\n\n猫咪全身是毛，但它从来不理发。因为猫咪的舌头上长有倒刺，这些倒刺可以帮助它梳理毛发，去除污垢和死毛。此外，猫咪还喜欢舔舐自己的毛发，这也能够起到清洁和梳理的作用。\n\n绵羊、狗狗和扫帚虽然也都有毛，但它们都需要定期理发或打扫，而猫咪不需要。因此，答案是B. 猫咪。"}
                     ]
                 self.chatbot.set_initial_history(initial_messages, user_id)
-                logger.debug(f"_开启问答,当前预设记录：{self.chatbot.get_history(user_id)}")
+                logger.debug(f"_开启问答,当前预设记录：{self.chatbot.get_user_history(user_id)}")
                 _set_reply_text("问答模式已开启，请输入'请出题'以继续。", e_context, level=ReplyType.TEXT)
                 return
             
