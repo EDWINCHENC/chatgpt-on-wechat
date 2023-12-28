@@ -184,43 +184,43 @@ class UnifiedChatbot:
         text = text.replace("### ", "").replace("## ", "").replace("# ", "")
         return text
 
-# 实例化 UnifiedChatbot
-bot = UnifiedChatbot()
+# # 实例化 UnifiedChatbot
+# bot = UnifiedChatbot()
 
-# 用户列表
-user_ids = ["user1", "user2"]
+# # 用户列表
+# user_ids = ["user1", "user2"]
 
-# 为每个用户设置系统级提示词
-system_prompts = {
-    "user1": "你是一个诗歌生成工具，每次都会生成一首诗。",
-    "user2": "你是一个科学问答机器人，专门回答科学相关的问题。"
-}
+# # 为每个用户设置系统级提示词
+# system_prompts = {
+#     "user1": "你是一个诗歌生成工具，每次都会生成一首诗。",
+#     "user2": "你是一个科学问答机器人，专门回答科学相关的问题。"
+# }
 
-# 设置系统级提示词并进行对话
-for user_id in user_ids:
-    # 设置系统级提示词
-    bot.set_system_prompt(user_id, system_prompts[user_id])
-    print(f"--- 开始与 {user_id} 的会话 ---")
-    for i in range(3):
-        user_input = input(f"{user_id} 输入: ")
-        reply = bot.get_reply(user_id, user_input)
-        print(f"模型回复: {reply}")
+# # 设置系统级提示词并进行对话
+# for user_id in user_ids:
+#     # 设置系统级提示词
+#     bot.set_system_prompt(user_id, system_prompts[user_id])
+#     print(f"--- 开始与 {user_id} 的会话 ---")
+#     for i in range(3):
+#         user_input = input(f"{user_id} 输入: ")
+#         reply = bot.get_reply(user_id, user_input)
+#         print(f"模型回复: {reply}")
 
-def display_history(user_id):
-    history = bot.get_user_history(user_id)
-    print(f"\n--- {user_id} 的历史记录 ---")
-    for message in history:
-        role = message.get("role")
-        content = ""
-        if role == "system":
-            content = message.get("content")
-        elif role in ["user", "assistant", "model"]:
-            # 针对 Gemini 和 OpenAI 的不同历史记录格式进行检查
-            parts = message.get("parts")
-            content = parts[0] if parts else message.get("content", "消息内容缺失")
-        print(f"{role.capitalize()}: {content}")
+# def display_history(user_id):
+#     history = bot.get_user_history(user_id)
+#     print(f"\n--- {user_id} 的历史记录 ---")
+#     for message in history:
+#         role = message.get("role")
+#         content = ""
+#         if role == "system":
+#             content = message.get("content")
+#         elif role in ["user", "assistant", "model"]:
+#             # 针对 Gemini 和 OpenAI 的不同历史记录格式进行检查
+#             parts = message.get("parts")
+#             content = parts[0] if parts else message.get("content", "消息内容缺失")
+#         print(f"{role.capitalize()}: {content}")
 
 
 
-for user_id in user_ids:
-    display_history(user_id)
+# for user_id in user_ids:
+#     display_history(user_id)
