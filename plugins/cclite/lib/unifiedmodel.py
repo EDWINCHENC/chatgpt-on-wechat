@@ -92,6 +92,9 @@ class UnifiedChatbot:
 
     def _trim_history(self, history):
         max_history_length = 13  # 示例值
+        # 首先检查历史记录是否为空
+        if not history:
+            return
 
         # 如果当前模型是 OpenAI 并且历史记录中包含 system 提示，那么保留 system 提示
         if self.ai_model == "OpenAI" and history[0]["role"] == "system":
