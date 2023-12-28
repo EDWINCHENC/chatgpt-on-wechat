@@ -19,6 +19,7 @@ import traceback
 import re
 from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
 from .lib.model_factory import ModelGenerator
+from .lib.unifiedmodel import UnifiedChatbot
 
 
 @plugins.register(
@@ -64,6 +65,9 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
+                self.in_chat_mode = {}  # 用于跟踪哪些用户处于问答模式
+                self.chatbot = UnifiedChatbot()  # 实例化 UnifiedChatbot
+
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
         except Exception as e:
@@ -204,6 +208,41 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
+
+            # 检测是否输入了“开启问答”命令
+            elif context.content == "开启问答":
+                user_id = msg.from_user_nickname
+                logger.debug(f"_开启问答：{user_id}")
+                self.in_chat_mode[user_id] = True
+                logger.debug(f"_开启问答：{self.in_chat_mode}")
+                initial_messages = [
+                    {"role": "user", "content": "你是一个猜谜语工具，你拥有最全的谜语题库，每次用户可以请你出题，你会给出一个猜谜的题目，且你只需要给出一道谜题，这道谜题需要符合常识、符合科学，谜题的涵盖范围可以非常广，例如可以猜中国的明星、可以猜著名的电影、可以猜物品、可以猜常识....可以猜各类谜语，你需要保证谜语有一定的趣味性。  当用户开始要求出题时，请给出一道谜题，并给出ABCD四个选项，四个选项中只有一个是正确的。随后用户会猜答案，你需要根据用户的回答来替他解析答案。现在，请出题："},
+                    {"role": "model", "content": "**谜题：**\n\n什么东西全身是毛，可它从来不理发？\n\nA. 绵羊\nB. 猫咪\nC. 狗狗\nD. 扫帚"},
+                    {"role": "user", "content": "B"},
+                    {"role": "model", "content": "**解析：**\n\nB. 猫咪\n\n猫咪全身是毛，但它从来不理发。因为猫咪的舌头上长有倒刺，这些倒刺可以帮助它梳理毛发，去除污垢和死毛。此外，猫咪还喜欢舔舐自己的毛发，这也能够起到清洁和梳理的作用。\n\n绵羊、狗狗和扫帚虽然也都有毛，但它们都需要定期理发或打扫，而猫咪不需要。因此，答案是B. 猫咪。"}
+                    ]
+                self.chatbot.set_initial_history(initial_messages, user_id)
+                logger.debug(f"_开启问答,当前预设记录：{self.chatbot.get_history(user_id)}")
+                _set_reply_text("问答模式已开启，请输入'请出题'以继续。", e_context, level=ReplyType.TEXT)
+                return
+            
+            elif self.in_chat_mode.get(user_id, False):
+                # 用户处于问答模式并请求出题
+                user_input = context.content  # 使用用户的实际输入
+                model_reply = self.chatbot.get_reply(user_input, user_id)
+                # 打印当前的用户历史记录
+                logger.debug(f"当前 {user_id} 的会话历史记录: {self.chatbot.get_user_history(user_id)}")
+                _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)
+                return
+            elif context.content == "退出问答":
+                # 用户请求退出问答模式
+                self.in_chat_mode[user_id] = False
+                self.chatbot.clear_user_history(user_id)  # 清空用户的聊天历史
+                # 打印当前的用户历史记录（此时应为空）
+                logger.debug(f"当前 {user_id} 的用户历史记录已清空: {self.chatbot.get_user_history(user_id)}")
+                _set_reply_text("问答模式已退出。", e_context, level=ReplyType.TEXT)
+                return
+
 
     #====================================================================================================
             #以下处理可能的函数调用逻辑
