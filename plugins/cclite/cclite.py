@@ -226,14 +226,6 @@ class CCLite(Plugin):
                 _set_reply_text("问答模式已开启，请输入'请出题'以继续。", e_context, level=ReplyType.TEXT)
                 return
             
-            elif self.in_chat_mode.get(user_id, False):
-                # 用户处于问答模式并请求出题
-                user_input = context.content  # 使用用户的实际输入
-                model_reply = self.chatbot.get_reply(user_input, user_id)
-                # 打印当前的用户历史记录
-                logger.debug(f"当前 {user_id} 的会话历史记录: {self.chatbot.get_user_history(user_id)}")
-                _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)
-                return
             elif context.content == "退出问答":
                 # 用户请求退出问答模式
                 self.in_chat_mode[user_id] = False
@@ -242,6 +234,17 @@ class CCLite(Plugin):
                 logger.debug(f"当前 {user_id} 的用户历史记录已清空: {self.chatbot.get_user_history(user_id)}")
                 _set_reply_text("问答模式已退出。", e_context, level=ReplyType.TEXT)
                 return
+            
+
+            # 用户处于问答模式并请求出题
+            user_input = context.content  # 使用用户的实际输入
+            if self.in_chat_mode.get(user_id, False):
+                model_reply = self.chatbot.get_reply(user_input, user_id)
+                # 打印当前的用户历史记录
+                logger.debug(f"当前 {user_id} 的会话历史记录: {self.chatbot.get_user_history(user_id)}")
+                _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)
+                return
+
 
 
     #====================================================================================================
