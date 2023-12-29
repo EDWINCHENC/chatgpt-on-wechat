@@ -2,15 +2,16 @@ import openai
 import google.generativeai as genai
 import json
 import os
-from common.log import logger
 
 class UnifiedChatbot:
     def __init__(self):
         # 从配置文件中加载模型配置
         curdir = os.path.dirname(__file__)
         self.config_path = os.path.join(curdir, "config.json")
+        print(f"尝试读取配置文件: {self.config_path}")
         with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
+        print("配置文件内容:", config)
 
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")
@@ -53,10 +54,16 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         # 设置特定用户的系统级别提示
         history = self.get_user_history(user_id)
-        if history[0]["role"] == "system":
-            history[0]["content"] = prompt  # 更新已存在的系统提示
+        # 检查历史记录是否为空
+        if not history:
+            # 直接添加新的系统提示
+            history.append({"role": "system", "content": prompt})
         else:
-            history.insert(0, {"role": "system", "content": prompt})  # 插入新的系统提示
+            # 检查第一条记录是否是系统提示，进行更新或插入操作
+            if history[0]["role"] == "system":
+                history[0]["content"] = prompt
+            else:
+                history.insert(0, {"role": "system", "content": prompt})
 
     def add_message_openai(self, role, content, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -71,10 +78,6 @@ class UnifiedChatbot:
         self._trim_history(history)
 
     def set_initial_history(self, initial_messages, user_id=None):
-        """
-        为指定的用户设置初始的对话历史。
-        initial_messages 应该是一个列表，其中包含字典，每个字典代表一条消息，包含 'role' 和 'content' 或 'parts' 键。
-        """
         user_id = user_id or self.DEFAULT_USER_ID
         if not isinstance(initial_messages, list):
             raise ValueError("initial_messages 应该是一个列表。")
@@ -82,9 +85,11 @@ class UnifiedChatbot:
         history = self.get_user_history(user_id)
         for message in initial_messages:
             if 'content' in message:
-                self.add_message_openai(user_id, message['role'], message['content'])
+                # 直接向历史记录中添加消息
+                history.append({"role": message['role'], "content": message['content']})
             elif 'parts' in message:
-                self.add_message_gemini(user_id, message['role'], message['parts'][0])
+                # 如果使用 Gemini API，处理 parts
+                history.append({'role': message['role'], 'parts': message['parts']})
             else:
                 raise ValueError("消息应该包含 'content' 或 'parts' 键。")
 
@@ -112,25 +117,34 @@ class UnifiedChatbot:
 
     def get_reply(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
+        print(f"当前 AI 模型: {self.ai_model}")  # 调试打印
         if self.ai_model == "OpenAI":
-            return self._get_reply_openai(user_id, user_input)
+            print("调用 _get_reply_openai")  # 调试打印
+            return self._get_reply_openai(user_input, user_id)
         elif self.ai_model == "Gemini":
-            return self._get_reply_gemini(user_id, user_input)
+            print("调用 _get_reply_gemini")  # 调试打印
+            return self._get_reply_gemini(user_input, user_id)
 
     def _get_reply_openai(self, user_input, user_id=None):
+        print("进入 _get_reply_openai 方法")  # 调试打印
+        if not user_input.strip():
+            return "用户输入为空"
         user_id = user_id or self.DEFAULT_USER_ID
-        self.add_message_openai(user_id, "user", user_input)
+        print(f"当前用户 ID: {user_id}， 输入为{user_input}")
+        self.add_message_openai("user", user_input, user_id)
         try:
             history = self.get_user_history(user_id)
+            print("传递给OpenAI的历史记录:", history)  # 调试打印
             response = openai.ChatCompletion.create(
                 model=self.openai_model,
                 messages=history
             )
             reply_text = response["choices"][0]["message"]['content']
-            self.add_message_openai(user_id, "assistant", reply_text)
+            self.add_message_openai("assistant", reply_text, user_id)
             return reply_text
         except Exception as e:
             # 发生异常时，移除最后一条用户输入
+            print(f"发生异常: {e}")
             history = self.get_user_history(user_id)
             history.pop(-1) if history and history[-1]["role"] == "user" else None
             return self.handle_exception(e)
@@ -138,19 +152,19 @@ class UnifiedChatbot:
     def handle_exception(self, e):
         message = "出现了一些问题，请稍后再试。"
         if isinstance(e, openai.error.RateLimitError):
-            logger.warn("[OPENAI] RateLimitError: {}".format(e))
-            message = "请求太频繁，请稍后再试。"
+            # logger.warn("[OPENAI] RateLimitError: {}".format(e))
+            message = f"请求太频繁，请稍后再试。错误信息：{e}"
         elif isinstance(e, openai.error.Timeout):
-            logger.warn("[OPENAI] Timeout: {}".format(e))
-            message = "请求超时，请稍后再试。"
+            # logger.warn("[OPENAI] Timeout: {}".format(e))
+            message = f"请求超时，请稍后再试。错误信息：{e}"
         elif isinstance(e, openai.error.APIError):
-            logger.warn("[OPENAI] APIError: {}".format(e))
-            message = "API 错误，请稍后再试。"
+            # logger.warn("[OPENAI] APIError: {}".format(e))
+            message = f"API 错误，请稍后再试。错误信息：{e}"
         elif isinstance(e, openai.error.APIConnectionError):
-            logger.warn("[OPENAI] APIConnectionError: {}".format(e))
-            message = "网络连接错误，请稍后再试。"
+            # logger.warn("[OPENAI] APIConnectionError: {}".format(e))
+            message = f"网络连接错误，请稍后再试。错误信息：{e}"
         else:
-            logger.error(f"Error: {e}")
+            message = (f"Error: {e}")
 
         return message
 
@@ -158,9 +172,10 @@ class UnifiedChatbot:
 
     def _get_reply_gemini(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
-        self.add_message_gemini(user_id, 'user', user_input)
+        self.add_message_gemini('user', user_input, user_id)
         try:
             history = self.get_user_history(user_id)
+            print("调用 Gemini API 前的历史记录:", history)  # 调试打印
             response = self.gemini_model.generate_content(history)
             if response.prompt_feedback and response.prompt_feedback.block_reason:
                 print(f"提示被阻止，原因: {response.prompt_feedback.block_reason}")
@@ -171,12 +186,14 @@ class UnifiedChatbot:
             model_response = response.text
             if model_response:
                 model_response = self.remove_markdown(model_response)
-                self.add_message_gemini(user_id, 'model', model_response)
+                self.add_message_gemini('model', model_response, user_id)
+                print("调用 Gemini API 后的历史记录:", self.get_user_history(user_id))  # 调试打印
                 return model_response
             else:
                 # 模型未产生有效回应，可选择移除该轮用户输入
                 history.pop(-1)
                 return "对不起，我没能理解你的意思。"
+        
         except Exception as e:
             return f"发生错误: {e}"
 
@@ -186,44 +203,43 @@ class UnifiedChatbot:
         # 替换Markdown的标题标记
         text = text.replace("### ", "").replace("## ", "").replace("# ", "")
         return text
+    
+    
+# 1. 实例化 UnifiedChatbot 类
+chatbot = UnifiedChatbot()
 
-# # 实例化 UnifiedChatbot
-# bot = UnifiedChatbot()
+# 2. 设置系统提示
+system_prompt = "你好，我是一个智能助手，有什么可以帮助你的吗？"
+chatbot.set_system_prompt(system_prompt)
 
-# # 用户列表
-# user_ids = ["user1", "user2"]
+# 3. 设置初始对话历史并打印
+initial_messages = [
+    {"role": "user", "parts": "你能告诉我当前的天气吗？"},
+    {"role": "model", "parts": "当然，当前在北京的天气是晴朗的。"}
+]
+chatbot.set_initial_history(initial_messages)
 
-# # 为每个用户设置系统级提示词
-# system_prompts = {
-#     "user1": "你是一个诗歌生成工具，每次都会生成一首诗。",
-#     "user2": "你是一个科学问答机器人，专门回答科学相关的问题。"
-# }
+# 4. 模拟一轮对话并打印结果
+user_input = "明天北京的天气怎么样？"
+print("\n用户输入:", user_input)
+response = chatbot.get_reply(user_input)
+print("模型回复:", response)
 
-# # 设置系统级提示词并进行对话
-# for user_id in user_ids:
-#     # 设置系统级提示词
-#     bot.set_system_prompt(user_id, system_prompts[user_id])
-#     print(f"--- 开始与 {user_id} 的会话 ---")
-#     for i in range(3):
-#         user_input = input(f"{user_id} 输入: ")
-#         reply = bot.get_reply(user_id, user_input)
-#         print(f"模型回复: {reply}")
+# 5. 模拟多轮会话并打印结果
+additional_inputs = ["还会下雨吗？", "谢谢你的帮助！"]
+for input in additional_inputs:
+    print("\n用户输入:", input)
+    response = chatbot.get_reply(input)
+    print("模型回复:", response)
 
-# def display_history(user_id):
-#     history = bot.get_user_history(user_id)
-#     print(f"\n--- {user_id} 的历史记录 ---")
-#     for message in history:
-#         role = message.get("role")
-#         content = ""
-#         if role == "system":
-#             content = message.get("content")
-#         elif role in ["user", "assistant", "model"]:
-#             # 针对 Gemini 和 OpenAI 的不同历史记录格式进行检查
-#             parts = message.get("parts")
-#             content = parts[0] if parts else message.get("content", "消息内容缺失")
-#         print(f"{role.capitalize()}: {content}")
+# 6. 打印最终的会话历史
+final_history = chatbot.get_user_history()
+print("\n最终的会话历史:")
+for message in final_history:
+    role = message.get("role")
+    content = message.get("parts")
+    print(f"{role}: {content}")
 
-
-
-# for user_id in user_ids:
-#     display_history(user_id)
+# 7. 清空会话历史并打印结果
+chatbot.clear_user_history()
+print("\n清空后的会话历史:", chatbot.get_user_history())
