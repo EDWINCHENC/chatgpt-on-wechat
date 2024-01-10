@@ -34,6 +34,19 @@ class UnifiedChatbot:
     # ... 其他已有的方法 ...
     DEFAULT_USER_ID = "default_user"
 
+    def set_ai_model(self, model_name):
+        """设置 AI 模型"""
+        # 将输入的模型名称转换为全部小写，以便进行不区分大小写的比较
+        model_name_lower = model_name.lower()
+        if model_name_lower == "openai":
+            self.ai_model = "OpenAI"  # 使用规范的模型名称
+            return "已切换到 OpenAI 模型。"
+        elif model_name_lower == "gemini":
+            self.ai_model = "Gemini"  # 使用规范的模型名称
+            return "已切换到 Gemini 模型。"
+        else:
+            return "无效的模型名称。请使用 'OpenAI' 或 'Gemini'。"
+
     def get_user_history(self, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         if user_id not in self.user_histories:
@@ -115,7 +128,7 @@ class UnifiedChatbot:
                 history[:] = history[2:]
 
 
-    def get_reply(self, user_input, user_id=None):
+    def get_model_reply(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         print(f"当前 AI 模型: {self.ai_model}")  # 调试打印
         if self.ai_model == "OpenAI":
@@ -214,22 +227,22 @@ chatbot.set_system_prompt(system_prompt)
 
 # 3. 设置初始对话历史并打印
 initial_messages = [
-    {"role": "user", "parts": "你能告诉我当前的天气吗？"},
-    {"role": "model", "parts": "当然，当前在北京的天气是晴朗的。"}
+    {"role": "user", "content": "你能告诉我当前的天气吗？"},
+    {"role": "assistant", "content": "当然，当前在北京的天气是晴朗的。"}
 ]
 chatbot.set_initial_history(initial_messages)
 
 # 4. 模拟一轮对话并打印结果
 user_input = "明天北京的天气怎么样？"
 print("\n用户输入:", user_input)
-response = chatbot.get_reply(user_input)
+response = chatbot.get_model_reply(user_input)
 print("模型回复:", response)
 
 # 5. 模拟多轮会话并打印结果
 additional_inputs = ["还会下雨吗？", "谢谢你的帮助！"]
 for input in additional_inputs:
     print("\n用户输入:", input)
-    response = chatbot.get_reply(input)
+    response = chatbot.get_model_reply(input)
     print("模型回复:", response)
 
 # 6. 打印最终的会话历史
@@ -237,7 +250,7 @@ final_history = chatbot.get_user_history()
 print("\n最终的会话历史:")
 for message in final_history:
     role = message.get("role")
-    content = message.get("parts")
+    content = message.get("content")
     print(f"{role}: {content}")
 
 # 7. 清空会话历史并打印结果

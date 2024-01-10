@@ -34,6 +34,7 @@ class CCLite(Plugin):
         super().__init__()
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
         self.user_divinations = {}  # 将 user_divinations 作为类的属性
+        self.user_sessions = {} 
         curdir = os.path.dirname(__file__)
         config_path = os.path.join(curdir, "config.json")
         logger.info(f"[cclite] current directory: {curdir}")
@@ -65,8 +66,6 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
-                self.in_chat_mode = {}  # 用于跟踪哪些用户处于问答模式
-                self.chatbot = UnifiedChatbot()  # 实例化 UnifiedChatbot
 
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
@@ -177,6 +176,54 @@ class CCLite(Plugin):
                 else:
                     _set_reply_text("请先求签后再请求解签。", e_context, level=ReplyType.TEXT)
                     return
+                    
+            elif "答案之书" in context.content:
+                logger.debug("开始寻找答案")
+                if self.has_user_used_book_today(user_id):
+                    _set_reply_text("今日已有答案，请明天再来。", e_context, level=ReplyType.TEXT)
+                    return
+                elif user_id in self.user_sessions and self.user_sessions[user_id]["session_active"]:
+                    _set_reply_text("你已在答案之书中，你是否需要知道心中的答案。", e_context)
+                    return
+                else:
+                    # 更新使用次数和日期
+                    if user_id not in self.user_sessions:
+                        self.user_sessions[user_id] = {"session_active": True, "usage_count": 1, "last_used_date": datetime.now().date().isoformat()}
+                    else:
+                        user_session = self.user_sessions[user_id]
+                        if user_session['last_used_date'] != datetime.now().date().isoformat():
+                            user_session['usage_count'] = 0  # 重置计数器
+                        user_session['last_used_date'] = datetime.now().date().isoformat()
+                        user_session['usage_count'] += 1
+                        logger.debug(f"User {user_id} has used the book {user_session['usage_count']} times today.")
+                    _set_reply_text(
+                        "🔮 当你遇事不决时......\n\n"
+                        "🤔 请用 5 至 10 秒的时间，集中思考你的问题。\n"
+                        "🌟 每次只能有一个问题哦。\n\n"
+                        "💭 在确定你的问题后，可以告诉我，例如：\n"
+                        "“TA喜欢我吗？” 或 “我需要换个工作吗？”\n\n"
+                        "✨ 或者，如果你愿意，不必告诉我你的问题，只需心中虔诚地默念。\n"
+                        "然后发送“答案”，你要寻找的答案就在那里等着你。\n",
+                        e_context,
+                        level=ReplyType.TEXT
+                    )
+
+            elif user_id in self.user_sessions and self.user_sessions[user_id]["session_active"]:
+                # 处理用户的问题，生成答案
+                # 构建提示词
+                prompt = "你是一本《答案之书》，人生的每个问题，都能从你这找到答案，拥有丰富的生活经验和深邃的洞察力。10秒沉思，帮助他人找到人生方向，找到任何问题的答案，有时候，我不会告诉你我的问题，我会在心中虔诚地默念，无论如何，你每次都要直接给出1个富有启发性的、简洁的答案。"
+                # 接收用户的问题
+                user_input = f"现在，我的问题是 {context.content} ，直接开启一个答案吧。"
+                # 调用OpenAI处理函数
+                model_response = self.c_model._generate_model_analysis(prompt, user_input)
+                # 构建最终的回复消息
+                final_response = f"🔮 你的答案：\n\n{model_response}"
+                logger.debug(f"已获取答案: {final_response}")
+                # 使用_set_reply_text发送回复
+                _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
+                # 可以选择结束会话
+                self.user_sessions[user_id]["session_active"] = False
+                return
 
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
                 logger.debug("正替你考虑今天吃什么")
@@ -209,42 +256,6 @@ class CCLite(Plugin):
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
 
-            # 检测是否输入了“开启问答”命令
-            elif context.content == "开启问答":
-                user_id = msg.from_user_nickname
-                logger.debug(f"_开启问答：{user_id}")
-                self.in_chat_mode[user_id] = True
-                logger.debug(f"_开启问答：{self.in_chat_mode}")
-                initial_messages = [
-                    {"role": "user", "parts": "你是一个猜谜语工具，你拥有最全的谜语题库，每次用户可以请你出题，你会给出一个猜谜的题目，且你只需要给出一道谜题，这道谜题需要符合常识、符合科学，谜题的涵盖范围可以非常广，例如可以猜中国的明星、可以猜著名的电影、可以猜物品、可以猜常识....可以猜各类谜语，你需要保证谜语有一定的趣味性。  当用户开始要求出题时，请给出一道谜题，并给出ABCD四个选项，四个选项中只有一个是正确的。随后用户会猜答案，你需要根据用户的回答来替他解析答案。现在，请出题："},
-                    {"role": "model", "parts": "**谜题：**\n\n什么东西全身是毛，可它从来不理发？\n\nA. 绵羊\nB. 猫咪\nC. 狗狗\nD. 扫帚"},
-                    {"role": "user", "parts": "B"},
-                    {"role": "model", "parts": "**解析：**\n\nB. 猫咪\n\n猫咪全身是毛，但它从来不理发。因为猫咪的舌头上长有倒刺，这些倒刺可以帮助它梳理毛发，去除污垢和死毛。此外，猫咪还喜欢舔舐自己的毛发，这也能够起到清洁和梳理的作用。\n\n绵羊、狗狗和扫帚虽然也都有毛，但它们都需要定期理发或打扫，而猫咪不需要。因此，答案是B. 猫咪。"}
-                    ]
-                self.chatbot.set_initial_history(initial_messages, user_id)
-                logger.debug(f"_开启问答,当前预设记录：{self.chatbot.get_user_history(user_id)}")
-                _set_reply_text("问答模式已开启，请输入'请出题'以继续。", e_context, level=ReplyType.TEXT)
-                return
-            
-            elif context.content == "退出问答":
-                # 用户请求退出问答模式
-                self.in_chat_mode[user_id] = False
-                self.chatbot.clear_user_history(user_id)  # 清空用户的聊天历史
-                # 打印当前的用户历史记录（此时应为空）
-                logger.debug(f"当前 {user_id} 的用户历史记录已清空: {self.chatbot.get_user_history(user_id)}")
-                _set_reply_text("问答模式已退出。", e_context, level=ReplyType.TEXT)
-                return
-            
-
-            # 用户处于问答模式并请求出题
-            user_input = context.content  # 使用用户的实际输入
-            if self.in_chat_mode.get(user_id, False):
-                model_reply = self.chatbot.get_reply(user_input, user_id)
-                # 打印当前的用户历史记录
-                logger.debug(f"当前 {user_id} 的会话历史记录: {self.chatbot.get_user_history(user_id)}")
-                _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)
-                return
-
 
 
     #====================================================================================================
@@ -274,6 +285,15 @@ class CCLite(Plugin):
                     _set_reply_text(conversation_output, e_context, level=reply_type)
 
                 logger.debug(f"Conversation output: {conversation_output}")
+
+    def has_user_used_book_today(self, user_id):
+        """检查用户当天是否已使用答案之书两次"""
+        if user_id in self.user_sessions:
+            user_session = self.user_sessions[user_id]
+            last_used_date = user_session.get('last_used_date')
+            usage_count = user_session.get('usage_count', 0)
+            return last_used_date == datetime.now().date().isoformat() and usage_count >= 2
+        return False
 
 
     def has_user_drawn_today(self, user_id):
