@@ -207,6 +207,7 @@ class CCLite(Plugin):
                         e_context,
                         level=ReplyType.TEXT
                     )
+                    return
 
             elif user_id in self.user_sessions and self.user_sessions[user_id]["session_active"]:
                 # 处理用户的问题，生成答案
@@ -222,7 +223,11 @@ class CCLite(Plugin):
                 # 使用_set_reply_text发送回复
                 _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
                 # 可以选择结束会话
+                # 结束当前会话
                 self.user_sessions[user_id]["session_active"] = False
+                # 如果使用次数达到每日限额，也可以在此处通知用户
+                if self.user_sessions[user_id]["usage_count"] >= 2:
+                    _set_reply_text("你今天已经使用了两次答案之书。", e_context, level=ReplyType.TEXT)
                 return
 
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):

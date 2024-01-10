@@ -324,7 +324,7 @@ class ChatStatistics(Plugin):
                 logger.debug(f"已完成群聊分析")
                 # 处理 Model 的回复...
             # 生成排名信息
-            ranking = ["😈 今日群员聊天榜🔝 聊天总数:🔢 {today_count} 条", "----------------"]  # 添加标题和分割线
+            ranking = [f"😈 今日群员聊天榜🔝 总 {today_count} 条", "----------------"]  # 添加标题和分割线
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
