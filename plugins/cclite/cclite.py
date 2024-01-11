@@ -298,7 +298,7 @@ class CCLite(Plugin):
             user_session = self.user_sessions[user_id]
             last_used_date = user_session.get('last_used_date')
             usage_count = user_session.get('usage_count', 0)
-            return last_used_date == datetime.now().date().isoformat() and usage_count >= 2
+            return last_used_date == datetime.now().date().isoformat() and usage_count >= 3
         return False
 
 
