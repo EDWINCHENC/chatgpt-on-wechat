@@ -60,14 +60,14 @@
         }
     },
     {
-        "name": "bing_google_search",
-        "description": "通过必应或谷歌等关键词触发该搜索工具,通过调用谷歌和必应的搜索引擎,获取搜索结果",
+        "name": "web_online_search_tool",
+        "description": "联网搜索工具，根据需求和意图判断是否需要联网，也可通过'搜索''查询'等关键词触发该联网搜索工具,将调用谷歌和必应的搜索引擎,获取与特定搜索关键词相关的内容",
         "parameters": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "提供需要搜索的关键词信息即可"
+                    "description": "提供需要联网查询的关键词信息即可，例如'最新''最新''搜索''查询'等关键词，根据意图自动判断是否需要联网搜索"
                 },
                 "count": {
                     "type": "string",
@@ -78,20 +78,6 @@
             "required": ["query", "count"]
         }
     },
-    {
-        "name": "webpilot_search",
-        "description": "默认搜索工具,只要带有'w'或'搜索'这个关键字,即可调用WebPilot,获取与特定搜索关键词相关的内容",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "search_term": {
-                    "type": "string",
-                    "description": ",用户输入的搜索关键词，用于检索相关内容如果用户输入内容中包括'w'或'搜索'这个关键字，则触发检索，例如'w成都的美食',则参数为'成都的美食'"
-                }
-            },
-            "required": ["search_term"]
-        }
-    },    
     {
         "name": "fetch_hero_trending",
         "description": "查询王者荣耀某个英雄的相关数据，如'xx英雄趋势'，'xx英雄热度','xx英雄数据'等相关指令来获取指定英雄近一个月/一段时间的热度趋势、胜率、受欢迎程度等数据",
