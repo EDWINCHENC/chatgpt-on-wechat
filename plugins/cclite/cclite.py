@@ -219,7 +219,7 @@ class CCLite(Plugin):
                 # 调用OpenAI处理函数
                 model_response = self.c_model._generate_model_analysis(prompt, user_input)
                 # 构建最终的回复消息
-                final_response = f"🔮 你的答案：\n\n{model_response}"
+                final_response = f"🔮 你的答案：\n{model_response}"
                 logger.debug(f"已获取答案: {final_response}")
                 # 使用_set_reply_text发送回复
                 _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
