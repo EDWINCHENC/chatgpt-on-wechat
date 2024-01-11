@@ -213,7 +213,7 @@ class CCLite(Plugin):
             elif user_id in self.user_sessions and self.user_sessions[user_id]["session_active"]:
                 # 处理用户的问题，生成答案
                 # 构建提示词
-                prompt = "你是一本《答案之书》，人生的每个问题，都能从你这找到答案，拥有丰富的生活经验和深邃的洞察力。10秒沉思，帮助他人找到人生方向，找到任何问题的答案，有时候，我不会告诉你我的问题，只是想要一个答案，我会在心中虔诚地默念，无论如何，你每次都要直接从答案之书中给出1个富有启发性的、简洁的答案。"
+                prompt = "你是一本《答案之书》，人生的每个问题，都能从你这找到答案，你拥有丰富的生活经验和深邃的洞察力。10秒沉思，帮助他人找到人生方向，解决疑惑，找到任何问题的答案，有时候，我不会告诉你我的问题，只是想要一个答案，我会在心中虔诚地默念，无论如何，你每次都要直接从答案之书中给出1个富有启发性的、简洁的答案。"
                 # 接收用户的问题
                 user_input = f"现在，我的问题是 {context.content} ，直接开启一个答案吧。"
                 # 调用OpenAI处理函数
@@ -298,7 +298,7 @@ class CCLite(Plugin):
             user_session = self.user_sessions[user_id]
             last_used_date = user_session.get('last_used_date')
             usage_count = user_session.get('usage_count', 0)
-            return last_used_date == datetime.now().date().isoformat() and usage_count >= 3
+            return last_used_date == datetime.now().date().isoformat() and usage_count >= 10
         return False
 
 
