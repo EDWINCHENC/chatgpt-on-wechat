@@ -227,8 +227,8 @@ class CCLite(Plugin):
                 # 结束当前会话
                 self.user_sessions[user_id]["session_active"] = False
                 # 如果使用次数达到每日限额，也可以在此处通知用户
-                if self.user_sessions[user_id]["usage_count"] >= 2:
-                    _set_reply_text("你今天已经使用了两次答案之书。", e_context, level=ReplyType.TEXT)
+                # if self.user_sessions[user_id]["usage_count"] >= 2:
+                #     _set_reply_text("你今天已经使用了两次答案之书。", e_context, level=ReplyType.TEXT)
                 return
 
             elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
