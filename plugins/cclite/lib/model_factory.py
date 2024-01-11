@@ -75,7 +75,7 @@ class ModelGenerator:
 
             # 调用 OpenAI ChatGPT
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo-1106",
+                model="gpt-4-1106-preview",
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
