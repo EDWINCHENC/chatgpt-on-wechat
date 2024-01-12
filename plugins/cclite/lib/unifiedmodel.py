@@ -218,41 +218,41 @@ class UnifiedChatbot:
         return text
     
     
-# 1. 实例化 UnifiedChatbot 类
-chatbot = UnifiedChatbot()
+# # 1. 实例化 UnifiedChatbot 类
+# chatbot = UnifiedChatbot()
 
-# 2. 设置系统提示
-system_prompt = "你好，我是一个智能助手，有什么可以帮助你的吗？"
-chatbot.set_system_prompt(system_prompt)
+# # 2. 设置系统提示
+# system_prompt = "你好，我是一个智能助手，有什么可以帮助你的吗？"
+# chatbot.set_system_prompt(system_prompt)
 
-# 3. 设置初始对话历史并打印
-initial_messages = [
-    {"role": "user", "content": "你能告诉我当前的天气吗？"},
-    {"role": "assistant", "content": "当然，当前在北京的天气是晴朗的。"}
-]
-chatbot.set_initial_history(initial_messages)
+# # 3. 设置初始对话历史并打印
+# initial_messages = [
+#     {"role": "user", "content": "你能告诉我当前的天气吗？"},
+#     {"role": "assistant", "content": "当然，当前在北京的天气是晴朗的。"}
+# ]
+# chatbot.set_initial_history(initial_messages)
 
-# 4. 模拟一轮对话并打印结果
-user_input = "明天北京的天气怎么样？"
-print("\n用户输入:", user_input)
-response = chatbot.get_model_reply(user_input)
-print("模型回复:", response)
+# # 4. 模拟一轮对话并打印结果
+# user_input = "明天北京的天气怎么样？"
+# print("\n用户输入:", user_input)
+# response = chatbot.get_model_reply(user_input)
+# print("模型回复:", response)
 
-# 5. 模拟多轮会话并打印结果
-additional_inputs = ["还会下雨吗？", "谢谢你的帮助！"]
-for input in additional_inputs:
-    print("\n用户输入:", input)
-    response = chatbot.get_model_reply(input)
-    print("模型回复:", response)
+# # 5. 模拟多轮会话并打印结果
+# additional_inputs = ["还会下雨吗？", "谢谢你的帮助！"]
+# for input in additional_inputs:
+#     print("\n用户输入:", input)
+#     response = chatbot.get_model_reply(input)
+#     print("模型回复:", response)
 
-# 6. 打印最终的会话历史
-final_history = chatbot.get_user_history()
-print("\n最终的会话历史:")
-for message in final_history:
-    role = message.get("role")
-    content = message.get("content")
-    print(f"{role}: {content}")
+# # 6. 打印最终的会话历史
+# final_history = chatbot.get_user_history()
+# print("\n最终的会话历史:")
+# for message in final_history:
+#     role = message.get("role")
+#     content = message.get("content")
+#     print(f"{role}: {content}")
 
-# 7. 清空会话历史并打印结果
-chatbot.clear_user_history()
-print("\n清空后的会话历史:", chatbot.get_user_history())
+# # 7. 清空会话历史并打印结果
+# chatbot.clear_user_history()
+# print("\n清空后的会话历史:", chatbot.get_user_history())
