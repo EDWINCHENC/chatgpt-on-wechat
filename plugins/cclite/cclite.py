@@ -109,7 +109,7 @@ class CCLite(Plugin):
                 response = self.c_model.get_current_model()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
-
+            
             elif "找" in context.content:
                 # 通过正则表达式匹配 "找电影名" 的模式
                 match = re.search(r"找(.+)", context.content)
@@ -119,14 +119,18 @@ class CCLite(Plugin):
                     try:
                         # 调用fetch_movie_info函数获取电影信息
                         movie_info = affdz.fetch_movie_info(movie_name)
-                        logger.debug(f"获取电影信息响应：{movie_info}")
-                        _set_reply_text(movie_info, e_context, level=ReplyType.TEXT)
+                        if movie_info is None:
+                            # 如果movie_info为None，则返回一个错误消息
+                            logger.error(f"未找到电影: {movie_info}")
+                            _set_reply_text("未找到电影信息，请检查电影名称是否正确。", e_context, level=ReplyType.TEXT)
+                        else:
+                            logger.debug(f"获取电影信息响应：{movie_info}")
+                            _set_reply_text(movie_info, e_context, level=ReplyType.TEXT)
                         return
                     except Exception as e:
                         logger.error(f"查找电影信息失败: {e}")
                         _set_reply_text("查找电影信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                         return
-
 
             # 使用正则表达式来匹配星座运势的请求
             elif "运势" in context.content:

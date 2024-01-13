@@ -33,7 +33,7 @@ def fetch_html(url, max_retries=3):
             retries += 1
 
     logger.debug(f"多次重试后未能获取 {url} 的内容。")
-    return None
+    return "多次重试后获取内容失败。"
 
 
 def parse_html(html_content, movie_name):
