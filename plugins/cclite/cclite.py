@@ -17,7 +17,7 @@ import os
 import time
 import traceback
 import re
-from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo
+from .lib import fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo,function as fun,search_google as google,get_birth_info as birth, horoscope as horo, fetch_affdz as affdz
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
 
@@ -109,6 +109,24 @@ class CCLite(Plugin):
                 response = self.c_model.get_current_model()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
+
+            elif "找" in context.content:
+                # 通过正则表达式匹配 "找电影名" 的模式
+                match = re.search(r"找(.+)", context.content)
+                if match:
+                    movie_name = match.group(1).strip()  # 获取电影名
+                    logger.debug(f"正在为 {nickname} 查找电影: {movie_name}")
+                    try:
+                        # 调用fetch_movie_info函数获取电影信息
+                        movie_info = affdz.fetch_movie_info(movie_name)
+                        logger.debug(f"获取电影信息响应：{movie_info}")
+                        _set_reply_text(movie_info, e_context, level=ReplyType.TEXT)
+                        return
+                    except Exception as e:
+                        logger.error(f"查找电影信息失败: {e}")
+                        _set_reply_text("查找电影信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                        return
+
 
             # 使用正则表达式来匹配星座运势的请求
             elif "运势" in context.content:
@@ -261,6 +279,7 @@ class CCLite(Plugin):
                             return
                 except requests.RequestException as e:
                     return f"请求异常：{e}"
+
 
 
 
