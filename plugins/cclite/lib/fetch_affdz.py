@@ -112,11 +112,18 @@ def fetch_movie_info(movie_name):
         })
 
     # 格式化输出
-    formatted_output = f"🎬 共找到 {len(final_results)} 个相关资源:\n\n"
-    for result in final_results:
-        formatted_output += f"🎥 资源名称: {result['title']}\n🔗 链接: {result['final_link']} - {result['link_text']}\n--------------------------------\n"
+    if len(final_results) == 0:
+        # 如果没有找到任何资源，返回简化的消息
+        formatted_output = "🎬 没有找到相关资源。"
+    else:
+        # 如果找到了资源，按照原有格式返回详细列表
+        formatted_output = f"🎬 共找到 {len(final_results)} 个相关资源:\n\n"
+        for result in final_results:
+            formatted_output += f"🎥 资源名称: {result['title']}\n🔗 {result['final_link']} - {result['link_text']}\n--------------------------------\n"
+
     logger.debug("电影信息获取完成。")
     return formatted_output
+
 
 # 示例：获取电影或电视剧的信息
 # movie_name = "步步惊心"  # 可以替换为任何您想查询的影视剧名称
