@@ -69,7 +69,7 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         if user_id not in self.user_histories:
             self.user_histories[user_id] = []
-        logger.debug(f"当前用户 {user_id} 的历史记录: {self.user_histories[user_id]}")
+        # logger.debug(f"当前用户 {user_id} 的历史记录: {self.user_histories[user_id]}")
         return self.user_histories[user_id]
     
     def clear_user_history(self, user_id=None):
@@ -176,17 +176,16 @@ class UnifiedChatbot:
             return "未知的 AI 模型。"
 
     def _get_reply_openai(self, user_input, user_id=None):
-        print("进入 _get_reply_openai 方法")  # 调试打印
         logger.debug(f"进入 _get_reply_openai 方法")
         if not user_input.strip():
             return "用户输入为空"
         user_id = user_id or self.DEFAULT_USER_ID
-        print(f"当前用户 ID: {user_id}")
+        logger.debug(f"当前用户 ID: {user_id}")
         logger.debug(f"向 OpenAI 发送消息: {user_input}")
         self.add_message_openai("user", user_input, user_id)
         try:
             history = self.get_user_history(user_id)
-            print("传递给OpenAI的历史记录:", history)  # 调试打印
+            logger.debug(f"传递给 OpenAI 的历史记录: {history}")  # 调试打印")
             response = openai.ChatCompletion.create(
                 model=self.openai_model,
                 messages=history
@@ -224,6 +223,7 @@ class UnifiedChatbot:
 
     def _get_reply_gemini(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_gemini 方法")
         self.add_message_gemini('user', user_input, user_id)
         try:
             history = self.get_user_history(user_id)
@@ -251,11 +251,13 @@ class UnifiedChatbot:
         
     def _get_reply_qwen(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_qwen 方法")
+        logger.debug(f"当前用户 ID: {user_id}")
+        logger.debug(f"向 Qwen API 发送消息: {user_input}")
         self.add_message_qwen('user', user_input, user_id)
         try:
             history = self.get_user_history(user_id)
-            print("调用 Qwen API 前的历史记录:", history)  # 调试打印
-            # logger.debug(f"向 Dashscope 发送消息: {messages}")
+            logger.debug(f"传递给 Qwen API 的历史记录: {history}")  # 调试打印
             # 调用 Dashscope API
             response = dashscope.Generation.call(
                 model=self.qwen_model,
