@@ -911,9 +911,10 @@ class CCLite(Plugin):
         else:
             # 如果模型不希望调用函数，直接打印其响应
             logger.debug(f"模型未调用函数，原始模型响应: {message['content']}")  # 打印模型的响应
+            response = message['content']
             # 在此处调用c_modelpro的UnifiedChatbot中的模型，获取响应
-            user_input = context.content
-            response = self.c_modelpro.get_model_reply(user_input, user_id)
+            # user_input = context.content
+            # response = self.c_modelpro.get_model_reply(user_input, user_id)
             
             return None, response
 
