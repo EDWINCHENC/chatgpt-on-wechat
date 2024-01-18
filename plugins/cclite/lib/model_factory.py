@@ -141,7 +141,7 @@ class ModelGenerator:
             response = dashscope.Generation.call(
                 model='qwen-max-longcontext',
                 messages=messages,
-                max_tokens=5000,
+                # max_tokens=5000,
                 result_format='message'
             )
             logger.debug(f"来自 Dashscope 的回复: {json.dumps(response, ensure_ascii=False)}")
