@@ -139,7 +139,7 @@ class ModelGenerator:
             logger.debug(f"向 Dashscope 发送消息: {messages}")
             # 调用 Dashscope API
             response = dashscope.Generation.call(
-                model='qwen-max-longcontext',
+                model='qwen-max-1201',
                 messages=messages,
                 # max_tokens=5000,
                 result_format='message'
