@@ -19,7 +19,6 @@ class ModelGenerator:
         self.config_path = os.path.join(curdir, "config.json")
         with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-            logger.info(f"[ModelGenerator] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
 
     def set_ai_model(self, model_name):
