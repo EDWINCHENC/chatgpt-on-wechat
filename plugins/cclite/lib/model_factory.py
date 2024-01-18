@@ -136,7 +136,7 @@ class ModelGenerator:
         try:
             # 配置 Dashscope API
             dashscope.api_key=self.dashscope_api_key
-            
+            logger.debug(f"向 Dashscope 发送消息: {messages}")
             # 调用 Dashscope API
             response = dashscope.Generation.call(
                 model='qwen-max-longcontext',
