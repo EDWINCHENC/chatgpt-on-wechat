@@ -326,40 +326,40 @@ class UnifiedChatbot:
 # print("\n清空后的会话历史:", chatbot.get_user_history())
 
 
-# 创建UnifiedChatbot实例
-chatbot = UnifiedChatbot()
+# # 创建UnifiedChatbot实例
+# chatbot = UnifiedChatbot()
 
-# 设置AI模型为Qwen
-chatbot.set_ai_model("Qwen")
+# # 设置AI模型为Qwen
+# chatbot.set_ai_model("Qwen")
 
-# 预设一些初始历史对话
-initial_history = [
-    {"role": "user", "content": "你觉得未来的科技趋势是什么？"},
-    {"role": "assistant", "content": "我认为人工智能和量子计算将是重要的趋势。"}
-]
-chatbot.set_initial_history(initial_history)
+# # 预设一些初始历史对话
+# initial_history = [
+#     {"role": "user", "content": "你觉得未来的科技趋势是什么？"},
+#     {"role": "assistant", "content": "我认为人工智能和量子计算将是重要的趋势。"}
+# ]
+# chatbot.set_initial_history(initial_history)
 
-# 打印预设的历史对话
-print("预设的历史对话:", chatbot.get_user_history())
+# # 打印预设的历史对话
+# print("预设的历史对话:", chatbot.get_user_history())
 
-# 开始测试三轮对话
-# 第一轮会话
-user_input1 = "那你认为人工智能会带来哪些改变？"
-print(f"\n用户输入: {user_input1}")
-response1 = chatbot.get_model_reply(user_input1)
-print("模型回复:", response1)
-print("第一轮会话后的历史记录:", chatbot.get_user_history())
+# # 开始测试三轮对话
+# # 第一轮会话
+# user_input1 = "那你认为人工智能会带来哪些改变？"
+# print(f"\n用户输入: {user_input1}")
+# response1 = chatbot.get_model_reply(user_input1)
+# print("模型回复:", response1)
+# print("第一轮会话后的历史记录:", chatbot.get_user_history())
 
-# 第二轮会话
-user_input2 = "人工智能在医疗领域的应用前景如何？"
-print(f"\n用户输入: {user_input2}")
-response2 = chatbot.get_model_reply(user_input2)
-print("模型回复:", response2)
-print("第二轮会话后的历史记录:", chatbot.get_user_history())
+# # 第二轮会话
+# user_input2 = "人工智能在医疗领域的应用前景如何？"
+# print(f"\n用户输入: {user_input2}")
+# response2 = chatbot.get_model_reply(user_input2)
+# print("模型回复:", response2)
+# print("第二轮会话后的历史记录:", chatbot.get_user_history())
 
-# 第三轮会话
-user_input3 = "人工智能对人类的伦理和社会有什么影响？"
-print(f"\n用户输入: {user_input3}")
-response3 = chatbot.get_model_reply(user_input3)
-print("模型回复:", response3)
-print("第三轮会话后的历史记录:", chatbot.get_user_history())
+# # 第三轮会话
+# user_input3 = "人工智能对人类的伦理和社会有什么影响？"
+# print(f"\n用户输入: {user_input3}")
+# response3 = chatbot.get_model_reply(user_input3)
+# print("模型回复:", response3)
+# print("第三轮会话后的历史记录:", chatbot.get_user_history())
