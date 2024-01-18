@@ -69,7 +69,7 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         if user_id not in self.user_histories:
             self.user_histories[user_id] = []
-        logger.debug(f"获取用户 {user_id} 的历史记录: {self.user_histories[user_id]}")
+        logger.debug(f"当前用户 {user_id} 的历史记录: {self.user_histories[user_id]}")
         return self.user_histories[user_id]
     
     def clear_user_history(self, user_id=None):
@@ -138,28 +138,31 @@ class UnifiedChatbot:
         self._trim_history(history)  # 确保历史记录不会超出预设的长度
 
     def _trim_history(self, history):
-        max_history_length = 13  # 示例值
+        max_history_length = 7  # 示例值
         # 首先检查历史记录是否为空
         if not history:
             return
 
         # 如果当前模型是 OpenAI 并且历史记录中包含 system 提示，那么保留 system 提示
-        if self.ai_model == "OpenAI" and history[0]["role"] == "system":
+        if self.ai_model in ["OpenAI", "Qwen"] and history[0]["role"] == "system":
             while len(history) > max_history_length:
+                logger.debug("移除2条历史记录")
                 history[:] = history[:1] + history[3:]
         # 如果当前模型是 Gemini 或者历史记录中没有 system 提示，那么直接移除最旧的记录
         else:
             # 如果历史记录中有 system 提示，先移除它
             if history[0]["role"] == "system":
                 history.pop(0)
+                logger.debug(f"移除1条系统提示")
             # 然后根据历史记录的最大长度移除最旧的记录
             while len(history) > max_history_length - 1:  # 减去 1 因为不再包含 system 提示
+                logger.debug("移除2条历史记录")
                 history[:] = history[2:]
 
 
     def get_model_reply(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
-        print(f"当前 AI 模型: {self.ai_model}")  # 调试打印
+        logger.debug(f"当前使用的模型为：{self.ai_model}")
         if self.ai_model == "OpenAI":
             print("调用 _get_reply_openai")  # 调试打印
             return self._get_reply_openai(user_input, user_id)
@@ -184,7 +187,6 @@ class UnifiedChatbot:
         try:
             history = self.get_user_history(user_id)
             print("传递给OpenAI的历史记录:", history)  # 调试打印
-            logger.debug(f"传递给OpenAI的历史记录: {history}")
             response = openai.ChatCompletion.create(
                 model=self.openai_model,
                 messages=history

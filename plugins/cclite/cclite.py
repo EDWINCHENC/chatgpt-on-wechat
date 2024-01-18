@@ -100,16 +100,19 @@ class CCLite(Plugin):
 
             content_lower = context.content.lower()
             if "cc openai" in content_lower:
-                response = self.c_model.set_ai_model("OpenAI")
-                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                self.c_model.set_ai_model("OpenAI")
+                self.c_modelpro.set_ai_model("OpenAI")
+                _set_reply_text("已切换到OpenAI模型。", e_context, level=ReplyType.TEXT)
                 return
             elif "cc gemini" in content_lower:
-                response = self.c_model.set_ai_model("Gemini")
-                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                self.c_model.set_ai_model("Gemini")
+                self.c_modelpro.set_ai_model("Gemini")
+                _set_reply_text("已切换到Gemini模型。", e_context, level=ReplyType.TEXT)
                 return
             elif "cc qwen" in content_lower:
-                response = self.c_model.set_ai_model("Qwen")
-                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                self.c_model.set_ai_model("Qwen")
+                self.c_modelpro.set_ai_model("Qwen")
+                _set_reply_text("已切换到Qwen模型。", e_context, level=ReplyType.TEXT)
                 return
             elif "cmodel" in content_lower:
                 response = self.c_model.get_current_model()
