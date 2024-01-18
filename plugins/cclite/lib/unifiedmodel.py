@@ -2,6 +2,11 @@ import openai
 import google.generativeai as genai
 import json
 import os
+from http import HTTPStatus
+import dashscope
+from common.log import logger
+# import logging
+# logger = logging.getLogger(__name__)
 
 class UnifiedChatbot:
     def __init__(self):
@@ -12,11 +17,12 @@ class UnifiedChatbot:
         with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
         print("配置文件内容:", config)
+        logger.debug(f"配置文件内容: {config}")
 
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")
         self.openai_api_base = config.get("open_ai_api_base", "https://api.openai.com/v1")
-        self.openai_model = "gpt-3.5-turbo-0613"
+        self.openai_model = "gpt-4-1106-preview"
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
 
@@ -25,6 +31,12 @@ class UnifiedChatbot:
         self.gemini_api_key = config.get("gemini_api_key", "")
         self.gemini_model = genai.GenerativeModel('gemini-pro')
         genai.configure(api_key=self.gemini_api_key)
+        
+        # Qwen配置
+        self.dashscope_api_key = config.get("dashscope_api_key", "")
+        self.qwen_model = 'qwen-max-1201'  # 模型名称
+        # 配置 Dashscope API
+        dashscope.api_key=self.dashscope_api_key
 
         self.user_histories = {}
         # 设置默认用户 ID
@@ -40,28 +52,37 @@ class UnifiedChatbot:
         model_name_lower = model_name.lower()
         if model_name_lower == "openai":
             self.ai_model = "OpenAI"  # 使用规范的模型名称
+            logger.debug(f"已切换到 OpenAI 模型。")
             return "已切换到 OpenAI 模型。"
         elif model_name_lower == "gemini":
             self.ai_model = "Gemini"  # 使用规范的模型名称
+            logger.debug(f"已切换到 Gemini 模型。")
             return "已切换到 Gemini 模型。"
+        elif model_name_lower == "qwen":
+            self.ai_model = "Qwen"
+            logger.debug(f"已切换到 Qwen 模型。")
+            return "已切换到 Qwen 模型。"
         else:
-            return "无效的模型名称。请使用 'OpenAI' 或 'Gemini'。"
+            return "无效的模型名称。请使用 'OpenAI'、'Gemini' 或 'Qwen'。"
 
     def get_user_history(self, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         if user_id not in self.user_histories:
             self.user_histories[user_id] = []
+        logger.debug(f"获取用户 {user_id} 的历史记录: {self.user_histories[user_id]}")
         return self.user_histories[user_id]
     
     def clear_user_history(self, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         if user_id in self.user_histories:
             self.user_histories[user_id] = []
+            logger.debug(f"已清空用户 {user_id} 的历史记录。")
             return True
         return False
 
     def clear_all_histories(self):
         self.user_histories.clear()
+        logger.debug("已清空所有历史记录。")
 
     def set_system_prompt(self, prompt, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -71,12 +92,14 @@ class UnifiedChatbot:
         if not history:
             # 直接添加新的系统提示
             history.append({"role": "system", "content": prompt})
+            logger.debug(f"已设置用户 {user_id} 的系统提示: {prompt}")
         else:
             # 检查第一条记录是否是系统提示，进行更新或插入操作
             if history[0]["role"] == "system":
                 history[0]["content"] = prompt
             else:
                 history.insert(0, {"role": "system", "content": prompt})
+            logger.debug(f"已更新或插入用户 {user_id} 的系统提示: {prompt}")
 
     def add_message_openai(self, role, content, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -88,6 +111,12 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         history = self.get_user_history(user_id)
         history.append({'role': role, 'parts': [text]})
+        self._trim_history(history)
+    
+    def add_message_qwen(self, role, content, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        history = self.get_user_history(user_id)
+        history.append({'role': role, 'content': content})
         self._trim_history(history)
 
     def set_initial_history(self, initial_messages, user_id=None):
@@ -137,24 +166,32 @@ class UnifiedChatbot:
         elif self.ai_model == "Gemini":
             print("调用 _get_reply_gemini")  # 调试打印
             return self._get_reply_gemini(user_input, user_id)
+        elif self.ai_model == "Qwen":
+            print("调用 _get_reply_qwen")  # 调试打印
+            return self._get_reply_qwen(user_input, user_id)
+        else:
+            return "未知的 AI 模型。"
 
     def _get_reply_openai(self, user_input, user_id=None):
         print("进入 _get_reply_openai 方法")  # 调试打印
+        logger.debug(f"进入 _get_reply_openai 方法")
         if not user_input.strip():
             return "用户输入为空"
         user_id = user_id or self.DEFAULT_USER_ID
-        print(f"当前用户 ID: {user_id}， 输入为{user_input}")
+        print(f"当前用户 ID: {user_id}")
+        logger.debug(f"向 OpenAI 发送消息: {user_input}")
         self.add_message_openai("user", user_input, user_id)
         try:
             history = self.get_user_history(user_id)
             print("传递给OpenAI的历史记录:", history)  # 调试打印
+            logger.debug(f"传递给OpenAI的历史记录: {history}")
             response = openai.ChatCompletion.create(
                 model=self.openai_model,
                 messages=history
             )
             reply_text = response["choices"][0]["message"]['content']
             self.add_message_openai("assistant", reply_text, user_id)
-            return reply_text
+            return f"{reply_text}[O]"
         except Exception as e:
             # 发生异常时，移除最后一条用户输入
             print(f"发生异常: {e}")
@@ -201,7 +238,7 @@ class UnifiedChatbot:
                 model_response = self.remove_markdown(model_response)
                 self.add_message_gemini('model', model_response, user_id)
                 print("调用 Gemini API 后的历史记录:", self.get_user_history(user_id))  # 调试打印
-                return model_response
+                return f"{model_response}[G]" 
             else:
                 # 模型未产生有效回应，可选择移除该轮用户输入
                 history.pop(-1)
@@ -209,6 +246,37 @@ class UnifiedChatbot:
         
         except Exception as e:
             return f"发生错误: {e}"
+        
+    def _get_reply_qwen(self, user_input, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        self.add_message_qwen('user', user_input, user_id)
+        try:
+            history = self.get_user_history(user_id)
+            print("调用 Qwen API 前的历史记录:", history)  # 调试打印
+            # logger.debug(f"向 Dashscope 发送消息: {messages}")
+            # 调用 Dashscope API
+            response = dashscope.Generation.call(
+                model=self.qwen_model,
+                messages=history,
+                enable_search=True,
+                # max_tokens=5000,
+                result_format='message'
+            )
+            # logger.debug(f"来自 Dashscope 的回复: {json.dumps(response, ensure_ascii=False)}")
+            if response.status_code == HTTPStatus.OK:
+                # 直接提取所需信息
+                reply_content = response.output.get("choices", [{}])[0].get("message", {}).get("content", "")
+                self.add_message_qwen('assistant', reply_content, user_id)
+                return f"{reply_content}[Q]" if reply_content else "未收到有效回复。"
+            else:
+                # 移除最后一条用户输入
+                history.pop(-1) if history and history[-1]["role"] == "user" else None
+                return f"请求错误: 状态码 {response.status_code}, 消息: {response.message}"
+        except Exception as e:
+            # logger.error(f"Error generating summary with Dashscope: {e}")
+            history.pop(-1) if history and history[-1]["role"] == "user" else None
+            return f"Qwen模型调用出错: {e}"
+
 
     def remove_markdown(self, text):
         # 替换Markdown的粗体标记
@@ -256,3 +324,42 @@ class UnifiedChatbot:
 # # 7. 清空会话历史并打印结果
 # chatbot.clear_user_history()
 # print("\n清空后的会话历史:", chatbot.get_user_history())
+
+
+# 创建UnifiedChatbot实例
+chatbot = UnifiedChatbot()
+
+# 设置AI模型为Qwen
+chatbot.set_ai_model("Qwen")
+
+# 预设一些初始历史对话
+initial_history = [
+    {"role": "user", "content": "你觉得未来的科技趋势是什么？"},
+    {"role": "assistant", "content": "我认为人工智能和量子计算将是重要的趋势。"}
+]
+chatbot.set_initial_history(initial_history)
+
+# 打印预设的历史对话
+print("预设的历史对话:", chatbot.get_user_history())
+
+# 开始测试三轮对话
+# 第一轮会话
+user_input1 = "那你认为人工智能会带来哪些改变？"
+print(f"\n用户输入: {user_input1}")
+response1 = chatbot.get_model_reply(user_input1)
+print("模型回复:", response1)
+print("第一轮会话后的历史记录:", chatbot.get_user_history())
+
+# 第二轮会话
+user_input2 = "人工智能在医疗领域的应用前景如何？"
+print(f"\n用户输入: {user_input2}")
+response2 = chatbot.get_model_reply(user_input2)
+print("模型回复:", response2)
+print("第二轮会话后的历史记录:", chatbot.get_user_history())
+
+# 第三轮会话
+user_input3 = "人工智能对人类的伦理和社会有什么影响？"
+print(f"\n用户输入: {user_input3}")
+response3 = chatbot.get_model_reply(user_input3)
+print("模型回复:", response3)
+print("第三轮会话后的历史记录:", chatbot.get_user_history())

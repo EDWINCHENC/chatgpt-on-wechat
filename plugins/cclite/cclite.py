@@ -66,6 +66,8 @@ class CCLite(Plugin):
                 self.temperature = config.get("temperature", 0.9)
                 self.prompt = config.get("prompt", {})
                 self.c_model = ModelGenerator()
+                # 创建 UnifiedChatbot 实例
+                self.c_modelpro = UnifiedChatbot()
 
                 self.default_prompt = "当前中国北京时间是：{time}，你是一个可以通过联网工具获取各种实时信息、也可以使用联网工具访问指定URL内容的AI助手,请根据联网工具返回的信息按照用户的要求，告诉用户'{name}'想要的信息,要求排版美观，依据联网工具提供的内容进行描述！严禁胡编乱造！如果用户没有指定语言，默认中文。"
                 logger.info("[cclite] inited")
@@ -347,6 +349,10 @@ class CCLite(Plugin):
     def run_conversation(self, input_messages, e_context: EventContext):
         global function_response
         context = e_context['context']
+        msg: ChatMessage = context['msg']
+        # user_id = msg.from_user_id
+        isgroup = e_context["context"].get("isgroup")
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
         called_function_name = None  # 初始化变量
         messages = []
         openai.api_key = self.openai_api_key
@@ -902,7 +908,11 @@ class CCLite(Plugin):
         else:
             # 如果模型不希望调用函数，直接打印其响应
             logger.debug(f"模型未调用函数，原始模型响应: {message['content']}")  # 打印模型的响应
-            return     
+            # 在此处调用c_modelpro的UnifiedChatbot中的模型，获取响应
+            user_input = context.content
+            response = self.c_modelpro.get_model_reply(user_input, user_id)
+            
+            return None, response
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述

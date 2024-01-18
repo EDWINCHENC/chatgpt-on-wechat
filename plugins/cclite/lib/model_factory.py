@@ -4,8 +4,6 @@ from config import conf
 from common.log import logger
 import openai
 import google.generativeai as genai
-
-import random
 from http import HTTPStatus
 import dashscope
 
