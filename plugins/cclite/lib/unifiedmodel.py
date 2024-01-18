@@ -50,6 +50,8 @@ class UnifiedChatbot:
         """设置 AI 模型"""
         # 将输入的模型名称转换为全部小写，以便进行不区分大小写的比较
         model_name_lower = model_name.lower()
+        # 在切换模型前清除所有用户的历史记录
+        self.clear_all_histories()
         if model_name_lower == "openai":
             self.ai_model = "OpenAI"  # 使用规范的模型名称
             logger.debug(f"已切换到 OpenAI 模型。")
@@ -164,13 +166,13 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"当前使用的模型为：{self.ai_model}")
         if self.ai_model == "OpenAI":
-            print("调用 _get_reply_openai")  # 调试打印
+            logger.debug("调用 _get_reply_openai")  # 调试打印
             return self._get_reply_openai(user_input, user_id)
         elif self.ai_model == "Gemini":
-            print("调用 _get_reply_gemini")  # 调试打印
+            logger.debug("调用 _get_reply_gemini")  # 调试打印
             return self._get_reply_gemini(user_input, user_id)
         elif self.ai_model == "Qwen":
-            print("调用 _get_reply_qwen")  # 调试打印
+            logger.debug("调用 _get_reply_qwen")  # 调试打印
             return self._get_reply_qwen(user_input, user_id)
         else:
             return "未知的 AI 模型。"
