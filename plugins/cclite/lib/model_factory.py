@@ -5,6 +5,10 @@ from common.log import logger
 import openai
 import google.generativeai as genai
 
+import random
+from http import HTTPStatus
+import dashscope
+
 class ModelGenerator:
     def __init__(self):
         # 设置数据库路径和API配置
@@ -12,6 +16,7 @@ class ModelGenerator:
         self.openai_api_key = conf().get("open_ai_api_key")
         self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
         self.gemini_api_key = conf().get("gemini_api_key")
+
         logger.debug(f"[ModelGenerator] openai_api_key: {self.openai_api_key}")
         logger.debug(f"[ModelGenerator] gemini_api_key: {self.gemini_api_key}")
 
@@ -21,6 +26,7 @@ class ModelGenerator:
             config = json.load(f)
             logger.info(f"[ModelGenerator] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
+        self.dashscope_api_key = config.get("dashscope_api_key")
 
     def set_ai_model(self, model_name):
         """设置 AI 模型"""
@@ -34,8 +40,12 @@ class ModelGenerator:
             self.ai_model = "Gemini"  # 使用规范的模型名称
             logger.debug(f"[ModelGenerator] ai_model: {self.ai_model}")
             return "已切换到 Gemini 模型。"
+        elif model_name.lower() == "qwen":
+            self.ai_model = "Qwen"
+            logger.debug(f"[ModelGenerator] ai_model: {self.ai_model}")
+            return "已切换到 Qwen 模型。"
         else:
-            return "无效的模型名称。请使用 'OpenAI' 或 'Gemini'。"
+            return "无效的模型名称。请使用 'OpenAI' 或 'Gemini' 或 'Qwen'。"
 
     def get_current_model(self):
         """获取当前 AI 模型"""
@@ -49,6 +59,10 @@ class ModelGenerator:
         elif self.ai_model == "Gemini":
             messages = self._build_gemini_messages(prompt, combined_content)
             return self._generate_summary_with_gemini_pro(messages)
+        
+        elif self.ai_model == "Qwen":
+            messages = self._build_dashscope_messages(prompt, combined_content)
+            return self._generate_summary_with_dashscope(messages)
 
     def _build_openai_messages(self, prompt, user_input):
         return [
@@ -63,6 +77,12 @@ class ModelGenerator:
             "output: "
         ]
         return prompt_parts
+
+    def _build_dashscope_messages(self, prompt, user_input):
+        return [
+            {'role': 'system', 'content': prompt},
+            {'role': 'user', 'content': user_input}
+        ]
 
     def _generate_summary_with_openai(self, messages):
         """使用 OpenAI ChatGPT 生成总结"""
@@ -109,6 +129,31 @@ class ModelGenerator:
 
         except Exception as e:
             logger.error(f"Error generating summary with Gemini Pro: {e}")
+            return "生成总结时出错，请稍后再试。"
+
+    def _generate_summary_with_dashscope(self, messages):
+        # 使用 Dashscope 生成总结
+        try:
+            # 配置 Dashscope API
+            dashscope.api_key=self.dashscope_api_key
+            
+            # 调用 Dashscope API
+            response = dashscope.Generation.call(
+                model='qwen-max-longcontext',
+                messages=messages,
+                max_tokens=5000,
+                result_format='message'
+            )
+            logger.debug(f"来自 Dashscope 的回复: {json.dumps(response, ensure_ascii=False)}")
+            if response.status_code == HTTPStatus.OK:
+                # 直接提取所需信息
+                reply_content = response.output.get("choices", [{}])[0].get("message", {}).get("content", "")
+                return f"{reply_content}[Q]" if reply_content else "未收到有效回复。"
+            else:
+                return f"请求错误: 状态码 {response.status_code}, 消息: {response.message}"
+
+        except Exception as e:
+            logger.error(f"Error generating summary with Dashscope: {e}")
             return "生成总结时出错，请稍后再试。"
 
 

@@ -239,7 +239,7 @@ class ChatStatistics(Plugin):
 
             # 调用 OpenAI ChatGPT
             response = openai.ChatCompletion.create(
-                model="gpt-4-1106-preivew",
+                model="gpt-3.5-turbo-0613",
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
@@ -317,7 +317,7 @@ class ChatStatistics(Plugin):
                 # 构建消息格式
                 formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
 
-                prompt = "你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user} 的聊天记录进行适当的总结，并进行精华点评（添加emoji)。可以点评他/她主要的聊天话题、聊天活跃度、和谁互动最多、发言时段等等方面，总字数80字以内"
+                prompt = "你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user} 的聊天记录进行适当的总结，并进行精华点评（添加emoji)。可以点评他/她主要的聊天话题、聊天活跃度、和谁互动最多等等方面，总字数60字以内"
                 messages_to_model = formatted_top_user_messages
                 # 调用 Model 进行分析
                 model_analysis = self._generate_model_analysis(prompt, messages_to_model)
