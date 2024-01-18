@@ -105,6 +105,10 @@ class CCLite(Plugin):
                 response = self.c_model.set_ai_model("Gemini")
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
+            elif "cc qwen" in content_lower:
+                response = self.c_model.set_ai_model("Qwen")
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)
+                return
             elif "cmodel" in content_lower:
                 response = self.c_model.get_current_model()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
