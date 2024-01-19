@@ -64,6 +64,19 @@ class CCLite(Plugin):
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
                 return
 
+            elif "重置会话" in context.content:
+                self.c_modelpro.clear_all_histories()
+                _set_reply_text("记录清除，会话已重置。", e_context, level=ReplyType.TEXT)
+                return
+
+            elif "清除我的会话" in context.content:
+                # 调用 clear_user_history 方法并检查操作是否成功
+                if self.c_modelpro.clear_user_history(user_id):
+                    _set_reply_text("您的会话历史已被清除。", e_context, level=ReplyType.TEXT)
+                else:
+                    _set_reply_text("会话历史清除失败，可能不存在历史记录。", e_context, level=ReplyType.TEXT)
+                return
+
             user_input = context.content
             response = self.c_modelpro.get_model_reply(user_input, user_id)
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
