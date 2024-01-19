@@ -34,7 +34,7 @@ class UnifiedChatbot:
         
         # Qwen配置
         self.dashscope_api_key = config.get("dashscope_api_key", "")
-        self.qwen_model = 'qwen-max-1201'  # 模型名称
+        self.qwen_model = 'qwen-max'  # 模型名称
         # 配置 Dashscope API
         dashscope.api_key=self.dashscope_api_key
 
@@ -145,6 +145,10 @@ class UnifiedChatbot:
         if not history:
             return
 
+        # 确保历史记录的第一条不是 'assistant'
+        if history[0]["role"] == "assistant":
+            history.pop(0)
+
         # 如果当前模型是 OpenAI 并且历史记录中包含 system 提示，那么保留 system 提示
         if self.ai_model in ["OpenAI", "Qwen"] and history[0]["role"] == "system":
             while len(history) > max_history_length:
@@ -160,7 +164,39 @@ class UnifiedChatbot:
             while len(history) > max_history_length - 1:  # 减去 1 因为不再包含 system 提示
                 logger.debug("移除2条历史记录")
                 history[:] = history[2:]
+                
+    def _trim_history(self, history):
+        max_history_length = 7  # 示例值
 
+        if not history:
+            return
+
+        # 移除第一条 'assistant' 记录（如果存在）
+        if history[0]["role"] == "assistant":
+            history.pop(0)
+            logger.debug("移除1条助手记录")
+
+        # 如果模型不是 OpenAI 或 Qwen 且第一条是 'system'，则移除
+        if self.ai_model not in ["OpenAI", "Qwen"] and history[0]["role"] == "system":
+            history.pop(0)
+            logger.debug("移除1条系统提示")
+
+        # 根据模型特定逻辑修剪历史记录
+        if self.ai_model in ["OpenAI", "Qwen"] and history and history[0]["role"] == "system":
+            while len(history) > max_history_length:
+                # 确保至少有3条历史记录
+                if len(history) > 3:
+                    logger.debug("移除2条历史记录")
+                    history[:] = history[:1] + history[3:]
+                else:
+                    break
+        else:
+            while len(history) > max_history_length - 1:
+                if len(history) > 2:
+                    logger.debug("移除2条历史记录")
+                    history[:] = history[2:]
+                else:
+                    break
 
     def get_model_reply(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -273,6 +309,7 @@ class UnifiedChatbot:
                 # 直接提取所需信息
                 reply_content = response.output.get("choices", [{}])[0].get("message", {}).get("content", "")
                 self.add_message_qwen('assistant', reply_content, user_id)
+                reply_content = self.remove_markdown(reply_content)
                 return f"{reply_content}[Q]" if reply_content else "未收到有效回复。"
             else:
                 # 移除最后一条用户输入
