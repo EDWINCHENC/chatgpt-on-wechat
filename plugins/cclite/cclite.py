@@ -59,6 +59,12 @@ class CCLite(Plugin):
                 self.c_modelpro.set_ai_model("Qwen")
                 _set_reply_text("已切换到Qwen模型。", e_context, level=ReplyType.TEXT)
                 return
+            elif "cc zhipuai" in content_lower:
+                # self.c_model.set_ai_model("Zhipuai")
+                self.c_modelpro.set_ai_model("Zhipuai")
+                _set_reply_text("已切换到Zhipuai模型。", e_context, level=ReplyType.TEXT)
+                return
+
             elif "cmodel" in content_lower:
                 response = self.c_model.get_current_model()
                 _set_reply_text(response, e_context, level=ReplyType.TEXT)
@@ -76,11 +82,21 @@ class CCLite(Plugin):
                 else:
                     _set_reply_text("会话历史清除失败，可能不存在历史记录。", e_context, level=ReplyType.TEXT)
                 return
+            
+            # 添加对图像生成请求的检测
+            elif context.content.startswith("画："):
+                prompt = context.content[2:].strip()  # 从"画："后的文本开始提取
+                logger.debug(f"检测到图像生成请求，提示词: {prompt}")
+                image_url = self.c_modelpro._generate_image_zhipuai(prompt)
+                logger.debug(f"生成的图像URL: {image_url}")
+                _set_reply_text(image_url, e_context, level=ReplyType.IMAGE_URL)
+                return
 
-            user_input = context.content
-            response = self.c_modelpro.get_model_reply(user_input, user_id)
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)     
-            return
+            else:
+                user_input = context.content
+                response = self.c_modelpro.get_model_reply(user_input, user_id)
+                _set_reply_text(response, e_context, level=ReplyType.TEXT)     
+                return
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述

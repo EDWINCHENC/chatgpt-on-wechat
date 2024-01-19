@@ -4,9 +4,10 @@ import json
 import os
 from http import HTTPStatus
 import dashscope
-from common.log import logger
-# import logging
-# logger = logging.getLogger(__name__)
+from zhipuai import ZhipuAI
+# from common.log import logger
+import logging
+logger = logging.getLogger(__name__)
 
 class UnifiedChatbot:
     def __init__(self):
@@ -37,13 +38,21 @@ class UnifiedChatbot:
         self.qwen_model = 'qwen-max'  # 模型名称
         # 配置 Dashscope API
         dashscope.api_key=self.dashscope_api_key
+        
+        # ZhipuAI配置
+        self.zhipuai_api_key = config.get("zhipuai_api_key", "")
+        self.zhipuai_model = "glm-4"
+        self.zhipuai_client = ZhipuAI(api_key=self.zhipuai_api_key)
+        # ZhipuAI图像模型配置
+        self.zhipuai_image_model = "cogview-3"
 
+        # 其他配置
         self.user_histories = {}
         # 设置默认用户 ID
         self.user_histories[self.DEFAULT_USER_ID] = []
         self.ai_model = config.get("ai_model", "OpenAI")
 
-    # ... 其他已有的方法 ...
+    # 常量定义
     DEFAULT_USER_ID = "default_user"
 
     def set_ai_model(self, model_name):
@@ -64,8 +73,12 @@ class UnifiedChatbot:
             self.ai_model = "Qwen"
             logger.debug(f"已切换到 Qwen 模型。")
             return "已切换到 Qwen 模型。"
+        elif model_name_lower == "zhipuai":
+            self.ai_model = "ZhipuAI"
+            logger.debug(f"已切换到 ZhipuAI 模型。")
+            return "已切换到 ZhipuAI 模型。"
         else:
-            return "无效的模型名称。请使用 'OpenAI'、'Gemini' 或 'Qwen'。"
+            return "无效的模型名称。"
 
     def get_user_history(self, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -121,6 +134,13 @@ class UnifiedChatbot:
         history.append({'role': role, 'content': content})
         self._trim_history(history)
 
+    def add_message_zhipuai(self, role, content, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        history = self.get_user_history(user_id)
+        history.append({'role': role, 'content': content})
+        self._trim_history(history)
+
+
     def set_initial_history(self, initial_messages, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         if not isinstance(initial_messages, list):
@@ -138,51 +158,24 @@ class UnifiedChatbot:
                 raise ValueError("消息应该包含 'content' 或 'parts' 键。")
 
         self._trim_history(history)  # 确保历史记录不会超出预设的长度
-
+         
     def _trim_history(self, history):
         max_history_length = 7  # 示例值
-        # 首先检查历史记录是否为空
+        
         if not history:
             return
-
-        # 确保历史记录的第一条不是 'assistant'
-        if history[0]["role"] == "assistant":
-            history.pop(0)
-
-        # 如果当前模型是 OpenAI 并且历史记录中包含 system 提示，那么保留 system 提示
-        if self.ai_model in ["OpenAI", "Qwen"] and history[0]["role"] == "system":
-            while len(history) > max_history_length:
-                logger.debug("移除2条历史记录")
-                history[:] = history[:1] + history[3:]
-        # 如果当前模型是 Gemini 或者历史记录中没有 system 提示，那么直接移除最旧的记录
-        else:
-            # 如果历史记录中有 system 提示，先移除它
-            if history[0]["role"] == "system":
-                history.pop(0)
-                logger.debug(f"移除1条系统提示")
-            # 然后根据历史记录的最大长度移除最旧的记录
-            while len(history) > max_history_length - 1:  # 减去 1 因为不再包含 system 提示
-                logger.debug("移除2条历史记录")
-                history[:] = history[2:]
-                
-    def _trim_history(self, history):
-        max_history_length = 7  # 示例值
-
-        if not history:
-            return
-
         # 移除第一条 'assistant' 记录（如果存在）
         if history[0]["role"] == "assistant":
             history.pop(0)
             logger.debug("移除1条助手记录")
 
         # 如果模型不是 OpenAI 或 Qwen 且第一条是 'system'，则移除
-        if self.ai_model not in ["OpenAI", "Qwen"] and history[0]["role"] == "system":
+        if self.ai_model not in ["OpenAI", "Qwen", "ZhipuAI"] and history[0]["role"] == "system":
             history.pop(0)
             logger.debug("移除1条系统提示")
 
         # 根据模型特定逻辑修剪历史记录
-        if self.ai_model in ["OpenAI", "Qwen"] and history and history[0]["role"] == "system":
+        if self.ai_model in ["OpenAI", "Qwen", "ZhipuAI"] and history and history[0]["role"] == "system":
             while len(history) > max_history_length:
                 # 确保至少有3条历史记录
                 if len(history) > 3:
@@ -210,9 +203,13 @@ class UnifiedChatbot:
         elif self.ai_model == "Qwen":
             logger.debug("调用 _get_reply_qwen")  # 调试打印
             return self._get_reply_qwen(user_input, user_id)
+        elif self.ai_model == "ZhipuAI":
+            logger.debug("调用 _get_reply_zhipuai")  # 调试打印
+            return self._get_reply_zhipuai(user_input, user_id)
         else:
             return "未知的 AI 模型。"
 
+    # 获取OpenAI 模型的响应
     def _get_reply_openai(self, user_input, user_id=None):
         logger.debug(f"进入 _get_reply_openai 方法")
         if not user_input.strip():
@@ -257,8 +254,7 @@ class UnifiedChatbot:
 
         return message
 
-
-
+    # 获取Gemini 模型的响应
     def _get_reply_gemini(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_gemini 方法")
@@ -286,7 +282,8 @@ class UnifiedChatbot:
         
         except Exception as e:
             return f"发生错误: {e}"
-        
+
+    # 获取Qwen 模型的响应       
     def _get_reply_qwen(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_qwen 方法")
@@ -319,6 +316,44 @@ class UnifiedChatbot:
             # logger.error(f"Error generating summary with Dashscope: {e}")
             history.pop(-1) if history and history[-1]["role"] == "user" else None
             return f"Qwen模型调用出错: {e}"
+
+    # 获取Zhipuai 模型的响应
+    def _get_reply_zhipuai(self, user_input, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_zhipuai 方法")
+        logger.debug(f"当前用户 ID: {user_id}")
+        logger.debug(f"向 Zhipuai API 发送消息: {user_input}")
+        self.add_message_zhipuai('user', user_input, user_id)
+        try:
+            history = self.get_user_history(user_id)
+            logger.debug(f"传递给 Zhipuai API 的历史记录: {history}")  # 调试打印
+            response = self.zhipuai_client.chat.completions.create(
+                model=self.zhipuai_model,
+                messages=history,
+                # top_p=0.7,
+                # temperature=0.9,
+                # stream=False,
+                max_tokens=1500
+            )
+            reply_text = response.choices[0].message.content
+            self.add_message_zhipuai('assistant', reply_text, user_id)
+            reply_text = self.remove_markdown(reply_text)
+            return f"{reply_text}[Z]"
+        except Exception as e:
+            history.pop(-1) if history and history[-1]["role"] == "user" else None
+            return self.handle_exception(e)
+
+    def _generate_image_zhipuai(self, prompt):
+        model_name = self.zhipuai_image_model
+        try:
+            response = self.zhipuai_client.images.generations(
+                model=model_name,
+                prompt=prompt
+            )
+            return response.data[0].url if response.data else "未能生成图像"
+        except Exception as e:
+            return f"生成图像时发生错误: {e}"
+
 
 
     def remove_markdown(self, text):
