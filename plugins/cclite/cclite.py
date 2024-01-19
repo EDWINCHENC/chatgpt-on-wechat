@@ -85,7 +85,7 @@ class CCLite(Plugin):
             
             # 添加对图像生成请求的检测
             elif context.content.startswith("画"):
-                prompt = context.content[2:].strip()  # 从"画："后的文本开始提取
+                prompt = context.content[1:].strip()  # 从"画："后的文本开始提取
                 logger.debug(f"检测到图像生成请求，提示词: {prompt}")
                 image_url = self.c_modelpro._generate_image_zhipuai(prompt)
                 logger.debug(f"生成的图像URL: {image_url}")
