@@ -5,9 +5,9 @@ import os
 from http import HTTPStatus
 import dashscope
 from zhipuai import ZhipuAI
-# from common.log import logger
-import logging
-logger = logging.getLogger(__name__)
+from common.log import logger
+# import logging
+# logger = logging.getLogger(__name__)
 
 class UnifiedChatbot:
     def __init__(self):
@@ -345,6 +345,7 @@ class UnifiedChatbot:
 
     def _generate_image_zhipuai(self, prompt):
         model_name = self.zhipuai_image_model
+        logger.debug(f"调用 Zhipuai API 生成图像: {prompt}")
         try:
             response = self.zhipuai_client.images.generations(
                 model=model_name,
