@@ -9,21 +9,16 @@
     "@CChat"
   ],
   "single_chat_reply_prefix": "",
-  "group_chat_prefix": [
-    "@CChat",
-    "@Oʀ ."
-  ],
-  "nick_name_black_list": ["黄二狗²⁴⁶⁷"],
+  "group_chat_prefix": [],
+  "nick_name_black_list": [],
 
   "channel_type": "wx",
   "group_chat_reply_suffix": "",
-  "group_chat_keyword": ["总结群聊","群聊统计","宠物领养","宠物命名","宠物状态","宠物任务","宠物签到","我的宠物"],  
+  "group_chat_keyword": [],  
   "group_name_white_list": [
     "ALL_GROUP"
   ],
-  "group_chat_in_one_session": [
-    ""
-  ],
+  "group_chat_in_one_session": [],
 
   "image_create_prefix": [
     "画"
