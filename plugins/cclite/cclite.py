@@ -220,7 +220,7 @@ class CCLite(Plugin):
         elif "周公解梦" in context.content:
             logger.debug("激活周公解梦会话")
             self.start_session(user_id, "ZHOU_GONG_DREAM")
-            _set_reply_text("你已进入周公解梦模式，请描述你的梦境, e_context, level=ReplyType.TEXT)")
+            _set_reply_text("你已进入周公解梦模式，请描述你的梦境", e_context, level=ReplyType.TEXT)
             return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
@@ -620,7 +620,7 @@ class CCLite(Plugin):
         logger.debug(f"用户{user_id}结束会话")
 
     def get_session_state(self, user_id):
-        logger.debug(f"获取用户{user_id}的会话状态")
+        logger.debug(f"获取用户{user_id}的会话状态: {self.session_data.get(user_id)}")
         return self.session_data.get(user_id, ("NORMAL", None))
 
     def get_help_text(self, verbose=False, **kwargs):
