@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
-from .lib import fetch_affdz as affdz, horoscope as horo, function as fun
+from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
 
 
 @plugins.register(
@@ -435,8 +435,93 @@ class CCLite(Plugin):
                 
         elif "早报" in context.content:  # 11.获取每日早报
             function_response = fun.get_morning_news(api_key=self.alapi_key)
-            _set_reply_text(f"{function_response}, e_context, level=ReplyType.TEXT)")
+            _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
             return
+
+                                       
+        elif "英雄" in context.content and "的数据" in context.content:
+            # 使用正则表达式匹配英雄名称
+            match = re.search(r"英雄(.+?)的数据", context.content)
+            hero_name = match.group(1).strip() if match else "未指定英雄"
+            # 调用函数并获取返回值
+            function_response = fun.get_hero_info(hero_name)
+            _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+            return
+
+            
+        elif "英雄梯度榜" in context.content:  # 9.获取英雄梯度榜
+            # 构建 API 请求的 URL
+            api_url = f"{self.base_url()}/hero_ranking/"
+            # 向 FastAPI 端点发送 GET 请求
+            try:
+                response = requests.get(api_url)
+                response.raise_for_status()  # 检查请求是否成功
+                # 解析响应数据
+                data = response.json()
+                function_response = data.get('results')                    
+                # 根据响应设置回复文本
+                if function_response is None or "查询出错" in function_response:
+                    _set_reply_text(f"❌获取失败: {function_response}", e_context, level=ReplyType.TEXT)
+                else:
+                    _set_reply_text(f"✅获取成功，数据如下：\n{function_response}", e_context, level=ReplyType.TEXT)
+            except requests.HTTPError as http_err:
+                # 如果请求出错，则设置失败消息
+                _set_reply_text(f"❌HTTP请求错误: {http_err}", e_context, level=ReplyType.TEXT)
+            except Exception as err:
+                # 如果发生其他错误，则设置失败消息
+                _set_reply_text(f"❌请求失败: {err}", e_context, level=ReplyType.TEXT)             
+            # 记录响应
+            return
+        
+                                
+        elif re.search(r"(电视剧|电影|动漫)(.+)", context.content):
+            match = re.search(r"(电视剧|电影|动漫)(.+)", context.content)
+            media_type_raw, tv_show_name = match.groups()
+            tv_show_name = tv_show_name.strip()  # 去除可能的前后空格
+
+            # 根据匹配到的媒体类型设置 media_type
+            if media_type_raw == "电影":
+                media_type = "movie"
+            else:
+                media_type = "tv"  # 默认为电视剧，包括动漫
+            com_reply = Reply()
+            com_reply.type = ReplyType.TEXT
+            count = 8  # 默认10条评论
+            order_by = "hot"  # 默认按照'hot'排序
+
+            if context.kwargs.get('isgroup'):
+                msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                nickname = msg.actual_user_nickname  # 获取nickname
+                _send_info(e_context,"@{name}\n☑️正在为您获取《{show}》的{media_type_text}信息和剧评，请稍后...".format(name=nickname, show=tv_show_name, media_type_text="电影" if media_type == "movie" else "电视剧")) 
+            else:
+                _send_info(e_context,"☑️正在为您获取《{show}》的{media_type_text}信息和剧评，请稍后...".format(show=tv_show_name, media_type_text="电影" if media_type == "movie" else "电视剧")) 
+                
+            # 使用 fetch_tv_show_id 获取电视剧 ID
+            tv_show_id, status_msg, elapsed_time = fetch_tv_show_id.fetch_tv_show_id(tv_show_name)  # 假设函数返回 ID, 状态信息和耗时
+            logger.debug(f"TV show ID: {tv_show_id}, status message: {status_msg}, elapsed time: {elapsed_time:.2f}秒")  # 打印获取的 ID 和状态信息                
+            # 初始化回复内容
+            com_reply.content = ""   # 假设 Reply 是一个您定义的类或数据结构
+            
+            # 根据获取的电视剧 ID 设置回复内容
+            if tv_show_id is None:
+                # 如果获取 ID 失败，设置失败消息
+                com_reply.content += f"❌获取影视信息失败: {status_msg}"
+            else:
+                # 如果获取 ID 成功，设置成功消息和链接
+                com_reply.content += f"✅获取影视信息成功，耗时: {elapsed_time:.2f}秒\n现可访问页面：https://m.douban.com/movie/subject/{tv_show_id}/\n以下为平台及播放跳转链接:"
+                
+                # 调用 fetch_media_details 函数获取影视详细信息
+                media_details = tvinfo.fetch_media_details(tv_show_name, media_type)
+                com_reply.content += f"\n{media_details}\n-----------------------------\n😈即将为你呈现精彩剧评🔜"  # 将详细信息添加到回复内容中
+                
+            # 发送回复
+            _send_info(e_context, com_reply.content)
+            # 调用函数
+            function_response = tvinfo.get_tv_show_interests(tv_show_name, media_type=media_type, count=count, order_by=order_by)  # 注意这里我们直接调用函数，并没有使用shows_map
+            function_response = json.dumps({"response": function_response}, ensure_ascii=False)
+            logger.debug(f"Function response: {function_response}")  # 打印函数响应     
+            _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+            return           
 
 
         # 添加对图像生成请求的检测
