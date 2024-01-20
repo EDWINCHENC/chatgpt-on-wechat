@@ -217,20 +217,11 @@ class CCLite(Plugin):
             )
             return
         
-        # elif "周公解梦" in context.content:
-        #     logger.debug("激活周公解梦会话")
-        #     self.start_session(user_id, "ZHOU_GONG_DREAM")
-        #     _set_reply_text(
-        #         "🔮 请用 5 至 10 秒的时间，集中思考你的梦。\n"
-        #         "🌟 每次只能有一个梦。\n\n"
-        #         "💭 在确定你的梦后，可以告诉我，例如：\n"
-        #         "“我梦见我妈妈在我家做饭。” 或 “我梦见我爸爸在我家打篮球。”\n\n"
-        #         "✨ 或者，如果你愿意，不必告诉我你的梦，只需心中虔诚地默念。\n"
-        #         "然后发送“解梦”，你要寻找的答案就在那里等着你。\n",
-        #         e_context,
-        #         level=ReplyType.TEXT
-        #     )
-        #     return
+        elif "周公解梦" in context.content:
+            logger.debug("激活周公解梦会话")
+            self.start_session(user_id, "ZHOU_GONG_DREAM")
+            _set_reply_text("你已进入周公解梦模式，请描述你的梦境, e_context, level=ReplyType.TEXT)")
+            return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
             logger.debug("正替你考虑今天吃什么")
@@ -587,7 +578,26 @@ class CCLite(Plugin):
         self.end_session(user_id)
         logger.debug(f"结束答案之书会话后，用户 {user_id} 的会话状态: {self.session_data.get(user_id)}")
         return
-
+    
+    def handle_zhou_gong_dream(self, e_context: EventContext, session_data):
+        logger.debug("进入周公之梦会话")     
+        context = e_context['context']
+        msg: ChatMessage = context['msg']
+        # user_id = msg.from_user_id
+        isgroup = e_context["context"].get("isgroup")
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        # nickname = msg.actual_user_nickname  # 获取nickname   
+        system_prompt = "你是一个拥有 25 年经验的解梦专家，你精通《周公解梦》（作者：周公）、《梦林玄解》（作者：李隆基）、《梦的解析》 作者：西格蒙德·弗洛伊德、《解梦大全》（作者：是詹姆斯·R·刘易斯）等解梦书籍。你正在为需要的人进行解梦。用户会向你描述他的梦境是什么？你要运用你渊博的解梦知识对用户的梦境进行专业解读。" 
+        self.c_modelpro.set_system_prompt(system_prompt,user_id)
+        model_response = self.c_modelpro.get_model_reply(context.content, user_id)
+        logger.debug(f"已获取周公之解梦: {model_response}")
+        _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
+        history = self.c_modelpro.user_histories.get(user_id)
+        logger.debug(f"即将清楚用户{user_id}的历史记录: {history}")
+        self.c_modelpro.clear_user_history(user_id)
+        self.end_session(user_id)
+        logger.debug(f"结束周公之梦会话后，用户 {user_id} 的会话状态: {self.session_data.get(user_id)}")
+        return
 
     # 以下为插件的一些辅助函数
 
