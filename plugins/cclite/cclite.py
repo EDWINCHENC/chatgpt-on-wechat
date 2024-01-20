@@ -8,10 +8,11 @@ from channel.chat_message import ChatMessage
 from plugins import *
 from common.log import logger
 import os
+import time
 from datetime import datetime
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
-from .lib import fetch_affdz as affdz, horoscope as horo
+from .lib import fetch_affdz as affdz, horoscope as horo, function as fun
 
 
 @plugins.register(
@@ -25,11 +26,20 @@ class CCLite(Plugin):
     def __init__(self):
         super().__init__()
         self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
+        curdir = os.path.dirname(__file__)
+        config_path = os.path.join(curdir, "config.json")
         try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+                logger.info(f"[cclite] 加载配置文件成功: {config}")
                 self.c_model = ModelGenerator()
                 # 创建 UnifiedChatbot 实例
                 self.c_modelpro = UnifiedChatbot()
                 self.session_data = {}  # user_id -> (state, data)
+                self.user_divinations = {}
+                self.alapi_key = config["alapi_key"]   
+                self.getwt_key = config["getwt_key"]
+                self.cc_api_base = config.get("cc_api_base", "https://api.lfei.cc")
                 logger.info("[cclite] inited")
         except Exception as e:
             logger.error(f"[cclite] init error: {e}")
@@ -37,6 +47,7 @@ class CCLite(Plugin):
     
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
+        logger.debug(f"CCLite获取到用户输入：{context.content}")
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
@@ -61,7 +72,8 @@ class CCLite(Plugin):
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        # nickname = msg.actual_user_nickname  # 获取nickname
+        nickname = msg.actual_user_nickname  # 获取nickname
+        start_time = time.time()  # 开始计时
         
         # 模型切换
         content_lower = context.content.lower()
@@ -104,7 +116,7 @@ class CCLite(Plugin):
             match = re.search(r"找(.+)", context.content)
             if match:
                 movie_name = match.group(1).strip()  # 获取电影名
-                logger.debug(f"正在为 {nickname} 查找电影: {movie_name}")
+                logger.debug(f"正在查找电影: {movie_name}")
                 try:
                     # 调用fetch_movie_info函数获取电影信息
                     movie_info = affdz.fetch_movie_info(movie_name)
@@ -204,6 +216,21 @@ class CCLite(Plugin):
                 level=ReplyType.TEXT
             )
             return
+        
+        # elif "周公解梦" in context.content:
+        #     logger.debug("激活周公解梦会话")
+        #     self.start_session(user_id, "ZHOU_GONG_DREAM")
+        #     _set_reply_text(
+        #         "🔮 请用 5 至 10 秒的时间，集中思考你的梦。\n"
+        #         "🌟 每次只能有一个梦。\n\n"
+        #         "💭 在确定你的梦后，可以告诉我，例如：\n"
+        #         "“我梦见我妈妈在我家做饭。” 或 “我梦见我爸爸在我家打篮球。”\n\n"
+        #         "✨ 或者，如果你愿意，不必告诉我你的梦，只需心中虔诚地默念。\n"
+        #         "然后发送“解梦”，你要寻找的答案就在那里等着你。\n",
+        #         e_context,
+        #         level=ReplyType.TEXT
+        #     )
+        #     return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
             logger.debug("正替你考虑今天吃什么")
@@ -235,6 +262,182 @@ class CCLite(Plugin):
                         return
             except requests.RequestException as e:
                 return f"请求异常：{e}"
+            
+            # 以下为获取实时要闻的处理函数  
+        elif "实时要闻" in context.content:
+            api_url = f"{self.base_url()}/latest_news/"
+            try:
+                # 发送GET请求到你的FastAPI服务
+                response = requests.get(api_url)
+                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
+                function_response = response.json()  # 解析JSON响应体为字典
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                function_response = function_response["results"]  # 返回结果字段中的数据
+                elapsed_time = time.time() - start_time  # 计算耗时
+                # 仅在成功获取数据后发送信息
+                if context.kwargs.get('isgroup'):
+                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                    nickname = msg.actual_user_nickname  # 获取nickname
+                    _send_info(e_context, f"@{nickname}\n✅获取实时要闻成功,正在整理。🕒耗时{elapsed_time:.2f}秒")
+                else:
+                    _send_info(e_context, f"✅获取实时要闻成功,正在整理。🕒耗时{elapsed_time:.2f}秒")
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except requests.RequestException as e:
+                logger.error(f"Request to API failed: {e}")
+                _set_reply_text("获取最新新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return
+                            
+        elif "财经资讯" in context.content:  # 2.获取财经新闻
+            api_url = f"{self.base_url()}/financial_news/"            
+            try:
+                # 发送GET请求到你的FastAPI服务
+                response = requests.get(api_url)
+                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
+                function_response = response.json()  # 解析JSON响应体为字典
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                function_response = function_response["results"]  # 返回结果字段中的数据
+                elapsed_time = time.time() - start_time  # 计算耗时
+                # 仅在成功获取数据后发送信息
+                if context.kwargs.get('isgroup'):
+                    msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                    nickname = msg.actual_user_nickname  # 获取nickname
+                    _send_info(e_context, f"@{nickname}\n✅获取实时财经资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                else:
+                    _send_info(e_context, f"✅获取实时财经资讯成功，正在整理。🕒耗时{elapsed_time:.2f}秒")
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except requests.RequestException as e:
+                logger.error(f"Request to API failed: {e}")
+                _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return
+            
+        elif "天气" in context.content:
+            # 使用正则表达式匹配城市名称
+            match = re.search(r"(.+?)(的)?天气", context.content)
+            city_name = match.group(1) if match else "北京"  # 如果没有匹配到，则默认为北京
+            adm = None 
+            user_key = self.getwt_key
+
+            if context.kwargs.get('isgroup'):
+                msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                nickname = msg.actual_user_nickname  # 获取nickname
+                _send_info(e_context, "@{name}\n🔜正在获取{city}的天气情况🐳🐳🐳".format(name=nickname, city=city_name))
+            else:
+                _send_info(e_context, "🔜正在获取{city}的天气情况🐳🐳🐳".format(city=city_name))
+
+            # 向API端点发送GET请求，获取指定城市的天气情况
+            logger.debug(f"向API端点发送GET请求，获取{city_name}的天气情况")
+            try:
+                response = requests.get(
+                    self.base_url() + "/weather/",
+                    params={
+                        "city_name": city_name,
+                        "user_key": user_key,
+                        "adm": adm
+                    }
+                )
+                response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                function_response = response.json()
+                function_response = function_response.get("results", "未知错误")
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except Exception as e:
+                logger.error(f"Error fetching weather info: {e}")
+                _set_reply_text("获取天气信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return
+            
+                  
+        elif "影院热映" in context.content: 
+            if e_context['context'].kwargs.get('isgroup'):
+                msg = e_context['context'].kwargs.get('msg')  # 这是WechatMessage实例
+                nickname = msg.actual_user_nickname  # 获取nickname
+                _send_info(e_context, f"@{nickname}\n🔜正在获取最新影讯🐳🐳🐳")
+            else:
+                _send_info(e_context, "🔜正在获取最新影讯🐳🐳🐳")
+
+            # 构建API请求的URL
+            api_url = f"{self.base_url()}/now_playing_movies/"
+
+            # 向FastAPI端点发送GET请求
+            try:
+                response = requests.get(api_url)
+                response.raise_for_status()  # 检查请求是否成功
+
+                # 解析响应数据
+                data = response.json()
+                function_response = data.get('results')
+                status_msg = data.get('status')
+                elapsed_time = data.get('elapsed_time')
+
+                # 根据响应设置回复文本
+                if status_msg == '失败':
+                    _set_reply_text(f"\n❌获取失败: {status_msg}", e_context, level=ReplyType.TEXT)
+                else:
+                    _set_reply_text(f"\n✅获取成功，耗时: {elapsed_time:.2f}秒\n{function_response}", e_context, level=ReplyType.TEXT)
+            except requests.HTTPError as http_err:
+                # 如果请求出错，则设置失败消息
+                _set_reply_text(f"\n❌HTTP请求错误: {http_err}", e_context, level=ReplyType.TEXT)
+            return
+                
+        elif "热播电视剧" in context.content:  # 7.获取豆瓣最热电视剧榜单              
+            # 从message里提取函数调用参数
+            limit = 10
+            type_ = 'tv'  # 默认为电视剧
+            if context.kwargs.get('isgroup'):
+                msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+                nickname = msg.actual_user_nickname  # 获取nickname
+                _send_info(e_context,"@{name}\n☑️正在为您查询豆瓣的最热电视剧榜单🐳🐳🐳".format(name=nickname)) 
+            else:
+                _send_info(e_context, "☑️正在为您查询豆瓣的最热电视剧榜单，请稍后...") 
+            # 调用函数，获取豆瓣最热电视剧榜单
+            try:
+                response = requests.get(
+                    self.base_url() + "/top_tv_shows/",
+                    params={
+                        "limit": limit,
+                        "type": type_,
+                    }
+                )
+                response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                function_response = response.json()
+                function_response = function_response.get("results", "未知错误")
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except Exception as e:
+                logger.error(f"Error fetching top TV shows info: {e}")
+                _set_reply_text("获取最热影视剧榜单失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return  
+
+
+        elif "AI资讯" in context.content:  # 7.获取AI资讯
+            max_items = 6
+            try:
+                response = requests.get(
+                    self.base_url() + "/ainews/",
+                    params={"max_items": max_items}
+                )
+                response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+            except Exception as e:
+                logger.error(f"Error fetching AI news: {e}")
+                _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
+                return  # 终止后续代码执行
+            try:
+                function_response = response.json()
+                function_response = function_response.get("results", "未知错误")
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except ValueError as e:  # 捕获JSON解析错误
+                logger.error(f"JSON parsing error: {e}")
+                _set_reply_text(f"获取AI新闻失败，请稍后再试。错误信息: {e}", e_context, level=ReplyType.TEXT)
+                return  # 终止后续代码执行
+
+                
+        elif "早报" in context.content:  # 11.获取每日早报
+            function_response = fun.get_morning_news(api_key=self.alapi_key)
+            _set_reply_text(f"{function_response}, e_context, level=ReplyType.TEXT)")
+            return
+
 
         # 添加对图像生成请求的检测
         elif context.content.startswith("画"):
@@ -279,7 +482,6 @@ class CCLite(Plugin):
         # 使用_set_reply_text发送回复
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         # 结束当前会话
-        logger.debug(f"结束答案之书会话前，用户 {user_id} 的会话状态: {self.session_data.get(user_id)}")
         self.end_session(user_id)
         logger.debug(f"结束答案之书会话后，用户 {user_id} 的会话状态: {self.session_data.get(user_id)}")
         return
@@ -292,6 +494,9 @@ class CCLite(Plugin):
             last_divination_date = self.user_divinations[user_id].get('date')
             return last_divination_date == datetime.now().date().isoformat()
         return False
+
+    def base_url(self):
+        return self.cc_api_base
 
     def start_session(self, user_id, state, data=None):
         self.session_data[user_id] = (state, data)
