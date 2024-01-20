@@ -330,6 +330,14 @@ class UnifiedChatbot:
             response = self.zhipuai_client.chat.completions.create(
                 model=self.zhipuai_model,
                 messages=history,
+                tools=[
+                    {
+                        "type":"web_search",
+                        "web_search":{
+                            "enable":True,
+                        }
+                    }
+                ],
                 # top_p=0.7,
                 # temperature=0.9,
                 # stream=False,
