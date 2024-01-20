@@ -37,7 +37,7 @@ def get_tv_show_interests(tv_show_name, media_type='tv', count=10, order_by='hot
                 for idx, interest in enumerate(selected_interests):
                     rank = rank_emojis[idx] if idx < 10 else str(idx + 1)
                     comment_text = interest['comment']
-                    formatted_comment = f"{rank} {comment_text}"
+                    formatted_comment = f"{rank} {comment_text}\n"
                     formatted_comments.append(formatted_comment)
 
                 return formatted_comments
