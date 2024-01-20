@@ -220,7 +220,7 @@ class CCLite(Plugin):
         elif "周公解梦" in context.content:
             logger.debug("激活周公解梦会话")
             self.start_session(user_id, "ZHOU_GONG_DREAM")
-            _set_reply_text("你已进入周公解梦模式，请描述你的梦境", e_context, level=ReplyType.TEXT)
+            _set_reply_text("你已进入周公解梦模式，请描述你的梦境。", e_context, level=ReplyType.TEXT)
             return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
@@ -592,11 +592,9 @@ class CCLite(Plugin):
         model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取周公之解梦: {model_response}")
         _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
-        history = self.c_modelpro.user_histories.get(user_id)
-        logger.debug(f"即将清楚用户{user_id}的历史记录: {history}")
         self.c_modelpro.clear_user_history(user_id)
         self.end_session(user_id)
-        logger.debug(f"结束周公之梦会话后，用户 {user_id} 的会话状态: {self.session_data.get(user_id)}")
+        logger.debug(f"结束周公之梦会话后，清除用户记录和会话状态")
         return
 
     # 以下为插件的一些辅助函数
