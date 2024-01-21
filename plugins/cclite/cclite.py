@@ -50,12 +50,13 @@ class CCLite(Plugin):
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
         # nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             return
         if context.type == ContextType.TEXT:
-            session_state, session_data = self.get_session_state(user_id)
+            session_state, session_data = self.get_session_state(user_id, session_id)
 
             if session_state == "NORMAL":
                 self.handle_normal_context(e_context)
@@ -230,10 +231,10 @@ class CCLite(Plugin):
 
         elif "答题模式" in context.content:
             logger.debug("激活答题模式会话")
-            # user_id = msg.from_user_nickname if isgroup else msg.from_user_id
-            # logger.debug(f"目前的user_id为{user_id}")
-            self.start_session(user_id, "QUIZ_MODE")
-            self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
+            session_id = msg.from_user_nickname if isgroup else msg.from_user_id
+            logger.debug(f"使用session_id: {session_id} 作为会话ID")
+            self.start_session(session_id, "QUIZ_MODE")
+            self.c_modelpro.clear_user_history(session_id)  # 先清除用户历史记录
             _set_reply_text("你已进入答题模式，来挑战自己吧！\n您想选择什么类型的题目呢？例如，您可以选择天文、地理、常识、历史学、法律等。", e_context, level=ReplyType.TEXT)
             return
 
@@ -648,12 +649,11 @@ class CCLite(Plugin):
         context = e_context['context']
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
-        # user_id = msg.from_user_nickname if isgroup else msg.from_user_id
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
         # 此处可以根据您的需求设计问题和回答的逻辑
-        system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意不能胡编乱造，要尊重客观规律，客观事实，不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后给出下一到同类型的题目，以此类推进行多轮答题。"
-        self.c_modelpro.set_system_prompt(system_prompt, user_id)
-        model_response = self.c_modelpro.get_model_reply(context.content, user_id)
+        system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意题目内容不能胡编乱造，要尊重客观规律，客观事实。不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后给出下一到同类型的题目，以此类推进行多轮答题。"
+        self.c_modelpro.set_system_prompt(system_prompt, session_id)
+        model_response = self.c_modelpro.get_model_reply(context.content, session_id)
         logger.debug(f"已获取答题模式回复: {model_response}")
         final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前模式。"
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
@@ -678,10 +678,17 @@ class CCLite(Plugin):
     def end_session(self, user_id):
         self.session_data.pop(user_id, None)
         logger.debug(f"结束用户{user_id}的特殊会话状态")
+            
+    def get_session_state(self, user_id, session_id=None):
+        # 如果提供了session_id且其状态非NORMAL，则使用session_id的状态
+        if session_id and self.session_data.get(session_id, ("NORMAL", None))[0] != "NORMAL":
+            logger.debug(f"检测到有特殊会话状态的session_id: {session_id}, 状态为：{self.session_data.get(session_id)}")
+            return self.session_data.get(session_id)
+        else:
+            # 否则，使用user_id的状态
+            logger.debug(f"检测到当前user_id: {user_id}的会话状态: {self.session_data.get(user_id)}")
+            return self.session_data.get(user_id, ("NORMAL", None))
 
-    def get_session_state(self, user_id):
-        logger.debug(f"当前用户{user_id}的会话状态: {self.session_data.get(user_id)}")
-        return self.session_data.get(user_id, ("NORMAL", None))
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述
