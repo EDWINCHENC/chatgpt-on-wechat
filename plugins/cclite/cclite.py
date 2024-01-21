@@ -595,6 +595,7 @@ class CCLite(Plugin):
         # user_id = msg.from_user_id
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        self.c_modelpro.clear_user_history(user_id)
         # nickname = msg.actual_user_nickname  # 获取nickname   
         system_prompt = "你是一个拥有 25 年经验的解梦专家，你精通《周公解梦》（作者：周公）、《梦林玄解》（作者：李隆基）、《梦的解析》 作者：西格蒙德·弗洛伊德、《解梦大全》（作者：是詹姆斯·R·刘易斯）等解梦书籍。你正在为需要的人进行解梦。用户会向你描述他的梦境是什么？你要运用你渊博的解梦知识对用户的梦境进行专业解读。梦境解读搭配emoji, 发送给用户字数控制在100字以内。" 
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
@@ -614,6 +615,7 @@ class CCLite(Plugin):
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         # nickname = msg.actual_user_nickname  # 获取nickname   
+        self.c_modelpro.clear_user_history(user_id)
         system_prompt = """
             你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
             要求：
