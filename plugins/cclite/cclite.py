@@ -204,6 +204,7 @@ class CCLite(Plugin):
         elif "答案之书" in context.content:
             logger.debug("激活答案之书会话")
             self.start_session(user_id, "ANSWER_BOOK")
+            self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text(
                 "🔮 当你遇事不决时......\n\n"
                 "🤔 请用 5 至 10 秒的时间，集中思考你的问题。\n"
@@ -220,19 +221,20 @@ class CCLite(Plugin):
         elif "周公解梦" in context.content:
             logger.debug("激活周公解梦会话")
             self.start_session(user_id, "ZHOU_GONG_DREAM")
-            self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
+            self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text("你已进入周公解梦模式，请描述你的梦境。", e_context, level=ReplyType.TEXT)
             return
 
         elif "厨房助手" in context.content:
             logger.debug("激活厨房助手会话")
             self.start_session(user_id, "KITCHEN_ASSISTANT")
-            self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
+            self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text("你已进入厨房助手模式，你可以告诉我你手上拥有的食材(例如里脊肉、青椒)，和你喜欢的口味。", e_context, level=ReplyType.TEXT)
             return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
             logger.debug("激活今天吃什么会话")
+            self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             system_prompt = """
             你是中国著名的美食专家，走遍全国各大城市品尝过各种当地代表性的、小众的美食，对美食有深刻且独到的见解。你会基于背景信息，给用户随机推荐2道国内地域美食，会根据用户的烦恼给出合理的饮食建议和推荐的美食点评或推荐理由。现在需要你用两段文字（每段35字以内），适当结合用户的实际情况（例如来自什么地方、口味等）来简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超70字。推荐美食严格遵循以下格式（仅作为参考）：
             🍽️ 今天推荐给你的美食有：
@@ -587,6 +589,7 @@ class CCLite(Plugin):
         final_response = f"🔮 你的答案：\n{model_response}"
         logger.debug(f"已获取答案: {final_response}")
         # 使用_set_reply_text发送回复
+        final_response = f"{final_response}\n\n🆗 完成解答，自动退出当前模式。"
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         # 结束当前会话
         self.c_modelpro.clear_user_history(user_id)
@@ -607,6 +610,7 @@ class CCLite(Plugin):
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
         model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取周公之解梦: {model_response}")
+        model_response = f"{model_response}\n\n🆗 完成解梦，自动退出当前模式。"
         _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
         self.c_modelpro.clear_user_history(user_id)
         self.end_session(user_id)
@@ -631,7 +635,7 @@ class CCLite(Plugin):
         model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取厨房助手食谱: {model_response}")
     # 在模型回复后面添加一行提醒
-        final_response = f"{model_response}\n\n🔄 发送‘退出’，退出当前模式。"
+        final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前模式。"
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
     
