@@ -10,7 +10,7 @@ from common.log import logger
 import os
 import time
 from datetime import datetime
-from .lib.model_factory import ModelGenerator
+# from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
 from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
 
@@ -18,7 +18,7 @@ from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch
 @plugins.register(
     name="cclite",
     desc="A plugin that supports multi-function_call",
-    version="0.1.0",
+    version="3.0",
     author="cc",
     desire_priority=66
 )
@@ -32,7 +32,6 @@ class CCLite(Plugin):
             with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 logger.info(f"[cclite] 加载配置文件成功: {config}")
-                self.c_model = ModelGenerator()
                 # 创建 UnifiedChatbot 实例
                 self.c_modelpro = UnifiedChatbot()
                 self.session_data = {}  # user_id -> (state, data)
@@ -65,7 +64,7 @@ class CCLite(Plugin):
                 self.c_modelpro.clear_user_history(user_id)
                 self.end_session(user_id)
                 logger.debug(f"清除用户记录和会话状态")
-                _set_reply_text("已退出当前模式。", e_context, level=ReplyType.TEXT)
+                _set_reply_text("已退出特殊会话模式，进入正常聊天。", e_context, level=ReplyType.TEXT)
                 return
             
             elif session_state == "ANSWER_BOOK":
@@ -87,28 +86,20 @@ class CCLite(Plugin):
         # 模型切换
         content_lower = context.content.lower()
         if "cc openai" in content_lower:
-            self.c_model.set_ai_model("OpenAI")
             self.c_modelpro.set_ai_model("OpenAI")
             _set_reply_text("已切换到OpenAI模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cc gemini" in content_lower:
-            self.c_model.set_ai_model("Gemini")
             self.c_modelpro.set_ai_model("Gemini")
             _set_reply_text("已切换到Gemini模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cc qwen" in content_lower:
-            self.c_model.set_ai_model("Qwen")
             self.c_modelpro.set_ai_model("Qwen")
             _set_reply_text("已切换到Qwen模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cc zhipuai" in content_lower:
-            # self.c_model.set_ai_model("Zhipuai")
             self.c_modelpro.set_ai_model("Zhipuai")
             _set_reply_text("已切换到Zhipuai模型。", e_context, level=ReplyType.TEXT)
-            return
-        elif "cmodel" in content_lower:
-            response = self.c_model.get_current_model()
-            _set_reply_text(response, e_context, level=ReplyType.TEXT)
             return
         elif "重置会话" in context.content:
             self.c_modelpro.clear_all_histories()
