@@ -46,12 +46,13 @@ class CCLite(Plugin):
     
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
-        logger.debug(f"CCLite获取到用户输入：{context.content}")
+        logger.debug(f"CCLite获取到用户输入：{context.content}，获取到user_id:{user_id}")
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        # nickname = msg.actual_user_nickname  # 获取nickname
-
+        # 如果user_id未被设置，则重新赋值
+        if not user_id:
+            user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             return
@@ -231,7 +232,7 @@ class CCLite(Plugin):
 
         elif "答题模式" in context.content:
             logger.debug("激活答题模式会话")
-            user_id = msg.from_user_nickname
+            user_id = msg.from_user_nickname if isgroup else msg.from_user_id
             logger.debug(f"目前的user_id为{user_id}")
             self.start_session(user_id, "QUIZ_MODE")
             self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
