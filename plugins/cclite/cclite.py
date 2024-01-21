@@ -608,29 +608,31 @@ class CCLite(Plugin):
         return
     
     def handle_recipe_request(self, e_context: EventContext, session_data):
-        logger.debug("进入厨房助手会话")     
+        logger.debug("进入厨房助手会话")
         context = e_context['context']
         msg: ChatMessage = context['msg']
         # user_id = msg.from_user_id
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         # nickname = msg.actual_user_nickname  # 获取nickname   
-        self.c_modelpro.clear_user_history(user_id)
-        system_prompt = """
-            你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
-            要求：
-            1、提供菜品名称和做法，一到三个菜之间
-            2、不需要在一道菜里用完所有食材
-            3、注意排版美观，适当搭配emoji        
-        """ 
-        self.c_modelpro.set_system_prompt(system_prompt,user_id)
-        model_response = self.c_modelpro.get_model_reply(context.content, user_id)
-        logger.debug(f"已获取厨房助手食谱: {model_response}")
-        _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
         if "退出模式" in context.content:
             self.c_modelpro.clear_user_history(user_id)
             self.end_session(user_id)
-            logger.debug(f"结束周公之梦会话后，清除用户记录和会话状态")
+            logger.debug(f"清除用户记录和会话状态")
+            _set_reply_text("已退出厨房助手模式", e_context, level=ReplyType.TEXT)
+        else:
+            self.c_modelpro.clear_user_history(user_id)
+            system_prompt = """
+                你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
+                要求：
+                1、提供菜品名称和做法，一到三个菜之间
+                2、不需要在一道菜里用完所有食材
+                3、注意排版美观，适当搭配emoji        
+            """ 
+            self.c_modelpro.set_system_prompt(system_prompt,user_id)
+            model_response = self.c_modelpro.get_model_reply(context.content, user_id)
+            logger.debug(f"已获取厨房助手食谱: {model_response}")
+            _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
         return
     
 
