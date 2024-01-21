@@ -62,7 +62,7 @@ class CCLite(Plugin):
                 self.handle_normal_context(e_context)
             elif context.content == "退出":
                 self.c_modelpro.clear_user_history(user_id)
-                self.end_session(user_id)
+                self.end_session(session_id)
                 logger.debug(f"清除用户记录和会话状态")
                 _set_reply_text("已退出特殊会话模式，进入正常聊天。", e_context, level=ReplyType.TEXT)
                 return
@@ -675,9 +675,16 @@ class CCLite(Plugin):
         self.session_data[user_id] = (state, data)
         logger.debug(f"用户{user_id}进入特殊会话，状态: {state}, 数据: {data}")
 
-    def end_session(self, user_id):
+    def end_session(self, user_id, session_id=None):
+        # 结束基于user_id的会话
         self.session_data.pop(user_id, None)
         logger.debug(f"结束用户{user_id}的特殊会话状态")
+
+        # 如果提供了session_id，同时结束基于session_id的会话
+        if session_id:
+            self.session_data.pop(session_id, None)
+            logger.debug(f"结束特殊会话用户{session_id}的状态")
+
             
     def get_session_state(self, user_id, session_id=None):
         # 如果提供了session_id且其状态非NORMAL，则使用session_id的状态
