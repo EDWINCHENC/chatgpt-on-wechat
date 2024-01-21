@@ -61,6 +61,13 @@ class CCLite(Plugin):
 
             if session_state == "NORMAL":
                 self.handle_normal_context(e_context)
+            elif context.content == "退出":
+                self.c_modelpro.clear_user_history(user_id)
+                self.end_session(user_id)
+                logger.debug(f"清除用户记录和会话状态")
+                _set_reply_text("已退出当前模式。", e_context, level=ReplyType.TEXT)
+                return
+            
             elif session_state == "ANSWER_BOOK":
                 self.handle_answer_book(e_context, session_data)
             elif session_state == "ZHOU_GONG_DREAM":
@@ -113,12 +120,12 @@ class CCLite(Plugin):
                 _set_reply_text("您的会话历史已被清除。", e_context, level=ReplyType.TEXT)
             return
 
-        elif "找" in context.content:
+        elif context.content.startswith("找"):
             # 通过正则表达式匹配 "找电影名" 的模式
             match = re.search(r"找(.+)", context.content)
             if match:
                 movie_name = match.group(1).strip()  # 获取电影名
-                logger.debug(f"正在查找电影: {movie_name}")
+                logger.debug(f"正在查找影视资源: {movie_name}")
                 try:
                     # 调用fetch_movie_info函数获取电影信息
                     movie_info = affdz.fetch_movie_info(movie_name)
@@ -228,11 +235,11 @@ class CCLite(Plugin):
         elif "厨房助手" in context.content:
             logger.debug("激活厨房助手会话")
             self.start_session(user_id, "KITCHEN_ASSISTANT")
-            _set_reply_text("你已进入厨房助手模式，你可以告诉我你手上拥有的食材(例如里脊肉、青椒),和你喜欢的口味。", e_context, level=ReplyType.TEXT)
+            _set_reply_text("你已进入厨房助手模式，你可以告诉我你手上拥有的食材(例如里脊肉、青椒)，和你喜欢的口味。", e_context, level=ReplyType.TEXT)
             return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):
-            logger.debug("正替你考虑今天吃什么")
+            logger.debug("激活今天吃什么会话")
             system_prompt = """
             你是中国著名的美食专家，走遍全国各大城市品尝过各种当地代表性的、小众的美食，对美食有深刻且独到的见解。你会基于背景信息，给用户随机推荐2道国内地域美食，会根据用户的烦恼给出合理的饮食建议和推荐的美食点评或推荐理由。现在需要你用两段文字（每段35字以内），适当结合用户的实际情况（例如来自什么地方、口味等）来简要点评推荐的菜、分享一下菜谱、营养搭配建议等，搭配适当的emoji来回复。总字数不超70字。推荐美食严格遵循以下格式（仅作为参考）：
             🍽️ 今天推荐给你的美食有：
@@ -413,6 +420,7 @@ class CCLite(Plugin):
             try:
                 function_response = response.json()
                 function_response = function_response.get("results", "未知错误")
+                logger.debug("AI资讯获取完成")  # 打印函数响应
                 _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
                 return
             except ValueError as e:  # 捕获JSON解析错误
@@ -422,10 +430,12 @@ class CCLite(Plugin):
 
                 
         elif "早报" in context.content:  # 11.获取每日早报
+            logger.debug("获取每日早报")
             function_response = fun.get_morning_news(api_key=self.alapi_key)
             system_prompt = "你是每日新闻的早报助手，需要将获取到的新闻晨报资讯进行整理后，搭配适当emoji，返回给用户进行阅读。"
             self.c_modelpro.set_system_prompt(system_prompt, user_id)
             function_response = self.c_modelpro.get_model_reply(function_response, user_id)
+            logger.debug(f"已获取，交由模型处理")
             self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
             _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
             return
@@ -532,6 +542,8 @@ class CCLite(Plugin):
                 "🎮 '英雄+英雄名+的数据' - 查询指定英雄的游戏数据\n"
                 "🏅 '英雄梯度榜' - 查看当前英雄游戏排行榜\n"
                 "📖 '电视剧xxx' 或 '电影xxx' - 获取指定电视剧/电影的评论和详情\n"
+                "🔮 '周公解梦' - 提供梦境解析服务\n"
+                "👩‍🍳 '厨房助手' - 提供烹饪技巧和食谱建议\n"
                 "🎨 '画+一只可爱的猫咪' - 根据描述生成图像\n"
                 "💬 其他普通文本 - 聊天机器人智能回复\n"
                 "\n🌟 有任何问题或建议，随时欢迎反馈！"
@@ -550,6 +562,7 @@ class CCLite(Plugin):
 
         # 调用模型库的模型进行处理
         else:
+            logger.debug(f"进入通用会话处理模式")
             user_input = context.content
             response = self.c_modelpro.get_model_reply(user_input, user_id)
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
@@ -604,7 +617,6 @@ class CCLite(Plugin):
         _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
         self.c_modelpro.clear_user_history(user_id)
         self.end_session(user_id)
-        logger.debug(f"结束周公之梦会话后，清除用户记录和会话状态")
         return
     
     def handle_recipe_request(self, e_context: EventContext, session_data):
@@ -615,24 +627,19 @@ class CCLite(Plugin):
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
         # nickname = msg.actual_user_nickname  # 获取nickname   
-        if "退出模式" in context.content:
-            self.c_modelpro.clear_user_history(user_id)
-            self.end_session(user_id)
-            logger.debug(f"清除用户记录和会话状态")
-            _set_reply_text("已退出厨房助手模式", e_context, level=ReplyType.TEXT)
-        else:
-            self.c_modelpro.clear_user_history(user_id)
-            system_prompt = """
-                你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
-                要求：
-                1、提供菜品名称和做法，一到三个菜之间
-                2、不需要在一道菜里用完所有食材
-                3、注意排版美观，适当搭配emoji        
-            """ 
-            self.c_modelpro.set_system_prompt(system_prompt,user_id)
-            model_response = self.c_modelpro.get_model_reply(context.content, user_id)
-            logger.debug(f"已获取厨房助手食谱: {model_response}")
-            _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
+        system_prompt = """
+            你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
+            要求：
+            1、提供菜品名称和做法，一到三个菜之间
+            2、不需要在一道菜里用完所有食材
+            3、注意排版美观，适当搭配emoji        
+        """ 
+        self.c_modelpro.set_system_prompt(system_prompt,user_id)
+        model_response = self.c_modelpro.get_model_reply(context.content, user_id)
+        logger.debug(f"已获取厨房助手食谱: {model_response}")
+    # 在模型回复后面添加一行提醒
+        final_response = f"{model_response}\n\n🔄 发送‘退出’，退出当前模式。"
+        _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
     
 
@@ -650,14 +657,14 @@ class CCLite(Plugin):
 
     def start_session(self, user_id, state, data=None):
         self.session_data[user_id] = (state, data)
-        logger.debug(f"用户{user_id}开始会话，状态: {state}, 数据: {data}")
+        logger.debug(f"用户{user_id}进入特殊会话，状态: {state}, 数据: {data}")
 
     def end_session(self, user_id):
         self.session_data.pop(user_id, None)
-        logger.debug(f"用户{user_id}结束会话")
+        logger.debug(f"结束用户{user_id}的特殊会话状态")
 
     def get_session_state(self, user_id):
-        logger.debug(f"获取用户{user_id}的会话状态: {self.session_data.get(user_id)}")
+        logger.debug(f"当前用户{user_id}的会话状态: {self.session_data.get(user_id)}")
         return self.session_data.get(user_id, ("NORMAL", None))
 
     def get_help_text(self, verbose=False, **kwargs):

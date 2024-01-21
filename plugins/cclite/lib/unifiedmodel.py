@@ -111,9 +111,10 @@ class UnifiedChatbot:
             # 检查第一条记录是否是系统提示，进行更新或插入操作
             if history[0]["role"] == "system":
                 history[0]["content"] = prompt
+                logger.debug(f"已更新用户 {user_id} 的系统提示: {prompt}")
             else:
                 history.insert(0, {"role": "system", "content": prompt})
-            logger.debug(f"已更新或插入用户 {user_id} 的系统提示: {prompt}")
+                logger.debug(f"已插入用户 {user_id} 的系统提示: {prompt}")
 
     def add_message_openai(self, role, content, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
