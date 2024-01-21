@@ -229,12 +229,14 @@ class CCLite(Plugin):
         elif "周公解梦" in context.content:
             logger.debug("激活周公解梦会话")
             self.start_session(user_id, "ZHOU_GONG_DREAM")
+            self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
             _set_reply_text("你已进入周公解梦模式，请描述你的梦境。", e_context, level=ReplyType.TEXT)
             return
 
         elif "厨房助手" in context.content:
             logger.debug("激活厨房助手会话")
             self.start_session(user_id, "KITCHEN_ASSISTANT")
+            self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
             _set_reply_text("你已进入厨房助手模式，你可以告诉我你手上拥有的食材(例如里脊肉、青椒)，和你喜欢的口味。", e_context, level=ReplyType.TEXT)
             return
 
