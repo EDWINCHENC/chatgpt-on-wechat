@@ -46,13 +46,11 @@ class CCLite(Plugin):
     
     def on_handle_context(self, e_context: EventContext):
         context = e_context['context']
-        logger.debug(f"CCLite获取到用户输入：{context.content}，获取到user_id:{user_id}")
+        logger.debug(f"CCLite获取到用户输入：{context.content}")
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
-        # 如果user_id未被设置，则重新赋值
-        if not user_id:
-            user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        nickname = msg.actual_user_nickname  # 获取nickname
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        # nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             return
@@ -232,8 +230,8 @@ class CCLite(Plugin):
 
         elif "答题模式" in context.content:
             logger.debug("激活答题模式会话")
-            user_id = msg.from_user_nickname if isgroup else msg.from_user_id
-            logger.debug(f"目前的user_id为{user_id}")
+            # user_id = msg.from_user_nickname if isgroup else msg.from_user_id
+            # logger.debug(f"目前的user_id为{user_id}")
             self.start_session(user_id, "QUIZ_MODE")
             self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text("你已进入答题模式，来挑战自己吧！\n您想选择什么类型的题目呢？例如，您可以选择天文、地理、常识、历史学、法律等。", e_context, level=ReplyType.TEXT)
@@ -650,7 +648,8 @@ class CCLite(Plugin):
         context = e_context['context']
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
-        user_id = msg.from_user_nickname if isgroup else msg.from_user_id
+        # user_id = msg.from_user_nickname if isgroup else msg.from_user_id
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
         # 此处可以根据您的需求设计问题和回答的逻辑
         system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意不能胡编乱造，要尊重客观规律，客观事实，不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后给出下一到同类型的题目，以此类推进行多轮答题。"
         self.c_modelpro.set_system_prompt(system_prompt, user_id)
