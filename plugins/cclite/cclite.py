@@ -692,14 +692,14 @@ class CCLite(Plugin):
     def handle_comfort_mode(self, e_context: EventContext, session_data):   
         context, _, user_id, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug(f"进入哄哄模式会话, session_data: {session_data}")
+
         if session_data == "1":
             tips = "请直接给出一个女朋友生气的理由，例如'每次回家太晚，很生气','被同事夸漂亮，男朋友不开心了'..."
             tips_response = self.c_modelpro.get_model_reply(tips, "comfort_id")
             logger.debug(f"已获取哄哄模式生气词: {tips_response}")
             self.c_modelpro.clear_user_history("comfort_id")
             self.update_session_data(user_id, 2)
-        if tips_response:
-            # 设定模型提示词
+
             system_prompt = f"你要扮演一个生气的女朋友，每次都会有一个生气的理由，用户作为你的另一半会通过各种方式哄你，你内心要评估他哄你的方式，如果连续2次哄对了，你就表示不再生气，任何时候没哄好，则直接跟他说：分手吧。现在开始吧。你这次生气的理由是 '{tips_response}' ，你刚才说了一'哼'，等待他的回应吧。"
             self.c_modelpro.set_system_prompt(system_prompt, session_id)
             model_response = self.c_modelpro.get_model_reply(context.content, session_id)
@@ -707,7 +707,10 @@ class CCLite(Plugin):
             final_response = f"{model_response}\n\n🔄 如果哄完了，就发送‘退出’，可退出当前模式。"
             _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         else:
-            _set_reply_text("没生气哦~", e_context, level=ReplyType.TEXT)
+            model_response = self.c_modelpro.get_model_reply(context.content, session_id)
+            logger.debug(f"已获取哄哄模式回复: {model_response}")
+            final_response = f"{model_response}\n\n🔄 如果哄完了，就发送‘退出’，可退出当前模式。"
+            _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
 
     # 以下为插件的一些辅助函数
