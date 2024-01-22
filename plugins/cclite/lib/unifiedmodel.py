@@ -194,6 +194,7 @@ class UnifiedChatbot:
     def get_model_reply(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"当前使用的模型为：{self.ai_model}")
+        logger.debug(f"当前对话用户ID: {user_id}")
         if self.ai_model == "OpenAI":
             logger.debug("调用 _get_reply_openai")  # 调试打印
             return self._get_reply_openai(user_input, user_id)

@@ -58,15 +58,15 @@ class CCLite(Plugin):
         if context.type == ContextType.TEXT:
             session_state, session_data = self.get_session_state(user_id, session_id)
 
-            if session_state == "NORMAL":
-                self.handle_normal_context(e_context)
-            elif context.content == "退出":
+            if context.content == "退出":
                 self.c_modelpro.clear_user_history(user_id)
-                self.end_session(session_id)
-                logger.debug(f"清除用户记录和会话状态")
+                self.c_modelpro.clear_user_history(session_id)
+                self.end_session(user_id, session_id)
+                logger.debug(f"清除用户和群聊记录和会话状态")
                 _set_reply_text("已退出特殊会话模式，进入正常聊天。", e_context, level=ReplyType.TEXT)
                 return
-            
+            elif session_state == "NORMAL":
+                self.handle_normal_context(e_context)            
             elif session_state == "ANSWER_BOOK":
                 self.handle_answer_book(e_context, session_data)
             elif session_state == "ZHOU_GONG_DREAM":
@@ -82,6 +82,7 @@ class CCLite(Plugin):
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
         user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
         nickname = msg.actual_user_nickname  # 获取nickname
         start_time = time.time()  # 开始计时
         
@@ -103,7 +104,7 @@ class CCLite(Plugin):
             self.c_modelpro.set_ai_model("Zhipuai")
             _set_reply_text("已切换到Zhipuai模型。", e_context, level=ReplyType.TEXT)
             return
-        elif "重置会话" in context.content:
+        elif "重置所有会话" in context.content:
             self.c_modelpro.clear_all_histories()
             _set_reply_text("记录清除，会话已重置。", e_context, level=ReplyType.TEXT)
             return
@@ -231,7 +232,6 @@ class CCLite(Plugin):
 
         elif "答题模式" in context.content:
             logger.debug("激活答题模式会话")
-            session_id = msg.from_user_nickname if isgroup else msg.from_user_id
             logger.debug(f"使用session_id: {session_id} 作为会话ID")
             self.start_session(session_id, "QUIZ_MODE")
             self.c_modelpro.clear_user_history(session_id)  # 先清除用户历史记录
@@ -544,6 +544,7 @@ class CCLite(Plugin):
                 "📖 '电视剧xxx' 或 '电影xxx' - 获取指定电视剧/电影的评论和详情\n"
                 "🔮 '周公解梦' - 提供梦境解析服务\n"
                 "👩‍🍳 '厨房助手' - 提供烹饪技巧和食谱建议\n"
+                "🍲 '答题模式' - 进入答题模式\n"
                 "🎨 '画+一只可爱的猫咪' - 根据描述生成图像\n"
                 "💬 其他普通文本 - 聊天机器人智能回复\n"
                 "\n🌟 有任何问题或建议，随时欢迎反馈！"
@@ -564,7 +565,7 @@ class CCLite(Plugin):
         else:
             logger.debug(f"进入通用会话处理模式")
             user_input = context.content
-            response = self.c_modelpro.get_model_reply(user_input, user_id)
+            response = self.c_modelpro.get_model_reply(user_input)
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
             return
 
@@ -649,9 +650,9 @@ class CCLite(Plugin):
         context = e_context['context']
         msg: ChatMessage = context['msg']
         isgroup = e_context["context"].get("isgroup")
-        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
+        session_id = msg.from_user_nickname if isgroup else msg.from_user_id #把session_id作为user_id
         # 此处可以根据您的需求设计问题和回答的逻辑
-        system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意题目内容不能胡编乱造，要尊重客观规律，客观事实。不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后给出下一到同类型的题目，以此类推进行多轮答题。"
+        system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意题目内容不能胡编乱造，要尊重客观规律，客观事实。不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后不用询问，直接给出下一到同类型的题目，以此类推进行多轮问答，直到用户主动更改题目类型。"
         self.c_modelpro.set_system_prompt(system_prompt, session_id)
         model_response = self.c_modelpro.get_model_reply(context.content, session_id)
         logger.debug(f"已获取答题模式回复: {model_response}")
@@ -671,10 +672,10 @@ class CCLite(Plugin):
     def base_url(self):
         return self.cc_api_base
 
-    def start_session(self, user_id, state, data=None):
-        self.session_data[user_id] = (state, data)
-        logger.debug(f"用户{user_id}进入特殊会话，状态: {state}, 数据: {data}")
-
+    def start_session(self, user_session_id, state, data=None):
+        self.session_data[user_session_id] = (state, data)
+        logger.debug(f"用户{user_session_id}进入会话，状态: {state}, 数据: {data}")
+        
     def end_session(self, user_id, session_id=None):
         # 结束基于user_id的会话
         self.session_data.pop(user_id, None)
