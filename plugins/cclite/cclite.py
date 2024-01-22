@@ -231,7 +231,7 @@ class CCLite(Plugin):
 
         elif "哄哄模式" in context.content:
             logger.debug("激活哄哄模式会话")
-            self.start_session(user_id, "COMFORT_MODE")
+            self.start_session(user_id, "COMFORT_MODE","1")
             self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _send_info(e_context, "💖 你已进入哄哄模式，你需要使用语言技巧和沟通能力，让对方原谅你。")
             # 等待3秒
@@ -690,12 +690,14 @@ class CCLite(Plugin):
         return
     
     def handle_comfort_mode(self, e_context: EventContext, session_data):   
-        context, _, _, session_id, _ = self.extract_e_context_info(e_context)
+        context, _, user_id, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug("进入哄哄模式会话")
-        tips = "请直接给出一个女朋友生气的理由，例如'每次回家太晚，很生气','被同事夸漂亮，男朋友不开心了'..."
-        tips_response = self.c_modelpro.get_model_reply(tips, "tips")
-        logger.debug(f"已获取哄哄模式生气词: {tips_response}")
-        self.c_modelpro.clear_user_history("tips")
+        if session_data == 1:
+            tips = "请直接给出一个女朋友生气的理由，例如'每次回家太晚，很生气','被同事夸漂亮，男朋友不开心了'..."
+            tips_response = self.c_modelpro.get_model_reply(tips, "comfort_id")
+            logger.debug(f"已获取哄哄模式生气词: {tips_response}")
+            self.c_modelpro.clear_user_history("comfort_id")
+            self.update_session_data(user_id, 2)
         # 设定模型提示词
         system_prompt = f"你要扮演一个生气的女朋友，每次都会有一个生气的理由，用户作为你的另一半会通过各种方式哄你，你内心要评估他哄你的方式，如果连续2次哄对了，你就表示不再生气，任何时候没哄好，则直接跟他说：分手吧。现在开始吧。你这次生气的理由是 '{tips_response}' ，你刚才说了一'哼'，等待他的回应吧。"
         self.c_modelpro.set_system_prompt(system_prompt, session_id)
@@ -748,6 +750,13 @@ class CCLite(Plugin):
             # 否则，使用user_id的状态
             logger.debug(f"检测到当前user_id: {user_id}的会话状态: {self.session_data.get(user_id)}")
             return self.session_data.get(user_id, ("NORMAL", None))
+
+    def update_session_data(self, user_session_id, new_data):
+        if user_session_id in self.session_data:
+            current_state, _ = self.session_data[user_session_id]
+            self.session_data[user_session_id] = (current_state, new_data)
+            logger.debug(f"更新用户{user_session_id}的会话数据为: {new_data}")
+
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述
