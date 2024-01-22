@@ -216,7 +216,6 @@ class UnifiedChatbot:
         if not user_input.strip():
             return "用户输入为空"
         user_id = user_id or self.DEFAULT_USER_ID
-        logger.debug(f"当前用户 ID: {user_id}")
         logger.debug(f"向 OpenAI 发送消息: {user_input}")
         self.add_message_openai("user", user_input, user_id)
         try:
@@ -288,7 +287,6 @@ class UnifiedChatbot:
     def _get_reply_qwen(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_qwen 方法")
-        logger.debug(f"当前用户 ID: {user_id}")
         logger.debug(f"向 Qwen API 发送消息: {user_input}")
         self.add_message_qwen('user', user_input, user_id)
         try:
@@ -322,7 +320,6 @@ class UnifiedChatbot:
     def _get_reply_zhipuai(self, user_input, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_zhipuai 方法")
-        logger.debug(f"当前用户 ID: {user_id}")
         logger.debug(f"向 Zhipuai API 发送消息: {user_input}")
         self.add_message_zhipuai('user', user_input, user_id)
         try:
@@ -363,8 +360,6 @@ class UnifiedChatbot:
             return response.data[0].url if response.data else "未能生成图像"
         except Exception as e:
             return f"生成图像时发生错误: {e}"
-
-
 
     def remove_markdown(self, text):
         # 替换Markdown的粗体标记

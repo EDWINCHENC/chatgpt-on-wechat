@@ -4,17 +4,14 @@
   "gemini_api_key": "AIzaSyBI5DWFwhaIsfPjaut-AgoLZYJz5F9nI9c",
   "model": "gemini",
   "proxy": "",
-  "single_chat_prefix": [
-    "",
-    "@CChat"
-  ],
+  "single_chat_prefix": [],
   "single_chat_reply_prefix": "",
-  "group_chat_prefix": [],
+  "group_chat_prefix": ["@cc","@or"],
   "nick_name_black_list": [],
 
   "channel_type": "wx",
   "group_chat_reply_suffix": "",
-  "group_chat_keyword": [],  
+  "group_chat_keyword": ["群聊统计","总结群聊"],  
   "group_name_white_list": [
     "ALL_GROUP"
   ],
