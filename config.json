@@ -4,7 +4,7 @@
   "gemini_api_key": "AIzaSyBI5DWFwhaIsfPjaut-AgoLZYJz5F9nI9c",
   "model": "gemini",
   "proxy": "",
-  "single_chat_prefix": [],
+  "single_chat_prefix": [""],
   "single_chat_reply_prefix": "",
   "group_chat_prefix": ["@cc","@or"],
   "nick_name_black_list": [],

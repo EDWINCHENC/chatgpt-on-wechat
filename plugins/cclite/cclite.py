@@ -463,8 +463,7 @@ class CCLite(Plugin):
                 _set_reply_text(f"❌请求失败: {err}", e_context, level=ReplyType.TEXT)             
             # 记录响应
             return
-        
-                                
+                                        
         elif re.search(r"(电视剧|电影|动漫)(.+)", context.content):
             match = re.search(r"(电视剧|电影|动漫)(.+)", context.content)
             media_type_raw, tv_show_name = match.groups()
@@ -512,6 +511,31 @@ class CCLite(Plugin):
             response_text = "\n".join(function_response)  # 将评论列表转换为单个字符串
             _set_reply_text(response_text, e_context, level=ReplyType.TEXT)  # 发送格式化后的评论字符串
             return          
+
+        elif "搜索" in context.content:  #Webpilot搜索
+            context, is_group, user_id, session_id, nickname = self.extract_e_context_info(e_context)
+            search_term = context.content.replace("搜索", "").strip()  # 去除可能的前后空格 
+            # 向API端点发送POST请求，获取与搜索词相关的内容
+            try:
+                response = requests.post(
+                    self.base_url() + "/webpilot_search/",
+                    json={"search_term": search_term}
+                )
+                response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
+                function_response = response.json()
+                function_response = function_response.get("results", "未知错误")
+                elapsed_time = time.time() - start_time  # 计算耗时
+                # 仅在成功获取数据后发送信息
+                if is_group:
+                    _send_info(e_context, f"@{nickname}\n✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                else:
+                    _send_info(e_context, f"✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)  # 发送格式化后的搜索结果字符串
+            except Exception as e:
+                logger.error(f"Error fetching content: {e}")
+                _set_reply_text(f"获取内容失败，请稍后再试。错误信息 {e}", e_context, level=ReplyType.TEXT)
+            return
 
         elif context.content == "帮助" or context.content == "功能":
             # 完整的功能指南
