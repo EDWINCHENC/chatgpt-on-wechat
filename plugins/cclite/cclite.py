@@ -198,8 +198,8 @@ class CCLite(Plugin):
             self.start_session(user_id, "ANSWER_BOOK")
             self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text(
-                "🔮 你已进入答案之书......\n\n"
-                "💭 告诉我你的不解，你要寻找的答案就在那里等着你。\n",
+                "🔮 你已进入答案之书......\n"
+                "💭 告诉我你的不解，你要寻找的答案就在那里等着你。",
                 e_context,
                 level=ReplyType.TEXT
             )
@@ -224,7 +224,7 @@ class CCLite(Plugin):
             logger.debug(f"使用session_id: {session_id} 作为会话ID")
             self.start_session(session_id, "QUIZ_MODE")
             self.c_modelpro.clear_user_history(session_id)  # 先清除用户历史记录
-            _set_reply_text("你已进入答题模式，来挑战自己吧！\n您想选择什么类型的题目呢？例如，您可以选择天文、地理、常识、历史学、法律等。", e_context, level=ReplyType.TEXT)
+            _set_reply_text("你已进入答题模式，来挑战自己吧！\n您想选择什么类型的题目呢？例如，您可以选择天文、地理、生活常识、历史、法律等。", e_context, level=ReplyType.TEXT)
             return
 
         elif re.search("吃什么|中午吃什么|晚饭吃什么|吃啥", context.content):

@@ -6,7 +6,7 @@
   "proxy": "",
   "single_chat_prefix": [""],
   "single_chat_reply_prefix": "",
-  "group_chat_prefix": ["@cc","@or"],
+  "group_chat_prefix": ["cc","or"],
   "nick_name_black_list": [],
 
   "channel_type": "wx",
