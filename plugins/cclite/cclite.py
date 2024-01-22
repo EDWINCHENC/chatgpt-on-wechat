@@ -553,7 +553,7 @@ class CCLite(Plugin):
 
                     logger.debug(f"Function response: {function_response}")
 
-                    system_prompt = f"你是搜索结果归纳助手，用户的需求是: {context.content}, 以下是通过搜索引擎获取到的网页内容，请进行总结、整理，搭配适当emoji，优化排版, 返回给用户进行阅读。字数不超过100字。"
+                    system_prompt = f"你是搜索结果归纳助手，用户的需求是: {context.content}, 以下是通过搜索引擎获取到的网页内容，请进行总结、整理，搭配适当emoji，优化排版, 返回给用户进行阅读。字数不超过200字。"
                     logger.debug(f"已获取结果，即将交由模型处理")
                     self.c_modelpro.set_system_prompt(system_prompt, user_id)
                     model_reply = self.c_modelpro.get_model_reply(results, user_id)
@@ -611,7 +611,7 @@ class CCLite(Plugin):
         else:
             logger.debug(f"进入通用会话处理模式")
             user_input = context.content
-            response = self.c_modelpro.get_model_reply(user_input)
+            response = self.c_modelpro.get_model_reply(user_input, user_id)
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
             return
 
@@ -692,8 +692,7 @@ class CCLite(Plugin):
     def handle_comfort_mode(self, e_context: EventContext, session_data):   
         context, _, user_id, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug(f"进入哄哄模式会话, session_data: {session_data}")
-        tips_response = ""
-        if session_data == 1:
+        if session_data == "1":
             tips = "请直接给出一个女朋友生气的理由，例如'每次回家太晚，很生气','被同事夸漂亮，男朋友不开心了'..."
             tips_response = self.c_modelpro.get_model_reply(tips, "comfort_id")
             logger.debug(f"已获取哄哄模式生气词: {tips_response}")
