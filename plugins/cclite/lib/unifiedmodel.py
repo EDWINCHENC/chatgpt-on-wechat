@@ -17,7 +17,7 @@ class UnifiedChatbot:
         logger.debug(f"尝试读取配置文件: {self.config_path}")
         with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-        logger.debug(f"配置文件内容: {config}")
+            logger.debug(f"配置文件内容: {config}")
 
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")

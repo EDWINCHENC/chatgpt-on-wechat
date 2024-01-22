@@ -43,7 +43,6 @@ class ChatStatistics(Plugin):
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
             logger.info(f"[c_summary] config content: {config}")
-        self.ai_model = config.get("ai_model", "Qwen")
         self.c_model = ModelGenerator()
 
         # 初始化数据库
