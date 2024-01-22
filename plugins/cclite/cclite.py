@@ -45,13 +45,8 @@ class CCLite(Plugin):
 
     
     def on_handle_context(self, e_context: EventContext):
-        context = e_context['context']
+        context, _, user_id, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug(f"CCLite获取到用户输入：{context.content}")
-        msg: ChatMessage = context['msg']
-        isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
-        # nickname = msg.actual_user_nickname  # 获取nickname
         # 过滤不需要处理的内容类型
         if context.type not in [ContextType.TEXT, ContextType.IMAGE, ContextType.IMAGE_CREATE, ContextType.FILE, ContextType.SHARING]:
             return
@@ -62,7 +57,6 @@ class CCLite(Plugin):
                 self.c_modelpro.clear_user_history(user_id)
                 self.c_modelpro.clear_user_history(session_id)
                 self.end_session(user_id, session_id)
-                logger.debug(f"清除用户和群聊记录和会话状态")
                 _set_reply_text("已退出特殊会话模式，进入正常聊天。", e_context, level=ReplyType.TEXT)
                 return
             elif session_state == "NORMAL":
@@ -78,12 +72,7 @@ class CCLite(Plugin):
             # 未来可以添加更多elif来处理其他状态
 
     def handle_normal_context(self, e_context: EventContext):
-        context = e_context['context']
-        msg: ChatMessage = context['msg']
-        isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
-        nickname = msg.actual_user_nickname  # 获取nickname
+        context, _, user_id, session_id, nickname = self.extract_e_context_info(e_context)
         start_time = time.time()  # 开始计时
         
         # 模型切换
@@ -110,8 +99,8 @@ class CCLite(Plugin):
             return
         elif "清除我的会话" in context.content:
             # 调用 clear_user_history 方法并检查操作是否成功
-            if self.c_modelpro.clear_user_history(user_id):
-                _set_reply_text("您的会话历史已被清除。", e_context, level=ReplyType.TEXT)
+            self.c_modelpro.clear_user_history(user_id)
+            _set_reply_text("您的会话历史已被清除。", e_context, level=ReplyType.TEXT)
             return
 
         elif context.content.startswith("找"):
@@ -572,15 +561,8 @@ class CCLite(Plugin):
     # 以下为进入特殊会话的处理函数
     # 以下为个性化会话处理模式
     def handle_answer_book(self, e_context: EventContext, session_data):
+        context, _, user_id, _, _ = self.extract_e_context_info(e_context)
         logger.debug("进入答案之书会话")     
-        context = e_context['context']
-        msg: ChatMessage = context['msg']
-        # user_id = msg.from_user_id
-        isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        # nickname = msg.actual_user_nickname  # 获取nickname              
-    
-        # 处理用户的问题，生成答案
         # 构建提示词
         system_prompt = "你是一本《答案之书》，人生的每个问题，都能从你这找到答案，你拥有丰富的生活经验和深邃的洞察力。10秒沉思，你会从你的答案之书中寻找答案，帮助他人找到人生方向，解决疑惑，找到任何问题的答案，有时候，我不会告诉你我的问题，只是想要一个答案，我会在心中虔诚地默念，无论如何，你每次都要直接从答案之书中给出1个富有启发性的、简洁的(20字以内的)、尽量确切的、具有方向性、指导性的答案，为任何问题，或不存在的问题，解惑。记住，只需要给出问题答案，不需要解释，不需要任何其他内容。"
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
@@ -604,12 +586,8 @@ class CCLite(Plugin):
         return
     
     def handle_zhou_gong_dream(self, e_context: EventContext, session_data):
+        context, isgroup, user_id, _, _ = self.extract_e_context_info(e_context)
         logger.debug("进入周公之梦会话")     
-        context = e_context['context']
-        msg: ChatMessage = context['msg']
-        # user_id = msg.from_user_id
-        isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
         self.c_modelpro.clear_user_history(user_id)
         # nickname = msg.actual_user_nickname  # 获取nickname   
         system_prompt = "你是一个拥有 25 年经验的解梦专家，你精通《周公解梦》（作者：周公）、《梦林玄解》（作者：李隆基）、《梦的解析》 作者：西格蒙德·弗洛伊德、《解梦大全》（作者：是詹姆斯·R·刘易斯）等解梦书籍。你正在为需要的人进行解梦。用户会向你描述他的梦境是什么？你要运用你渊博的解梦知识对用户的梦境进行专业解读。梦境解读搭配emoji, 发送给用户字数控制在100字以内。" 
@@ -623,13 +601,9 @@ class CCLite(Plugin):
         return
     
     def handle_recipe_request(self, e_context: EventContext, session_data):
+        context, isgroup, user_id, _, _ = self.extract_e_context_info(e_context)
         logger.debug("进入厨房助手会话")
-        context = e_context['context']
-        msg: ChatMessage = context['msg']
-        # user_id = msg.from_user_id
-        isgroup = e_context["context"].get("isgroup")
-        user_id = msg.actual_user_id if isgroup else msg.from_user_id
-        # nickname = msg.actual_user_nickname  # 获取nickname   
+        
         system_prompt = """
             你现在是一个中餐大厨，擅长做简单美味的食物，我会告诉你我目前有的食材，我喜欢的口味，下面请你依据我的食材帮我提供食谱
             要求：
@@ -646,13 +620,11 @@ class CCLite(Plugin):
         return
 
     def handle_quiz_mode(self, e_context: EventContext, session_data):   
+        context, isgroup, _, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug("进入答题模式会话")
-        context = e_context['context']
-        msg: ChatMessage = context['msg']
-        isgroup = e_context["context"].get("isgroup")
-        session_id = msg.from_user_nickname if isgroup else msg.from_user_id #把session_id作为user_id
+        
         # 此处可以根据您的需求设计问题和回答的逻辑
-        system_prompt = "我想让大模型充当出题助手，作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的单项选择题，注意题目内容不能胡编乱造，要尊重客观规律，客观事实。不用表明你的身份。其他要求如下:每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题，注意只给出题目和选项，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确，并解析答案，要尽量简洁地说明各个选项对或不对的理由。如果用户没有更改题目类型，解析完之后不用询问，直接给出下一到同类型的题目，以此类推进行多轮问答，直到用户主动更改题目类型。"
+        system_prompt = "我想让大模型充当出题助手，你作为一个精通各个领域专业知识的出题专家，每次都会给出一道有趣的题目，题目是科学的、可以带有科普性质的、符合公共认知的[单项选择题]，注意题目内容不能胡编乱造，要[尊重客观规律，客观事实]。不用表明你的身份。其他要求如下:1.每次询问用户或由用户选择想要什么类型的题目，都要根据用户选择的题目类型，出一道题；2.注意[只给出题目和选项]，等到用户回答之后，再解析答案，你要告诉用户它回答是否正确；3.在解析答案过程中，要尽量简洁地说明各个选项对或不对的理由。4.如果用户没有更改题目类型，[解析完之后不用询问，直接给出下一到同类型的题目]，以此类推进行多轮问答，直到用户主动更改题目类型。现在，用户会告诉你想要答题的题目类型，请直接开始出题。"
         self.c_modelpro.set_system_prompt(system_prompt, session_id)
         model_response = self.c_modelpro.get_model_reply(context.content, session_id)
         logger.debug(f"已获取答题模式回复: {model_response}")
@@ -661,13 +633,21 @@ class CCLite(Plugin):
         return
 
     # 以下为插件的一些辅助函数
-
     def has_user_drawn_today(self, user_id):
         """检查用户是否在当天已求过签"""
         if user_id in self.user_divinations:
             last_divination_date = self.user_divinations[user_id].get('date')
             return last_divination_date == datetime.now().date().isoformat()
         return False
+
+    def extract_e_context_info(self, e_context: EventContext):
+        context = e_context['context']
+        isgroup = context.get("isgroup")
+        msg: ChatMessage = context['msg']
+        user_id = msg.actual_user_id if isgroup else msg.from_user_id
+        session_id = msg.from_user_nickname if isgroup else msg.from_user_id
+        nickname = msg.actual_user_nickname  # 获取nickname   
+        return context, isgroup, user_id, session_id, nickname
 
     def base_url(self):
         return self.cc_api_base
@@ -685,7 +665,6 @@ class CCLite(Plugin):
         if session_id:
             self.session_data.pop(session_id, None)
             logger.debug(f"结束特殊会话用户{session_id}的状态")
-
             
     def get_session_state(self, user_id, session_id=None):
         # 如果提供了session_id且其状态非NORMAL，则使用session_id的状态
@@ -696,7 +675,6 @@ class CCLite(Plugin):
             # 否则，使用user_id的状态
             logger.debug(f"检测到当前user_id: {user_id}的会话状态: {self.session_data.get(user_id)}")
             return self.session_data.get(user_id, ("NORMAL", None))
-
 
     def get_help_text(self, verbose=False, **kwargs):
         # 初始化帮助文本，插件的基础描述

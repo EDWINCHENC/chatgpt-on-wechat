@@ -91,8 +91,8 @@ class UnifiedChatbot:
         if user_id in self.user_histories:
             self.user_histories[user_id] = []
             logger.debug(f"已清空用户 {user_id} 的历史记录。")
-            return True
-        return False
+        #     return True
+        # return False
 
     def clear_all_histories(self):
         self.user_histories.clear()
