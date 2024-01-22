@@ -14,10 +14,10 @@ class UnifiedChatbot:
         # 从配置文件中加载模型配置
         curdir = os.path.dirname(__file__)
         self.config_path = os.path.join(curdir, "config.json")
-        logger.debug(f"尝试读取配置文件: {self.config_path}")
+        logger.info(f"尝试读取配置文件: {self.config_path}")
         with open(self.config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-            logger.debug(f"配置文件内容: {config}")
+            logger.info(f"配置文件内容: {config}")
 
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")

@@ -512,36 +512,50 @@ class CCLite(Plugin):
             _set_reply_text(response_text, e_context, level=ReplyType.TEXT)  # 发送格式化后的评论字符串
             return          
 
-        elif "搜索" in context.content:  #Webpilot搜索
+        elif "搜索" in context.content:  # Webpilot搜索
             logger.debug("进入搜索模式")
             context, is_group, user_id, session_id, nickname = self.extract_e_context_info(e_context)
             search_term = context.content.replace("搜索", "").strip()  # 去除可能的前后空格 
+
             logger.debug(f"搜索内容：{search_term}")
-            # 向API端点发送POST请求，获取与搜索词相关的内容
-            try:
-                response = requests.post(
-                    self.base_url() + "/webpilot_search/",
-                    json={"search_term": search_term}
-                )
-                response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
-                function_response = response.json()
-                function_response = function_response.get("results", "未知错误")
-                elapsed_time = time.time() - start_time  # 计算耗时
-                # 仅在成功获取数据后发送信息
-                if is_group:
-                    _send_info(e_context, f"@{nickname}\n✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                else:
-                    _send_info(e_context, f"✅Webpilot搜索{search_term}成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
-                logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                system_prompt = f"你是搜索结果归纳助手，用户的需求是: {context.content}, 以下是通过搜索引擎获取到的网页内容，请进行总结、整理，搭配适当emoji，优化排版, 返回给用户进行阅读。字数不超过100字。"
-                logger.debug(f"已获取结果，即将交由模型处理")
-                self.c_modelpro.set_system_prompt(system_prompt, user_id)
-                function_response = self.c_modelpro.get_model_reply(function_response, user_id)
-                self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
-                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)  # 发送格式化后的搜索结果字符串
-            except Exception as e:
-                logger.error(f"Error fetching content: {e}")
-                _set_reply_text(f"获取内容失败，请稍后再试。错误信息 {e}", e_context, level=ReplyType.TEXT)
+            
+            # 向API端点发送POST请求
+            response = requests.post(
+                self.base_url() + "/webpilot_search/",
+                json={"search_term": search_term}
+            )
+
+            elapsed_time = time.time() - start_time  # 计算耗时
+
+            if response.status_code == 200:
+                try:
+                    function_response = response.json()
+                    results = function_response.get("results", "未知错误")
+
+                    # 成功获取数据后发送信息
+                    success_message = f"✅Webpilot搜索'{search_term}'成功, 正在整理。🕒耗时{elapsed_time:.2f}秒"
+                    if is_group:
+                        _send_info(e_context, f"@{nickname}\n{success_message}")
+                    else:
+                        _send_info(e_context, success_message)
+
+                    logger.debug(f"Function response: {function_response}")
+
+                    system_prompt = f"你是搜索结果归纳助手，用户的需求是: {context.content}, 以下是通过搜索引擎获取到的网页内容，请进行总结、整理，搭配适当emoji，优化排版, 返回给用户进行阅读。字数不超过100字。"
+                    logger.debug(f"已获取结果，即将交由模型处理")
+                    self.c_modelpro.set_system_prompt(system_prompt, user_id)
+                    model_reply = self.c_modelpro.get_model_reply(results, user_id)
+                    self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
+                    _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)  # 发送格式化后的搜索结果字符串
+
+                except json.JSONDecodeError as json_err:
+                    logger.error(f"JSON解析错误: {json_err}")
+                    _set_reply_text("服务器返回数据解析失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    
+            else:
+                error_message = f"获取内容失败，请稍后再试。错误代码：{response.status_code}"
+                logger.error(f"请求失败，状态码为 {response.status_code}")
+                _set_reply_text(error_message, e_context, level=ReplyType.TEXT)
             return
 
         elif context.content == "帮助" or context.content == "功能":

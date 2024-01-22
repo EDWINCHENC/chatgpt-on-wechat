@@ -152,15 +152,15 @@ class ChatStatistics(Plugin):
 
         # 检查是否有切换模型的命令
         if "cset openai" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.ai_model = "OpenAI"
+            self.c_model.ai_model = "OpenAI"
             _set_reply_text("已切换到 OpenAI 模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cset gemini" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.ai_model = "Gemini"
+            self.c_model.ai_model = "Gemini"
             _set_reply_text("已切换到 Gemini 模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cset qwen" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.ai_model = "Qwen"
+            self.c_model.ai_model = "Qwen"
             _set_reply_text("已切换到 Qwen 模型。", e_context, level=ReplyType.TEXT)
             return
 
@@ -213,7 +213,7 @@ class ChatStatistics(Plugin):
         )
         prompt = "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。然后适当提炼总结3个左右群聊的精华主题/标题+聊天内容，标题用emoji美化。最后点点名一下表现活跃的一个群成员，并点评他的聊天记录，在总结的末尾单独一行，搭配emoji展示3-5个核心关键词（可以是活跃的群友名字、关键话题等）,并进行一句话精华点评（搭配emoji)。 总体要求：总结的文本要连贯、排版要段落结构清晰。总体字数不超过180字。"
         function_response = self.c_model._generate_model_analysis(prompt, combined_content)           
-        logger.debug(f"Summary response from {self.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
+        logger.debug(f"Summary response from {self.c_model.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
         return function_response
 
     def get_chat_activity_ranking(self, session_id):
