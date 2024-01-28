@@ -288,7 +288,7 @@ class CCLite(Plugin):
                 self.c_modelpro.set_system_prompt(system_prompt)
                 function_response = self.c_modelpro.get_model_reply(function_response)
                 logger.debug(f"实时要闻整理完成: {function_response}")
-                self.clear_user_history()  # 清除用户历史记录
+                self.c_modelpro.clear_user_history()  # 清除用户历史记录
                 _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
                 return
             except requests.RequestException as e:
