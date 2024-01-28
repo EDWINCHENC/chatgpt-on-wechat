@@ -6,6 +6,7 @@ import openai
 import google.generativeai as genai
 from http import HTTPStatus
 import dashscope
+import requests
 
 class ModelGenerator:
     def __init__(self):
@@ -25,6 +26,9 @@ class ModelGenerator:
             logger.info(f"[ModelGenerator] config content: {config}")
         self.ai_model = config.get("ai_model", "OpenAI")
         self.dashscope_api_key = config.get("dashscope_api_key")
+        
+        self.perplexity_api_key = config.get("perplexity_api_key")  # 确保这里正确地获取了API密钥
+
 
     def set_ai_model(self, model_name):
         """设置 AI 模型"""
@@ -62,6 +66,10 @@ class ModelGenerator:
             messages = self._build_dashscope_messages(prompt, combined_content)
             return self._generate_summary_with_dashscope(messages)
 
+        elif self.ai_model == "Perplexity":
+            messages = self._build_perplexity_messages(prompt, combined_content)
+            return self._generate_summary_with_perplexity(messages)
+
     def _build_openai_messages(self, prompt, user_input):
         return [
             {"role": "system", "content": prompt},
@@ -80,6 +88,13 @@ class ModelGenerator:
         return [
             {'role': 'system', 'content': prompt},
             {'role': 'user', 'content': user_input}
+        ]
+        
+    def _build_perplexity_messages(self, prompt, user_input):
+        # 构建适用于Mistral的消息格式
+        return [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": user_input}
         ]
 
     def _generate_summary_with_openai(self, messages):
@@ -153,6 +168,39 @@ class ModelGenerator:
         except Exception as e:
             logger.error(f"Error generating summary with Dashscope: {e}")
             return "有些累了，请稍后再试。"
+
+    def _generate_summary_with_perplexity(self, messages):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.perplexity_api_key}'
+        }
+        data = {
+            "model": "pplx-7b-online",
+            "messages": messages
+        }
+        try:
+            logger.debug(f"向 Perplexity 发送消息: {messages}")
+            api_url = "https://api.perplexity.ai/chat/completions"
+            response = requests.post(api_url, headers=headers, json=data)
+            logger.debug(f"来自 Perplexity 的回复: {json.dumps(response.json(), ensure_ascii=False)}")
+            response.raise_for_status()
+            # 处理响应数据
+            response_data = response.json()
+            # 这里可以根据你的需要处理响应数据
+            # 解析 JSON 并获取 content
+            if "choices" in response_data and len(response_data["choices"]) > 0:
+                first_choice = response_data["choices"][0]
+                if "message" in first_choice and "content" in first_choice["message"]:
+                    reply_content = first_choice["message"]["content"]
+                    return f"{reply_content}[P]" if reply_content else "未收到有效回复。"
+                else:
+                    return "Content not found in the response"
+            else:
+                return "No choices available in the response"
+        except requests.exceptions.RequestException as e:
+            # 处理可能出现的错误
+            logger.error(f"Error calling perplexity: {e}")
+
 
 
     def remove_markdown(self, text):

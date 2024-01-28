@@ -10,7 +10,7 @@ from common.log import logger
 import os
 import time
 from datetime import datetime
-# from .lib.model_factory import ModelGenerator
+from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
 from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
 
@@ -33,6 +33,7 @@ class CCLite(Plugin):
                 config = json.load(f)
                 logger.info(f"[cclite] 加载配置文件成功: {config}")
                 # 创建 UnifiedChatbot 实例
+                self.c_model = ModelGenerator()
                 self.c_modelpro = UnifiedChatbot()
                 self.session_data = {}  # user_id -> (state, data)
                 self.user_divinations = {}
@@ -524,51 +525,31 @@ class CCLite(Plugin):
             _set_reply_text(response_text, e_context, level=ReplyType.TEXT)  # 发送格式化后的评论字符串
             return          
 
-        elif "搜索" in context.content:  # Webpilot搜索
-            logger.debug("进入搜索模式")
-            context, is_group, user_id, session_id, nickname = self.extract_e_context_info(e_context)
-            search_term = context.content.replace("搜索", "").strip()  # 去除可能的前后空格 
+        if context.content.startswith("搜索"):
+            logger.debug("用户请求搜索")
+            # 从用户输入中提取搜索内容，假设搜索关键字后面的内容是实际的查询内容
+            search_query = context.content[2:].strip()  # 从第三个字符开始到字符串末尾
 
-            logger.debug(f"搜索内容：{search_term}")
-            
-            # 向API端点发送POST请求
-            response = requests.post(
-                self.base_url() + "/webpilot_search/",
-                json={"search_term": search_term}
+            # 设置Perplexity模型需要的系统提示信息
+            system_prompt = (
+                "你是一个高级智能搜索引擎，具备强大的联网搜索能力。"
+                "你的任务是根据用户的查询请求，在网络上搜寻信息，并从中提取最相关、最权威的资料。"
+                "在处理信息时，你能够理解复杂的概念，整理并归纳关键内容，并且能够理解和使用emoji来增强信息的表达效果。"
+                "你会以清晰、有逻辑且易于理解的方式组织回复，确保信息准确、全面且格式一致，满足用户对信息的具体需求。"
+                "在呈现结果时，你会考虑到用户的阅读体验，通过适当的排版和使用emoji，使得内容既信息丰富又视觉上吸引人。"
             )
 
-            elapsed_time = time.time() - start_time  # 计算耗时
+            # 构建消息格式
+            messages = self.c_model._build_perplexity_messages(system_prompt, search_query)
 
-            if response.status_code == 200:
-                try:
-                    function_response = response.json()
-                    results = function_response.get("results", "未知错误")
+            # 调用ModelGenerator实例的方法请求Perplexity接口响应
+            function_response = self.c_model._generate_summary_with_perplexity(messages)
 
-                    # 成功获取数据后发送信息
-                    success_message = f"✅Webpilot搜索'{search_term}'成功, 正在整理。🕒耗时{elapsed_time:.2f}秒"
-                    if is_group:
-                        _send_info(e_context, f"@{nickname}\n{success_message}")
-                    else:
-                        _send_info(e_context, success_message)
+            # 处理模型响应
+            logger.debug(f"搜索结果：{function_response}")
+            # 假设 _set_reply_text 是用来设置回复文本的方法
+            _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
 
-                    logger.debug(f"Function response: {function_response}")
-
-                    system_prompt = f"你是搜索结果归纳助手，用户的需求是: {context.content}, 以下是通过搜索引擎获取到的网页内容，请进行总结、整理，搭配适当emoji，优化排版, 返回给用户进行阅读。字数不超过200字。"
-                    logger.debug(f"已获取结果，即将交由模型处理")
-                    self.c_modelpro.set_system_prompt(system_prompt, user_id)
-                    model_reply = self.c_modelpro.get_model_reply(results, user_id)
-                    self.c_modelpro.clear_user_history(user_id)  # 清除用户历史记录
-                    _set_reply_text(model_reply, e_context, level=ReplyType.TEXT)  # 发送格式化后的搜索结果字符串
-
-                except json.JSONDecodeError as json_err:
-                    logger.error(f"JSON解析错误: {json_err}")
-                    _set_reply_text("服务器返回数据解析失败，请稍后再试。", e_context, level=ReplyType.TEXT)
-                    
-            else:
-                error_message = f"获取内容失败，请稍后再试。错误代码：{response.status_code}"
-                logger.error(f"请求失败，状态码为 {response.status_code}")
-                _set_reply_text(error_message, e_context, level=ReplyType.TEXT)
-            return
 
         elif context.content == "帮助" or context.content == "功能":
             # 完整的功能指南
