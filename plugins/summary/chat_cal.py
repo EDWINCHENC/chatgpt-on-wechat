@@ -83,13 +83,18 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 
-    def _get_records(self, session_id, excluded_users=None):
-        """获取指定会话的当天聊天记录，排除特定用户列表中的用户"""
+    def _get_records(self, session_id, excluded_users=None, specific_day=None):
+        """获取指定会话的聊天记录，排除特定用户列表中的用户，可选特定日期"""
         if excluded_users is None:
-            excluded_users = ["黄二狗²⁴⁶⁷","Oʀ ."]  # 默认排除的用户列表
+            excluded_users = ["Oʀ ."]  # 默认排除的用户列表
 
-        start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if specific_day is None:
+            specific_day = datetime.datetime.now()
+
+        start_of_day = specific_day.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = specific_day.replace(hour=23, minute=59, second=59, microsecond=999999)
         start_timestamp = int(start_of_day.timestamp())
+        end_timestamp = int(end_of_day.timestamp())
 
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -97,10 +102,10 @@ class ChatStatistics(Plugin):
 
                 # 构建排除用户的 SQL 条件
                 excluded_users_placeholder = ','.join('?' for _ in excluded_users)
-                query = f"SELECT * FROM chat_records WHERE sessionid=? AND timestamp>=? AND user NOT IN ({excluded_users_placeholder}) ORDER BY timestamp DESC"
+                query = f"SELECT * FROM chat_records WHERE sessionid=? AND timestamp BETWEEN ? AND ? AND user NOT IN ({excluded_users_placeholder}) ORDER BY timestamp DESC"
 
                 # 准备查询参数
-                query_params = [session_id, start_timestamp] + excluded_users
+                query_params = [session_id, start_timestamp, end_timestamp] + excluded_users
 
                 # 执行查询
                 c.execute(query, query_params)
@@ -109,6 +114,7 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error fetching records: {e}")
             return []
+
 
     def on_receive_message(self, e_context: EventContext):
         context = e_context['context']
@@ -217,51 +223,63 @@ class ChatStatistics(Plugin):
         return function_response
 
     def get_chat_activity_ranking(self, session_id):
-        """获取聊天活跃度排名前6位（当天）"""
         try:
-            # 获取当天的聊天记录
-            daily_records = self._get_records(session_id)
-            today_count = len(daily_records)  # 计算今日聊天记录总条数
+            # 获取今天的聊天记录
+            today_records = self._get_records(session_id)
+            today_count = len(today_records)  # 计算今日聊天记录总条数
 
-            # 获取当天的聊天记录
-            daily_records = self._get_records(session_id)
-            # 使用 Counter 统计每个用户的消息数量
-            user_message_count = Counter(record[2] for record in daily_records)
-            # 根据消息数量排序
+            # 获取昨天的聊天记录
+            yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+            yesterday_records = self._get_records(session_id, specific_day=yesterday)
+            yesterday_count = len(yesterday_records)  # 计算昨日聊天记录总条数
+
+            # 计算今日与昨日聊天量的百分比变化
+            percent_change = ((today_count - yesterday_count) / yesterday_count * 100) if yesterday_count > 0 else float('inf')
+
+            # 获取历史单日最高聊天量和对应用户
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                c.execute("""
+                    SELECT user, COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                    FROM chat_records 
+                    GROUP BY date, user 
+                    ORDER BY count DESC 
+                    LIMIT 1
+                """)
+                top_user_record = c.fetchone()
+                top_user, top_user_count, top_date = top_user_record if top_user_record else ("无记录", 0, "无日期")
+
+                c.execute("""
+                    SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                    FROM chat_records 
+                    GROUP BY date 
+                    ORDER BY count DESC 
+                    LIMIT 1
+                """)
+                top_day_record = c.fetchone()
+                top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
+
+            # 获取今日活跃用户信息
+            user_message_count = Counter(record[2] for record in today_records)
             sorted_users = user_message_count.most_common(6)
-            # 获取排名第一的用户
-            top_user = sorted_users[0][0] if sorted_users else None
-            logger.debug(f"最活跃的用户: {top_user}")
-            # 提取排名第一的用户的聊天内容
-            top_user_messages = [record[3] for record in daily_records if record[2] == top_user]
-            logger.debug(f"最活跃的用户的聊天内容: {top_user_messages[:5]}")
-            # 如果有消息，将其发送给 Model
-            if top_user_messages:
-                # 构建消息格式
-                formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
 
-                prompt = "你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user} 的聊天记录进行适当的总结，并进行精华点评（添加emoji)。可以点评他/她主要的聊天话题、聊天活跃度、和谁互动最多等等方面，总字数60字以内"
-                messages_to_model = formatted_top_user_messages
-                # 调用 Model 进行分析
-                model_analysis = self.c_model._generate_model_analysis(prompt, messages_to_model)
-                logger.debug(f"已完成群聊分析")
-                # 处理 Model 的回复...
-            # 生成排名信息
-            ranking = [f"😈 今日群员聊天榜🔝 总 {today_count} 条", "----------------"]  # 添加标题和分割线
+            # 组装最终的结果
+            result_lines = [
+                f"😈 今日群员聊天榜🔝 {today_count} 条 ({percent_change:.2f}%)",
+                f"😴 昨日: {yesterday_count} 条",
+                f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
+                f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
+                "----------------"
+            ]
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
-                ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
-            logger.debug(f"活跃度排名成功: {ranking}")
-            # 将 Model 的分析结果附加到排名信息之后
-            final_result = "\n".join(ranking)
-            if model_analysis:
-                final_result += "\n\n🔍点评时刻:\n" + model_analysis
-            return final_result
+                result_lines.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
+
+            return "\n".join(result_lines)
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")
-            return "Unable to retrieve chat activity ranking.", []
-
+            return "Unable to retrieve chat activity ranking."
 
     def get_fancy_emoji_for_number(self, number):
         """为排名序号提供更漂亮的emoji"""
