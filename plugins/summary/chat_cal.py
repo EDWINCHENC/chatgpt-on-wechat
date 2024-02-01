@@ -86,7 +86,7 @@ class ChatStatistics(Plugin):
     def _get_records(self, session_id, excluded_users=None, specific_day=None):
         """获取指定会话的聊天记录，排除特定用户列表中的用户，可选特定日期"""
         if excluded_users is None:
-            excluded_users = ["Oʀ ."]  # 默认排除的用户列表
+            excluded_users = ["黄二狗²⁴⁶⁷","Oʀ ."]  # 默认排除的用户列表
 
         if specific_day is None:
             specific_day = datetime.datetime.now()
@@ -235,6 +235,8 @@ class ChatStatistics(Plugin):
 
             # 计算今日与昨日聊天量的百分比变化
             percent_change = ((today_count - yesterday_count) / yesterday_count * 100) if yesterday_count > 0 else float('inf')
+            percent_change_str = f"+{percent_change:.0f}%" if percent_change >= 0 else f"{percent_change:.0f}%"
+            today_info = f"😈 今日群员聊天榜🔝 {today_count} 条 [较昨日（{yesterday_count}条）{percent_change_str}]"
 
             # 获取历史单日最高聊天量和对应用户
             with sqlite3.connect(self.db_path) as conn:
@@ -265,8 +267,7 @@ class ChatStatistics(Plugin):
 
             # 组装最终的结果
             result_lines = [
-                f"😈 今日群员聊天榜🔝 {today_count} 条 ({percent_change:.2f}%)",
-                f"😴 昨日: {yesterday_count} 条",
+                today_info,
                 f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
                 f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
                 "----------------"
