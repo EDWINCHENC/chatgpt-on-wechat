@@ -224,6 +224,8 @@ class ChatStatistics(Plugin):
 
     def get_chat_activity_ranking(self, session_id):
         try:
+            # 定义要排除的用户列表
+            excluded_users = ["黄二狗²⁴⁶⁷", "Oʀ ."]
             # 获取今天的聊天记录
             today_records = self._get_records(session_id)
             today_count = len(today_records)  # 计算今日聊天记录总条数
@@ -241,25 +243,32 @@ class ChatStatistics(Plugin):
             # 获取历史单日最高聊天量和对应用户
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
-                c.execute("""
+                excluded_users_placeholder = ','.join('?' for _ in excluded_users)
+                
+                # 查询历史单日用户发送消息最高记录，排除特定用户
+                c.execute(f"""
                     SELECT user, COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
                     FROM chat_records 
+                    WHERE user NOT IN ({excluded_users_placeholder})
                     GROUP BY date, user 
                     ORDER BY count DESC 
                     LIMIT 1
-                """)
+                """, excluded_users)
                 top_user_record = c.fetchone()
                 top_user, top_user_count, top_date = top_user_record if top_user_record else ("无记录", 0, "无日期")
 
-                c.execute("""
-                    SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
-                    FROM chat_records 
-                    GROUP BY date 
-                    ORDER BY count DESC 
-                    LIMIT 1
-                """)
-                top_day_record = c.fetchone()
-                top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
+            # 查询历史单日聊天量最高的记录
+            c.execute(f"""
+                SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                FROM chat_records 
+                WHERE user NOT IN ({excluded_users_placeholder})
+                GROUP BY date 
+                ORDER BY count DESC 
+                LIMIT 1
+            """, excluded_users)
+            top_day_record = c.fetchone()
+            top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
+
 
             # 获取今日活跃用户信息
             user_message_count = Counter(record[2] for record in today_records)
