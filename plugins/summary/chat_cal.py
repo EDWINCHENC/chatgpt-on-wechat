@@ -241,7 +241,7 @@ class ChatStatistics(Plugin):
             # 组装今日聊天榜信息和昨日数据
             today_info = f"😈 今日群员聊天榜🏆 总 {today_count} 条"
             change_emoji = "🔺" if percent_change >= 0 else "🔻"
-            yesterday_info = f"😴 较昨日: {yesterday_count} 条 {change_emoji}{abs(percent_change):.0f}%"
+            yesterday_info = f"😴 较昨日: {yesterday_count} 条 {change_emoji}{abs(percent_change):.1f}%"
 
             # 获取历史单日最高聊天量和对应用户
             with sqlite3.connect(self.db_path) as conn:
@@ -308,7 +308,7 @@ class ChatStatistics(Plugin):
                 result_lines.append("\n🔍点评时刻:\n" + model_analysis)
                 
             # 添加历史数据部分
-            result_lines.append("\n---------------------")
+            result_lines.append("---------------------")
             result_lines.append("🔖 最高历史记录:")
             result_lines.append(f"🏆 眠眠羊₊⁺: {top_user_count} 条 ({top_date})")
             result_lines.append(f"🌟 群聊: {top_day_count} 条 ({top_day_date})")
