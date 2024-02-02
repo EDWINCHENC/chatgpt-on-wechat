@@ -297,7 +297,7 @@ class ChatStatistics(Plugin):
                 yesterday_info,
                 # f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
                 # f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
-                "----------------"
+                "---------------------"
             ]
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
@@ -308,8 +308,8 @@ class ChatStatistics(Plugin):
                 result_lines.append("\n🔍点评时刻:\n" + model_analysis)
                 
             # 添加历史数据部分
-            result_lines.append("\n🔖 最高历史记录:")
-            result_lines.append("---------------")
+            result_lines.append("\n---------------------")
+            result_lines.append("🔖 最高历史记录:")
             result_lines.append(f"🏆 眠眠羊₊⁺: {top_user_count} 条 ({top_date})")
             result_lines.append(f"🌟 群聊: {top_day_count} 条 ({top_day_date})")
                     
