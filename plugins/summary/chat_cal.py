@@ -269,24 +269,46 @@ class ChatStatistics(Plugin):
             top_day_record = c.fetchone()
             top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
 
-
+ 
             # 获取今日活跃用户信息
             user_message_count = Counter(record[2] for record in today_records)
             sorted_users = user_message_count.most_common(6)
 
+            # 提取今日最活跃用户的聊天内容
+            top_user_today = sorted_users[0][0] if sorted_users else None
+            top_user_today_messages = [record[3] for record in today_records if record[2] == top_user_today]
+            model_analysis = ""
+            if top_user_today_messages:
+                # 构建消息格式
+                formatted_top_user_messages = f"以下是 {top_user_today} 今天的聊天内容，请点评：\n" + "\n".join(top_user_today_messages[:5])
+
+                prompt = f"你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user_today} 的聊天记录进行适当的总结，并进行精华点评（搭配emoji)。可以点评和适当总结他/她主要的聊天话题、核心话题、和谁互动最多等等方面，点评要尽量生动，语言表达优雅，如果可以，可以用一两句诗来最后总结，总字数70字以内"
+                messages_to_model = formatted_top_user_messages
+                # 调用 Model 进行分析
+                model_analysis = self.c_model._generate_model_analysis(prompt, messages_to_model)
+                logger.debug(f"Model analysis for {top_user_today}: {json.dumps(model_analysis, ensure_ascii=False)}")
+
             # 组装最终的结果
             result_lines = [
                 today_info,
-                f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
-                f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
+                # f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
+                # f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
                 "----------------"
             ]
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
                 result_lines.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
-
-            return "\n".join(result_lines)
+                # 添加点评时刻部分
+                if model_analysis:
+                    result_lines.append("\n🔍点评时刻:\n" + model_analysis)
+                
+            # 添加历史数据部分
+            result_lines.append("🌐 最高历史记录:")
+            result_lines.append(f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})")
+            result_lines.append(f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})")
+                    
+            return "\n".join(result_lines) 
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")
             return "Unable to retrieve chat activity ranking."
