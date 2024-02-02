@@ -238,7 +238,8 @@ class ChatStatistics(Plugin):
             # 计算今日与昨日聊天量的百分比变化
             percent_change = ((today_count - yesterday_count) / yesterday_count * 100) if yesterday_count > 0 else float('inf')
             percent_change_str = f"+{percent_change:.0f}%" if percent_change >= 0 else f"{percent_change:.0f}%"
-            today_info = f"😈 今日群员聊天榜🔝 {today_count} 条 [较昨日（{yesterday_count}条）{percent_change_str}]"
+            today_info = f"😈 今日群员聊天榜🏆 总 {today_count} 条 （较昨日{percent_change_str}）"
+            yesterday_info = f"😴 昨日: {yesterday_count} 条"
 
             # 获取历史单日最高聊天量和对应用户
             with sqlite3.connect(self.db_path) as conn:
@@ -291,6 +292,7 @@ class ChatStatistics(Plugin):
             # 组装最终的结果
             result_lines = [
                 today_info,
+                yesterday_info,
                 # f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
                 # f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
                 "----------------"
@@ -299,14 +301,14 @@ class ChatStatistics(Plugin):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
                 result_lines.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
-                # 添加点评时刻部分
-                if model_analysis:
-                    result_lines.append("\n🔍点评时刻:\n" + model_analysis)
+            # 添加点评时刻部分
+            if model_analysis:
+                result_lines.append("\n🔍点评时刻:\n" + model_analysis)
                 
             # 添加历史数据部分
             result_lines.append("🌐 最高历史记录:")
-            result_lines.append(f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})")
-            result_lines.append(f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})")
+            result_lines.append(f"🏆 {top_user}： {top_user_count} 条 ({top_date})")
+            result_lines.append(f"🌟 单日最高: {top_day_count} 条 ({top_day_date})")
                     
             return "\n".join(result_lines) 
         except Exception as e:
