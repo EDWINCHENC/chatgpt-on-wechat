@@ -238,10 +238,11 @@ class ChatStatistics(Plugin):
             # 计算今日与昨日聊天量的百分比变化
             percent_change = ((today_count - yesterday_count) / yesterday_count * 100) if yesterday_count > 0 else float('inf')
             # percent_change_str = f"+{percent_change:.0f}%" if percent_change >= 0 else f"{percent_change:.0f}%"
+            percent_change_str = f"{percent_change:+.2f}%"
             # 组装今日聊天榜信息和昨日数据
             today_info = f"😈 今日群员聊天榜🏆 总 {today_count} 条"
             change_emoji = "🔺" if percent_change >= 0 else "🔻"
-            yesterday_info = f"😴 较昨日: {yesterday_count} 条 {change_emoji}{abs(percent_change):.1f}%"
+            yesterday_info = f"😴 较昨日: {yesterday_count} 条 {percent_change_str}"
 
             # 获取历史单日最高聊天量和对应用户
             with sqlite3.connect(self.db_path) as conn:
@@ -260,17 +261,17 @@ class ChatStatistics(Plugin):
                 top_user_record = c.fetchone()
                 top_user, top_user_count, top_date = top_user_record if top_user_record else ("无记录", 0, "无日期")
 
-            # 查询历史单日聊天量最高的记录
-            c.execute(f"""
-                SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
-                FROM chat_records 
-                WHERE user NOT IN ({excluded_users_placeholder})
-                GROUP BY date 
-                ORDER BY count DESC 
-                LIMIT 1
-            """, excluded_users)
-            top_day_record = c.fetchone()
-            top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
+                # 查询历史单日聊天量最高的记录
+                c.execute(f"""
+                    SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                    FROM chat_records 
+                    WHERE user NOT IN ({excluded_users_placeholder})
+                    GROUP BY date 
+                    ORDER BY count DESC 
+                    LIMIT 1
+                """, excluded_users)
+                top_day_record = c.fetchone()
+                top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
 
  
             # 获取今日活跃用户信息
@@ -295,8 +296,6 @@ class ChatStatistics(Plugin):
             result_lines = [
                 today_info,
                 yesterday_info,
-                # f"🏆 单日最高: {top_user} {top_user_count} 条 ({top_date})",
-                # f"🌟 最活跃日: {top_day_count} 条 ({top_day_date})",
                 "---------------------"
             ]
             for idx, (user, count) in enumerate(sorted_users, start=1):
@@ -308,10 +307,10 @@ class ChatStatistics(Plugin):
                 result_lines.append("\n🔍点评时刻:\n" + model_analysis)
                 
             # 添加历史数据部分
-            result_lines.append("---------------------")
-            result_lines.append("🔖 最高历史记录:")
-            result_lines.append(f"🏆 眠眠羊₊⁺: {top_user_count} 条 ({top_date})")
-            result_lines.append(f"🌟 群聊: {top_day_count} 条 ({top_day_date})")
+            # result_lines.append("---------------------")
+            result_lines.append(f"\n🔖 最高历史记录: {top_day_count} 条")
+            # result_lines.append(f"🏆 眠眠羊₊⁺: {top_user_count} 条 ({top_date})")
+            # result_lines.append(f"🌟 群聊: {top_day_count} 条 ({top_day_date})")
                     
             return "\n".join(result_lines) 
         except Exception as e:
