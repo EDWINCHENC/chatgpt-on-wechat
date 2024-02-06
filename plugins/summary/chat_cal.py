@@ -249,27 +249,27 @@ class ChatStatistics(Plugin):
                 c = conn.cursor()
                 excluded_users_placeholder = ','.join('?' for _ in excluded_users)
                 
-                # 查询历史单日用户发送消息最高记录，排除特定用户
+                # 查询历史单日用户发送消息最高记录，排除特定用户，限定特定session_id
                 c.execute(f"""
                     SELECT user, COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
                     FROM chat_records 
-                    WHERE user NOT IN ({excluded_users_placeholder})
+                    WHERE sessionid = ? AND user NOT IN ({excluded_users_placeholder})
                     GROUP BY date, user 
                     ORDER BY count DESC 
                     LIMIT 1
-                """, excluded_users)
+                """, [session_id] + excluded_users)
                 top_user_record = c.fetchone()
                 top_user, top_user_count, top_date = top_user_record if top_user_record else ("无记录", 0, "无日期")
 
-                # 查询历史单日聊天量最高的记录
+                # 查询特定session_id下历史单日聊天量最高的记录
                 c.execute(f"""
                     SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
                     FROM chat_records 
-                    WHERE user NOT IN ({excluded_users_placeholder})
+                    WHERE sessionid = ? AND user NOT IN ({excluded_users_placeholder})
                     GROUP BY date 
                     ORDER BY count DESC 
                     LIMIT 1
-                """, excluded_users)
+                """, [session_id] + excluded_users)
                 top_day_record = c.fetchone()
                 top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
 
