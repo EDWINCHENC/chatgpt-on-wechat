@@ -281,6 +281,8 @@ class ChatStatistics(Plugin):
             # 提取今日最活跃用户的聊天内容
             top_user_today = sorted_users[0][0] if sorted_users else None
             top_user_today_messages = [record[3] for record in today_records if record[2] == top_user_today]
+            #打印获取到的top_user_today_messages的数量
+            logger.debug(f"今日top_user共发送了{len(top_user_today_messages)}条消息")
             model_analysis = ""
             if top_user_today_messages:
                 # 构建消息格式
