@@ -14,6 +14,7 @@ import plugins
 import openai
 from collections import Counter
 from .lib import wxmsg as wx
+from .lib.model_factory import ModelGenerator
 import re
 import google.generativeai as genai
 
@@ -42,7 +43,7 @@ class ChatStatistics(Plugin):
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
             logger.info(f"[c_summary] config content: {config}")
-        self.ai_model = config.get("ai_model", "OpenAI")
+        self.c_model = ModelGenerator()
 
         # 初始化数据库
         self.initialize_database()
@@ -82,13 +83,18 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 
-    def _get_records(self, session_id, excluded_users=None):
-        """获取指定会话的当天聊天记录，排除特定用户列表中的用户"""
+    def _get_records(self, session_id, excluded_users=None, specific_day=None):
+        """获取指定会话的聊天记录，排除特定用户列表中的用户，可选特定日期"""
         if excluded_users is None:
             excluded_users = ["黄二狗²⁴⁶⁷","Oʀ ."]  # 默认排除的用户列表
 
-        start_of_day = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if specific_day is None:
+            specific_day = datetime.datetime.now()
+
+        start_of_day = specific_day.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = specific_day.replace(hour=23, minute=59, second=59, microsecond=999999)
         start_timestamp = int(start_of_day.timestamp())
+        end_timestamp = int(end_of_day.timestamp())
 
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -96,10 +102,10 @@ class ChatStatistics(Plugin):
 
                 # 构建排除用户的 SQL 条件
                 excluded_users_placeholder = ','.join('?' for _ in excluded_users)
-                query = f"SELECT * FROM chat_records WHERE sessionid=? AND timestamp>=? AND user NOT IN ({excluded_users_placeholder}) ORDER BY timestamp DESC"
+                query = f"SELECT * FROM chat_records WHERE sessionid=? AND timestamp BETWEEN ? AND ? AND user NOT IN ({excluded_users_placeholder}) ORDER BY timestamp DESC"
 
                 # 准备查询参数
-                query_params = [session_id, start_timestamp] + excluded_users
+                query_params = [session_id, start_timestamp, end_timestamp] + excluded_users
 
                 # 执行查询
                 c.execute(query, query_params)
@@ -108,6 +114,7 @@ class ChatStatistics(Plugin):
         except Exception as e:
             logger.error(f"Error fetching records: {e}")
             return []
+
 
     def on_receive_message(self, e_context: EventContext):
         context = e_context['context']
@@ -151,12 +158,16 @@ class ChatStatistics(Plugin):
 
         # 检查是否有切换模型的命令
         if "cset openai" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.ai_model = "OpenAI"
+            self.c_model.ai_model = "OpenAI"
             _set_reply_text("已切换到 OpenAI 模型。", e_context, level=ReplyType.TEXT)
             return
         elif "cset gemini" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.ai_model = "Gemini"
+            self.c_model.ai_model = "Gemini"
             _set_reply_text("已切换到 Gemini 模型。", e_context, level=ReplyType.TEXT)
+            return
+        elif "cset qwen" in content_lower:  # 使用转换后的小写字符串进行比较
+            self.c_model.ai_model = "Qwen"
+            _set_reply_text("已切换到 Qwen 模型。", e_context, level=ReplyType.TEXT)
             return
 
         # 解析用户请求
@@ -182,17 +193,6 @@ class ChatStatistics(Plugin):
             else:
                 _set_reply_text("请提供一个有效的关键词。", e_context, level=ReplyType.TEXT)
 
-        elif content == "我的聊天":
-            # 使用发送消息的用户昵称或用户ID
-            user_identifier = chat_message.actual_user_nickname or chat_message.from_user_id
-            if user_identifier:
-                user_identifier = user_identifier.strip()
-            logger.debug(f"开始分析用户{user_identifier}的聊天记录...")
-            user_summary = remove_markdown(self.analyze_specific_user_usage(user_identifier))
-            logger.debug(f"用户 {user_identifier} 的聊天记录分析结果: {user_summary}")
-            _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
-
-
         else:
             # 使用正则表达式检查是否符合 "@xxx的聊天" 格式
             match = re.match(r"@([\w\s]+)的聊天$", content)
@@ -204,77 +204,6 @@ class ChatStatistics(Plugin):
                 _set_reply_text(user_summary, e_context, level=ReplyType.TEXT)
             else:
                 e_context.action = EventAction.CONTINUE
-
-    def _generate_model_analysis(self, prompt, combined_content):
-        if self.ai_model == "OpenAI":
-            messages = self._build_openai_messages(prompt, combined_content)
-            return self._generate_summary_with_openai(messages)
-
-        elif self.ai_model == "Gemini":
-            messages = self._build_gemini_messages(prompt, combined_content)
-            return self._generate_summary_with_gemini_pro(messages)
-
-    def _build_openai_messages(self, prompt, user_input):
-        return [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": user_input}
-        ]
-
-    def _build_gemini_messages(self, prompt, user_input):
-        prompt_parts = [
-            prompt,
-            "input: " + user_input,
-            "output: "
-        ]
-        return prompt_parts
-
-    def _generate_summary_with_openai(self, messages):
-        """使用 OpenAI ChatGPT 生成总结"""
-        try:
-            # 设置 OpenAI API 密钥和基础 URL
-            openai.api_key = self.openai_api_key
-            openai.api_base = self.openai_api_base
-
-            logger.debug(f"向 OpenAI 发送消息: {messages}")
-
-            # 调用 OpenAI ChatGPT
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo-0613",
-                messages=messages
-            )
-            logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")
-            reply_text = response["choices"][0]["message"]['content']  # 获取模型返回的消息
-            return f"{reply_text}[O]"
-        except Exception as e:
-            logger.error(f"Error generating summary with OpenAI: {e}")
-            return "生成总结时出错，请稍后再试。"
-
-
-    def _generate_summary_with_gemini_pro(self, messages):
-        """使用 Gemini Pro 生成总结"""
-        try:
-            # 配置 Gemini Pro API 密钥
-            genai.configure(api_key=self.gemini_api_key)
-            # Set up the model
-            generation_config = {
-            "temperature": 0.8,
-            "top_p": 1,
-            "top_k": 1,
-            "max_output_tokens": 8192,
-            }
-
-            # 创建 Gemini Pro 模型实例
-            model = genai.GenerativeModel(model_name="gemini-pro",generation_config=generation_config)
-            logger.debug(f"向 Gemini Pro 发送消息: {messages}")
-            # 调用 Gemini Pro 生成内容
-            response = model.generate_content(messages)
-            reply_text = remove_markdown(response.text)
-            logger.info(f"从 Gemini Pro 获取的回复: {reply_text}")
-            return f"{reply_text}[G]"
-
-        except Exception as e:
-            logger.error(f"Error generating summary with Gemini Pro: {e}")
-            return "生成总结时出错，请稍后再试。"
 
     def summarize_group_chat(self, session_id, count):
         # 从 _get_records 方法获取当天的所有聊天记录
@@ -289,56 +218,106 @@ class ChatStatistics(Plugin):
             for record in recent_records
         )
         prompt = "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。然后适当提炼总结3个左右群聊的精华主题/标题+聊天内容，标题用emoji美化。最后点点名一下表现活跃的一个群成员，并点评他的聊天记录，在总结的末尾单独一行，搭配emoji展示3-5个核心关键词（可以是活跃的群友名字、关键话题等）,并进行一句话精华点评（搭配emoji)。 总体要求：总结的文本要连贯、排版要段落结构清晰。总体字数不超过180字。"
-        function_response = self._generate_model_analysis(prompt, combined_content)           
-        logger.debug(f"Summary response from {self.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
+        function_response = self.c_model._generate_model_analysis(prompt, combined_content)           
+        logger.debug(f"Summary response from {self.c_model.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
         return function_response
 
     def get_chat_activity_ranking(self, session_id):
-        """获取聊天活跃度排名前6位（当天）"""
         try:
-            # 获取当天的聊天记录
-            daily_records = self._get_records(session_id)
-            today_count = len(daily_records)  # 计算今日聊天记录总条数
+            # 定义要排除的用户列表
+            excluded_users = ["黄二狗²⁴⁶⁷", "Oʀ ."]
+            # 获取今天的聊天记录
+            today_records = self._get_records(session_id)
+            today_count = len(today_records)  # 计算今日聊天记录总条数
 
-            # 获取当天的聊天记录
-            daily_records = self._get_records(session_id)
-            # 使用 Counter 统计每个用户的消息数量
-            user_message_count = Counter(record[2] for record in daily_records)
-            # 根据消息数量排序
+            # 获取昨天的聊天记录
+            yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+            yesterday_records = self._get_records(session_id, specific_day=yesterday)
+            yesterday_count = len(yesterday_records)  # 计算昨日聊天记录总条数
+
+            # 计算今日与昨日聊天量的百分比变化
+            percent_change = ((today_count - yesterday_count) / yesterday_count * 100) if yesterday_count > 0 else float('inf')
+            # percent_change_str = f"+{percent_change:.0f}%" if percent_change >= 0 else f"{percent_change:.0f}%"
+            percent_change_str = f"{percent_change:+.2f}%"
+            # 组装今日聊天榜信息和昨日数据
+            today_info = f"😈 今日群员聊天榜🏆 总 {today_count} 条"
+            change_emoji = "🔺" if percent_change >= 0 else "🔻"
+            yesterday_info = f"😴 较昨日: {yesterday_count} 条 {percent_change_str}"
+
+            # 获取历史单日最高聊天量和对应用户
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                excluded_users_placeholder = ','.join('?' for _ in excluded_users)
+                
+                # 查询历史单日用户发送消息最高记录，排除特定用户，限定特定session_id
+                c.execute(f"""
+                    SELECT user, COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                    FROM chat_records 
+                    WHERE sessionid = ? AND user NOT IN ({excluded_users_placeholder})
+                    GROUP BY date, user 
+                    ORDER BY count DESC 
+                    LIMIT 1
+                """, [session_id] + excluded_users)
+                top_user_record = c.fetchone()
+                top_user, top_user_count, top_date = top_user_record if top_user_record else ("无记录", 0, "无日期")
+
+                # 查询特定session_id下历史单日聊天量最高的记录
+                c.execute(f"""
+                    SELECT COUNT(*) as count, strftime('%Y-%m-%d', timestamp, 'unixepoch') as date 
+                    FROM chat_records 
+                    WHERE sessionid = ? AND user NOT IN ({excluded_users_placeholder})
+                    GROUP BY date 
+                    ORDER BY count DESC 
+                    LIMIT 1
+                """, [session_id] + excluded_users)
+                top_day_record = c.fetchone()
+                top_day_count, top_day_date = top_day_record if top_day_record else (0, "无日期")
+
+ 
+            # 获取今日活跃用户信息
+            user_message_count = Counter(record[2] for record in today_records)
             sorted_users = user_message_count.most_common(6)
-            # 获取排名第一的用户
-            top_user = sorted_users[0][0] if sorted_users else None
-            logger.debug(f"最活跃的用户: {top_user}")
-            # 提取排名第一的用户的聊天内容
-            top_user_messages = [record[3] for record in daily_records if record[2] == top_user]
-            logger.debug(f"最活跃的用户的聊天内容: {top_user_messages[:5]}")
-            # 如果有消息，将其发送给 Model
-            if top_user_messages:
-                # 构建消息格式
-                formatted_top_user_messages = f"以下是 {top_user} 今天的聊天内容，请点评：\n" + "\n".join(top_user_messages)
 
-                prompt = "你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user} 的聊天记录进行适当的总结，并进行精华点评（添加emoji)。可以点评他/她主要的聊天话题、聊天活跃度、和谁互动最多等等方面，总字数60字以内"
+            # 提取今日最活跃用户的聊天内容
+            top_user_today = sorted_users[0][0] if sorted_users else None
+            top_user_today_messages = [record[3] for record in today_records if record[2] == top_user_today]
+            #打印获取到的top_user_today_messages的数量
+            logger.debug(f"今日top_user共发送了{len(top_user_today_messages)}条消息")
+            model_analysis = ""
+            if top_user_today_messages:
+                # 构建消息格式
+                formatted_top_user_messages = f"以下是 {top_user_today} 今天的聊天内容，请点评：\n" + "\n".join(top_user_today_messages[:5])
+
+                prompt = f"你是一个群聊小助手，对获取到的群内最活跃的群员 {top_user_today} 的聊天记录进行适当的总结，并进行精华点评（搭配emoji)。可以点评和适当总结他/她主要的聊天话题、核心话题分析、和谁互动最多等等方面，点评要尽量生动，语言表达精炼，如果可以，可以在最后用一两句诗来总结，总字数60字以内"
                 messages_to_model = formatted_top_user_messages
                 # 调用 Model 进行分析
-                model_analysis = self._generate_model_analysis(prompt, messages_to_model)
-                logger.debug(f"已完成群聊分析")
-                # 处理 Model 的回复...
-            # 生成排名信息
-            ranking = [f"😈 今日群员聊天榜🔝 总 {today_count} 条", "----------------"]  # 添加标题和分割线
+                model_analysis = self.c_model._generate_model_analysis(prompt, messages_to_model)
+                logger.debug(f"Model analysis for {top_user_today}: {json.dumps(model_analysis, ensure_ascii=False)}")
+
+            # 组装最终的结果
+            result_lines = [
+                today_info,
+                yesterday_info,
+                "---------------------"
+            ]
             for idx, (user, count) in enumerate(sorted_users, start=1):
                 emoji_number = self.get_fancy_emoji_for_number(idx)
                 special_emoji = self.get_special_emoji_for_top_three(idx)
-                ranking.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
-            logger.debug(f"活跃度排名成功: {ranking}")
-            # 将 Model 的分析结果附加到排名信息之后
-            final_result = "\n".join(ranking)
+                result_lines.append(f"{emoji_number} {user}: {count}条 {special_emoji}")
+            # 添加点评时刻部分
             if model_analysis:
-                final_result += "\n\n🔍点评时刻:\n" + model_analysis
-            return final_result
+                result_lines.append("\n🔍点评时刻:\n" + model_analysis)
+                
+            # 添加历史数据部分
+            # result_lines.append("---------------------")
+            result_lines.append(f"\n🔖 最高历史记录: {top_day_count} 条")
+            # result_lines.append(f"🏆 眠眠羊₊⁺: {top_user_count} 条 ({top_date})")
+            # result_lines.append(f"🌟 群聊: {top_day_count} 条 ({top_day_date})")
+                    
+            return "\n".join(result_lines) 
         except Exception as e:
             logger.error(f"Error getting chat activity ranking: {e}")
-            return "Unable to retrieve chat activity ranking.", []
-
+            return "Unable to retrieve chat activity ranking."
 
     def get_fancy_emoji_for_number(self, number):
         """为排名序号提供更漂亮的emoji"""
@@ -362,7 +341,7 @@ class ChatStatistics(Plugin):
                 {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
             ]
             # 调用 OpenAI 生成总结
-            openai_analysis = self._generate_summary_with_openai(messages_to_openai)
+            openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
             return openai_analysis
         else:
             return "没有找到关于此关键词的信息。"
@@ -379,7 +358,7 @@ class ChatStatistics(Plugin):
             ]
 
             # 调用 OpenAI 生成总结
-            openai_analysis = self._generate_summary_with_openai(messages_to_openai)
+            openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
             return openai_analysis
         else:
             return "没有找到关于此用户的信息。"

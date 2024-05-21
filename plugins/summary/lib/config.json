@@ -14,5 +14,11 @@
     "micro_msg_db_path": "/home/ccc/MicroMsg.db",
     "target_talker": "13291955218@chatroom",
     "default_days": 90,
-    "my_wechat_id":"wxid_9jvcn4tu30q622"
+    "my_wechat_id":"wxid_9jvcn4tu30q622",
+    "openai_api_key":"sk-cZ9VPD4YyFz9m5cyB70dD67d111e4d7d8c2cF3D6B65751Ae",
+    "open_ai_api_base":"https://api.aigcbest.top/v1",
+    "gemini_api_key":"AIzaSyBI5DWFwhaIsfPjaut-AgoLZYJz5F9nI9c",
+    "dashscope_api_key":"sk-0fa18022f0854526877ca7bb0ec40a71",
+    "zhipuai_api_key":"9be2cacfc0819c5595a14713aa18569c.8Tf22qNhZdxbpavg",
+    "ai_model":"Qwen"
 }
