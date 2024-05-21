@@ -22,7 +22,7 @@ class UnifiedChatbot:
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")
         self.openai_api_base = config.get("open_ai_api_base", "https://api.openai.com/v1")
-        self.openai_model = "gpt-4-1106-preview"
+        self.openai_model = "gpt-4-gizmo-g-U2Esjmcpv"
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
 
