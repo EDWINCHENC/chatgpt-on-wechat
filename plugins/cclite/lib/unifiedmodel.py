@@ -22,7 +22,7 @@ class UnifiedChatbot:
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")
         self.openai_api_base = config.get("open_ai_api_base", "https://api.openai.com/v1")
-        self.openai_model = "gpt-4-gizmo-g-U2Esjmcpv"
+        self.openai_model = "gpt-3.5-turbo-16k-0613"
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
 
@@ -34,7 +34,7 @@ class UnifiedChatbot:
         
         # Qwen配置
         self.dashscope_api_key = config.get("dashscope_api_key", "")
-        self.qwen_model = 'qwen-max'  # 模型名称
+        self.qwen_model = 'qwen-long'  # 模型名称
         # 配置 Dashscope API
         dashscope.api_key=self.dashscope_api_key
         
