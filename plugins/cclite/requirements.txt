@@ -171,3 +171,4 @@ wsproto==1.2.0
 XlsxWriter==3.1.9
 xmltodict==0.13.0
 yarl==1.9.2
+zhipuai==2.1.0
