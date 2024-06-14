@@ -22,25 +22,25 @@ class UnifiedChatbot:
         # OpenAI配置
         self.openai_api_key = config.get("openai_api_key", "")
         self.openai_api_base = config.get("open_ai_api_base", "https://api.openai.com/v1")
-        self.openai_model = "gpt-3.5-turbo-16k-0613"
+        self.openai_model = config.get("openai_model", "gpt-3.5-turbo-16k-0613")
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
 
 
         # Gemini配置
         self.gemini_api_key = config.get("gemini_api_key", "")
-        self.gemini_model = genai.GenerativeModel('gemini-pro')
+        self.gemini_model = genai.GenerativeModel(config.get("gemini_model", "gemini-pro"))
         genai.configure(api_key=self.gemini_api_key)
         
         # Qwen配置
         self.dashscope_api_key = config.get("dashscope_api_key", "")
-        self.qwen_model = 'qwen-long'  # 模型名称
+        self.qwen_model = config.get("qwen_model", "qwen-long")  # 模型名称
         # 配置 Dashscope API
         dashscope.api_key=self.dashscope_api_key
         
         # ZhipuAI配置
         self.zhipuai_api_key = config.get("zhipuai_api_key", "")
-        self.zhipuai_model = "glm-4"
+        self.zhipuai_model =  config.get("zhipuai_model", "glm-4-flash")
         self.zhipuai_client = ZhipuAI(api_key=self.zhipuai_api_key)
         # ZhipuAI图像模型配置
         self.zhipuai_image_model = "cogview-3"
@@ -196,15 +196,23 @@ class UnifiedChatbot:
         logger.debug(f"当前使用的模型为：{self.ai_model}")
         logger.debug(f"当前对话用户ID: {user_id}")
         if self.ai_model == "OpenAI":
+            model_name = self.openai_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_openai")  # 调试打印
             return self._get_reply_openai(user_input, user_id)
         elif self.ai_model == "Gemini":
+            model_name = self.gemini_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_gemini")  # 调试打印
             return self._get_reply_gemini(user_input, user_id)
         elif self.ai_model == "Qwen":
+            model_name = self.qwen_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_qwen")  # 调试打印
             return self._get_reply_qwen(user_input, user_id)
         elif self.ai_model == "ZhipuAI":
+            model_name = self.zhipuai_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_zhipuai")  # 调试打印
             return self._get_reply_zhipuai(user_input, user_id)
         else:

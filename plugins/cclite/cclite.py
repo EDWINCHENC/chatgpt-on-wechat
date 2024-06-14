@@ -552,32 +552,6 @@ class CCLite(Plugin):
             _set_reply_text(response_text, e_context, level=ReplyType.TEXT)  # 发送格式化后的评论字符串
             return          
 
-        # elif context.content.startswith("搜索"):
-        #     logger.debug("用户请求搜索")
-        #     # 从用户输入中提取搜索内容，假设搜索关键字后面的内容是实际的查询内容
-        #     search_query = context.content[2:].strip()  # 从第三个字符开始到字符串末尾
-
-        #     # 设置Perplexity模型需要的系统提示信息
-        #     system_prompt = (
-        #         "你是一个高级智能搜索引擎，具备强大的联网搜索能力。"
-        #         "你的任务是根据用户的查询请求，在网络上搜寻信息，并从中提取最相关、最权威的资料。"
-        #         "在处理信息时，你能够理解复杂的概念，整理并归纳关键内容，并且能够理解和使用emoji来增强信息的表达效果。"
-        #         "你会以清晰、有逻辑且易于理解的方式组织回复，确保信息准确、全面且格式一致，满足用户对信息的具体需求。"
-        #         "在呈现结果时，你会考虑到用户的阅读体验，通过适当的排版和使用emoji，使得内容既信息丰富又视觉上吸引人。"
-        #     )
-
-        #     # 构建消息格式
-        #     messages = self.c_model._build_perplexity_messages(system_prompt, search_query)
-
-        #     # 调用ModelGenerator实例的方法请求Perplexity接口响应
-        #     function_response = self.c_model._generate_summary_with_perplexity(messages)
-
-        #     # 处理模型响应
-        #     logger.debug(f"搜索结果：{function_response}")
-        #     # 假设 _set_reply_text 是用来设置回复文本的方法
-        #     _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
-
-
         elif context.content == "帮助" or context.content == "功能":
             # 完整的功能指南
             features_guide = (
@@ -620,6 +594,7 @@ class CCLite(Plugin):
             logger.debug(f"进入通用会话处理模式")
             user_input = context.content
             response = self.c_modelpro.get_model_reply(user_input, user_id)
+            logger.debug(f"已成功获取模型回复: {response}")
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
             return
 

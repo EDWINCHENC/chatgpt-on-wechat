@@ -1,9 +1,13 @@
 {
     "openai_api_key":"sk-cZ9VPD4YyFz9m5cyB70dD67d111e4d7d8c2cF3D6B65751Ae",
     "open_ai_api_base":"https://api2.aigcbest.top/v1",
+    "openai_model": "gpt-3.5-turbo-16k-0613",
     "gemini_api_key":"AIzaSyBI5DWFwhaIsfPjaut-AgoLZYJz5F9nI9c",
+    "gemini_model": "gemini-pro",
     "dashscope_api_key":"sk-0fa18022f0854526877ca7bb0ec40a71",
+    "qwen_model": "qwen-long",
     "zhipuai_api_key":"9be2cacfc0819c5595a14713aa18569c.8Tf22qNhZdxbpavg",
+    "zhipuai_model": "glm-4-flash",
     "perplexity_api_key":"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",
     "ai_model":"Qwen"
 }
