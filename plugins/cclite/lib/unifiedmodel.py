@@ -392,6 +392,7 @@ class UnifiedChatbot:
             )
             reply_text = response.choices[0].message.content
             self.add_message_ark("assistant", reply_text, user_id)
+            reply_text = self.remove_markdown(reply_text)
             return f"{reply_text}[A]" if reply_text else "未收到有效回复。"
         except Exception as e:
             logger.error(f"Ark API 调用失败: {str(e)}")
