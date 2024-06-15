@@ -6,6 +6,7 @@ from http import HTTPStatus
 import dashscope
 from zhipuai import ZhipuAI
 from common.log import logger
+from volcenginesdkarkruntime import Ark
 # import logging
 # logger = logging.getLogger(__name__)
 
@@ -45,6 +46,11 @@ class UnifiedChatbot:
         # ZhipuAI图像模型配置
         self.zhipuai_image_model = "cogview-3"
 
+        # Ark配置
+        self.ark_api_key = config.get("ark_api_key", "")
+        self.ark_model = config.get("ark_model", "Doubao-pro-32k")
+        self.ark_client = Ark(api_key=self.ark_api_key)
+
         # 其他配置
         self.user_histories = {}
         # 设置默认用户 ID
@@ -76,6 +82,10 @@ class UnifiedChatbot:
             self.ai_model = "ZhipuAI"
             logger.debug(f"已切换到 ZhipuAI 模型。")
             return "已切换到 ZhipuAI 模型。"
+        elif model_name_lower == "ark":
+            self.ai_model = "Ark"
+            logger.debug(f"已切换到 Ark 模型。")
+            return "已切换到 Ark 模型。"
         else:
             return "无效的模型名称。"
 
@@ -140,6 +150,12 @@ class UnifiedChatbot:
         history.append({'role': role, 'content': content})
         self._trim_history(history)
 
+    def add_message_ark(self, role, content, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        history = self.get_user_history(user_id)
+        history.append({'role': role, 'content': content})
+        self._trim_history(history)
+
 
     def set_initial_history(self, initial_messages, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -170,12 +186,12 @@ class UnifiedChatbot:
             logger.debug("移除1条助手记录")
 
         # 如果模型不是 OpenAI 或 Qwen 且第一条是 'system'，则移除
-        if self.ai_model not in ["OpenAI", "Qwen", "ZhipuAI"] and history[0]["role"] == "system":
+        if self.ai_model not in ["OpenAI", "Qwen", "ZhipuAI", "Ark"] and history[0]["role"] == "system":
             history.pop(0)
             logger.debug("移除1条系统提示")
 
         # 根据模型特定逻辑修剪历史记录
-        if self.ai_model in ["OpenAI", "Qwen", "ZhipuAI"] and history and history[0]["role"] == "system":
+        if self.ai_model in ["OpenAI", "Qwen", "ZhipuAI", "Ark"] and history and history[0]["role"] == "system":
             while len(history) > max_history_length:
                 # 确保至少有3条历史记录
                 if len(history) > 3:
@@ -215,6 +231,11 @@ class UnifiedChatbot:
             logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_zhipuai")  # 调试打印
             return self._get_reply_zhipuai(user_input, user_id)
+        elif self.ai_model == "Ark":
+            model_name = self.ark_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
+            logger.debug("调用 _get_reply_ark")  # 调试打印
+            return self._get_reply_ark(user_input, user_id)
         else:
             return "未知的 AI 模型。"
 
@@ -356,6 +377,25 @@ class UnifiedChatbot:
         except Exception as e:
             history.pop(-1) if history and history[-1]["role"] == "user" else None
             return self.handle_exception(e)
+
+    def _get_reply_ark(self, user_input, user_id):
+        user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_ark 方法")
+        logger.debug(f"向 Ark API 发送消息: {user_input}")
+        self.add_message_ark("user", user_input, user_id)
+        history = self.get_user_history(user_id)
+        logger.debug(f"传递给 Ark API 的历史记录: {history}")  # 调试打印
+        try:
+            response = self.ark_client.chat.completions.create(
+                model=self.ark_model,
+                messages=history
+            )
+            reply_text = response.choices[0].message.content
+            self.add_message_ark("assistant", reply_text, user_id)
+            return f"{reply_text}[A]" if reply_text else "未收到有效回复。"
+        except Exception as e:
+            logger.error(f"Ark API 调用失败: {str(e)}")
+            return "对不起，我无法响应您的请求。"
 
     def _generate_image_zhipuai(self, prompt):
         model_name = self.zhipuai_image_model

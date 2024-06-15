@@ -8,6 +8,7 @@
     "qwen_model": "qwen-long",
     "zhipuai_api_key":"9be2cacfc0819c5595a14713aa18569c.8Tf22qNhZdxbpavg",
     "zhipuai_model": "glm-4-flash",
-    "perplexity_api_key":"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",
+    "ark_api_key":"8fe0cf3a-7d88-4588-a5c9-3259fc9c01c6",
+    "ark_model": "Doubao-pro-32k",
     "ai_model":"Qwen"
 }
