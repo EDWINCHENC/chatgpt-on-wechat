@@ -169,7 +169,10 @@ class UnifiedChatbot:
     def add_message_coze(self, role, content, type="answer", content_type="text", user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         history = self.get_user_history(user_id)
-        history.append({"role": role, "type": type, "content": content, "content_type": content_type})
+        message = {"role": role, "content": content, "content_type": content_type}
+        if role == "assistant":
+            message["type"] = type
+        history.append(message)
         self._trim_history(history)
 
 
@@ -197,7 +200,7 @@ class UnifiedChatbot:
         if not history:
             return
         # 移除第一条 'assistant' 记录（如果存在）
-        if history[0]["role"] == "assistant":
+        if history and history[0]["role"] == "assistant":
             history.pop(0)
             logger.debug("移除1条助手记录")
 
@@ -423,6 +426,7 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_coze 方法")
         logger.debug(f"向 Coze API 发送消息: {user_input}")
+        self.add_message_coze("user", user_input, content_type="text", user_id=user_id)
 
         # 获取用户历史记录
         history = self.get_user_history(user_id)
@@ -431,9 +435,9 @@ class UnifiedChatbot:
         chat_history = [
             {
                 "role": msg["role"],
-                "type": msg.get("type", "answer"),
                 "content": msg["content"],
-                "content_type": msg.get("content_type", "text")
+                "content_type": msg.get("content_type", "text"),
+                **({"type": msg["type"]} if msg["role"] == "assistant" else {})
             } for msg in history
         ]
 
