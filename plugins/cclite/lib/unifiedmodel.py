@@ -430,7 +430,7 @@ class UnifiedChatbot:
 
         # 获取用户历史记录
         history = self.get_user_history(user_id)
-        
+        logger.debug(f"传递给 Coze API 的历史记录: {history}")  # 调试打印
         # 构造 chat_history，包括所有消息
         chat_history = [
             {
@@ -462,21 +462,21 @@ class UnifiedChatbot:
             response = requests.post(self.coze_api_base, headers=headers, json=data)
             response.raise_for_status()
             reply_data = response.json()
-            messages = reply_data.get("messages", [{}])
-            if messages:
-                for message in messages:
+            choices = reply_data.get("choices", [{}])
+            if choices:
+                for choice in choices:
+                    message = choice.get("message", {})
                     role = message.get("role", "assistant")
                     content = message.get("content", "")
-                    type = message.get("type", "answer")
-                    content_type = message.get("content_type", "text")
+                    type = "answer"  # 假设类型是"answer"，根据实际情况调整
+                    content_type = "text"  # 假设内容类型是"text"，根据实际情况调整
                     self.add_message_coze(role, content, type, content_type, user_id=user_id)
-                reply_text = messages[0].get("content", "")
+                reply_text = choices[0].get("message", {}).get("content", "")
                 return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
             else:
                 return "未收到有效回复。"
         except requests.exceptions.RequestException as e:
-            logger.error(f"Coze API 请求失败: {str(e)}")
-            return "对不起，我无法响应您的请求。"
+            return f"请求失败：{e}"
 
 
     def _generate_image_zhipuai(self, prompt):
