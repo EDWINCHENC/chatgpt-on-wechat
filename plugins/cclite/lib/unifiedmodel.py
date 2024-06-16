@@ -460,6 +460,7 @@ class UnifiedChatbot:
 
         try:
             response = requests.post(self.coze_api_base, headers=headers, json=data)
+            logger.debug(f"Coze API 调用返回: {response.text}")
             response.raise_for_status()
             reply_data = response.json()
             choices = reply_data.get("choices", [{}])
