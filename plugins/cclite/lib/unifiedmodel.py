@@ -2,6 +2,7 @@ import openai
 import google.generativeai as genai
 import json
 import os
+import requests
 from http import HTTPStatus
 import dashscope
 from zhipuai import ZhipuAI
@@ -51,6 +52,11 @@ class UnifiedChatbot:
         self.ark_model = config.get("ark_model", "Doubao-pro-32k")
         self.ark_client = Ark(api_key=self.ark_api_key)
 
+        # Coze API 配置
+        self.coze_api_key = config.get("coze_api_key", "")
+        self.coze_bot_id = config.get("coze_bot_id", "")  # 确保你的config.json中有这个配置
+        self.coze_api_base = "https://api.coze.cn/open_api/v2/chat"
+
         # 其他配置
         self.user_histories = {}
         # 设置默认用户 ID
@@ -86,6 +92,10 @@ class UnifiedChatbot:
             self.ai_model = "Ark"
             logger.debug(f"已切换到 Ark 模型。")
             return "已切换到 Ark 模型。"
+        elif model_name_lower == "coze":
+            self.ai_model = "Coze"
+            logger.debug(f"已切换到 Coze 模型。")
+            return "已切换到 Coze 模型。"
         else:
             return "无效的模型名称。"
 
@@ -154,6 +164,12 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         history = self.get_user_history(user_id)
         history.append({'role': role, 'content': content})
+        self._trim_history(history)
+
+    def add_message_coze(self, role, content, type="answer", content_type="text", user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        history = self.get_user_history(user_id)
+        history.append({"role": role, "type": type, "content": content, "content_type": content_type})
         self._trim_history(history)
 
 
@@ -236,6 +252,11 @@ class UnifiedChatbot:
             logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_ark")  # 调试打印
             return self._get_reply_ark(user_input, user_id)
+        elif self.ai_model == "Coze":
+            model_name = self.coze_bot_id
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
+            logger.debug("调用 _get_reply_coze")  # 调试打印
+            return self._get_reply_coze(user_input, user_id)
         else:
             return "未知的 AI 模型。"
 
@@ -397,6 +418,62 @@ class UnifiedChatbot:
         except Exception as e:
             logger.error(f"Ark API 调用失败: {str(e)}")
             return "对不起，我无法响应您的请求。"
+        
+    def _get_reply_coze(self, user_input, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_coze 方法")
+        logger.debug(f"向 Coze API 发送消息: {user_input}")
+
+        # 获取用户历史记录
+        history = self.get_user_history(user_id)
+        
+        # 构造 chat_history，包括所有消息
+        chat_history = [
+            {
+                "role": msg["role"],
+                "type": msg.get("type", "answer"),
+                "content": msg["content"],
+                "content_type": msg.get("content_type", "text")
+            } for msg in history
+        ]
+
+        headers = {
+            'Authorization': f'Bearer {self.coze_api_key}',
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+            'Host': 'api.coze.cn',
+            'Connection': 'keep-alive'
+        }
+
+        data = {
+            "conversation_id": user_id,
+            "bot_id": self.coze_bot_id,
+            "user": user_id,
+            "query": user_input,
+            "stream": False,
+            "chat_history": chat_history
+        }
+
+        try:
+            response = requests.post(self.coze_api_base, headers=headers, json=data)
+            response.raise_for_status()
+            reply_data = response.json()
+            messages = reply_data.get("messages", [{}])
+            if messages:
+                for message in messages:
+                    role = message.get("role", "assistant")
+                    content = message.get("content", "")
+                    type = message.get("type", "answer")
+                    content_type = message.get("content_type", "text")
+                    self.add_message_coze(role, content, type, content_type, user_id=user_id)
+                reply_text = messages[0].get("content", "")
+                return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
+            else:
+                return "未收到有效回复。"
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Coze API 请求失败: {str(e)}")
+            return "对不起，我无法响应您的请求。"
+
 
     def _generate_image_zhipuai(self, prompt):
         model_name = self.zhipuai_image_model

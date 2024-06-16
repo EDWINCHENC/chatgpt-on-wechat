@@ -101,6 +101,10 @@ class CCLite(Plugin):
             self.c_modelpro.set_ai_model("Ark")
             _set_reply_text("已切换到Ark模型。", e_context, level=ReplyType.TEXT)
             return
+        elif "cc coze" in content_lower:
+            self.c_modelpro.set_ai_model("Coze")
+            _set_reply_text("已切换到Coze模型。", e_context, level=ReplyType.TEXT)
+            return
         elif "重置所有会话" in context.content:
             self.c_modelpro.clear_all_histories()
             _set_reply_text("记录清除，会话已重置。", e_context, level=ReplyType.TEXT)
