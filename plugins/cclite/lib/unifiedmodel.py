@@ -463,19 +463,22 @@ class UnifiedChatbot:
             logger.debug(f"Coze API 调用返回: {response.text}")
             response.raise_for_status()
             reply_data = response.json()
-            choices = reply_data.get("choices", [{}])
-            if choices:
-                for choice in choices:
-                    message = choice.get("message", {})
-                    role = message.get("role", "assistant")
-                    content = message.get("content", "")
-                    type = "answer"  # 假设类型是"answer"，根据实际情况调整
-                    content_type = "text"  # 假设内容类型是"text"，根据实际情况调整
+            
+            messages = reply_data.get("messages", [])
+            reply_text = ""
+
+            for message in messages:
+                role = message.get("role", "assistant")
+                content = message.get("content", "")
+                type = message.get("type", "")
+                content_type = message.get("content_type", "text")
+
+                if type == "answer":
+                    reply_text = content  # 找到第一个type为answer的content并保存
                     self.add_message_coze(role, content, type, content_type, user_id=user_id)
-                reply_text = choices[0].get("message", {}).get("content", "")
-                return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
-            else:
-                return "未收到有效回复。"
+                    break
+            return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
+            
         except requests.exceptions.RequestException as e:
             return f"请求失败：{e}"
 
