@@ -471,12 +471,13 @@ class UnifiedChatbot:
                 role = message.get("role", "assistant")
                 content = message.get("content", "")
                 type = message.get("type", "")
-                content_type = message.get("content_type", "text")
+                content_type = message.get("content_type", "")
 
-                if type == "answer":
-                    reply_text = content  # 找到第一个type为answer的content并保存
+                if type == "answer" and content_type == "text":
+                    reply_text = content  # 找到type为answer且content_type为text的content并保存
                     self.add_message_coze(role, content, type, content_type, user_id=user_id)
-                    break
+                    break  # 找到后立即退出循环
+                
             return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
             
         except requests.exceptions.RequestException as e:
