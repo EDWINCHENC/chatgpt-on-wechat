@@ -171,9 +171,12 @@ class UnifiedChatbot:
     def add_message_coze(self, role, content, type="answer", content_type="text", user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
         history = self.get_user_history(user_id)
-        message = {"role": role, "content": content, "content_type": content_type}
+        # 构建消息字典
+        message = {"role": role}
         if role == "assistant":
-            message["type"] = type
+            message["type"] = type  # 使用默认值 "answer" 或传入的值
+        message["content"] = content
+        message["content_type"] = content_type
         history.append(message)
         self._trim_history(history)
 
