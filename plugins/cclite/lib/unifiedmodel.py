@@ -476,8 +476,9 @@ class UnifiedChatbot:
                 if type == "answer" and content_type == "text":
                     reply_text = content  # 找到type为answer且content_type为text的content并保存
                     self.add_message_coze(role, content, type, content_type, user_id=user_id)
+                    reply_text = self.remove_markdown(reply_text)
                     break  # 找到后立即退出循环
-                
+    
             return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
             
         except requests.exceptions.RequestException as e:
