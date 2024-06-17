@@ -279,7 +279,8 @@ class UnifiedChatbot:
             logger.debug(f"传递给 OpenAI 的历史记录: {history}")  # 调试打印")
             response = self.openai_client.chat.completions.create(
                 model=self.openai_model,
-                messages=history
+                messages=history,
+                stream=False,
             )
             # reply_text = response["choices"][0]["message"]['content']
             reply_text = response.choices[0].message['content']  # 使用对象属性访问方式
@@ -287,29 +288,10 @@ class UnifiedChatbot:
             return f"{reply_text}[O]"
         except Exception as e:
             # 发生异常时，移除最后一条用户输入
-            print(f"发生异常: {e}")
+            logger.debug(f"发生异常: {e}")
             history = self.get_user_history(user_id)
             history.pop(-1) if history and history[-1]["role"] == "user" else None
-            return self.handle_exception(e)
-
-    def handle_exception(self, e):
-        message = "出现了一些问题，请稍后再试。"
-        if isinstance(e, openai.error.RateLimitError):
-            # logger.warn("[OPENAI] RateLimitError: {}".format(e))
-            message = f"请求太频繁，请稍后再试。错误信息：{e}"
-        elif isinstance(e, openai.error.Timeout):
-            # logger.warn("[OPENAI] Timeout: {}".format(e))
-            message = f"请求超时，请稍后再试。错误信息：{e}"
-        elif isinstance(e, openai.error.APIError):
-            # logger.warn("[OPENAI] APIError: {}".format(e))
-            message = f"API 错误，请稍后再试。错误信息：{e}"
-        elif isinstance(e, openai.error.APIConnectionError):
-            # logger.warn("[OPENAI] APIConnectionError: {}".format(e))
-            message = f"网络连接错误，请稍后再试。错误信息：{e}"
-        else:
-            message = (f"Error: {e}")
-
-        return message
+            return str(e)
 
     # 获取Gemini 模型的响应
     def _get_reply_gemini(self, user_input, user_id=None):
