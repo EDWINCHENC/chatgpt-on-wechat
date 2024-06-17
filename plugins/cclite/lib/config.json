@@ -1,6 +1,6 @@
 {
     "openai_api_key":"sk-cZ9VPD4YyFz9m5cyB70dD67d111e4d7d8c2cF3D6B65751Ae",
-    "open_ai_api_base":"https://api2.aigcbest.top",
+    "open_ai_api_base":"https://api2.aigcbest.top/v1/",
     "openai_model": "gpt-3.5-turbo-16k-0613",
     "gemini_api_key":"AIzaSyBI5DWFwhaIsfPjaut-AgoLZYJz5F9nI9c",
     "gemini_model": "gemini-pro",
