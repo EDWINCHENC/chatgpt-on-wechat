@@ -1,4 +1,5 @@
 import openai
+from openai import OpenAI
 import google.generativeai as genai
 import json
 import os
@@ -27,6 +28,8 @@ class UnifiedChatbot:
         self.openai_model = config.get("openai_model", "gpt-3.5-turbo-16k-0613")
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
+        # 初始化OpenAI客户端
+        self.openai_client = OpenAI(api_key=self.openai_api_key, api_base=self.openai_api_base)
 
 
         # Gemini配置
@@ -274,11 +277,12 @@ class UnifiedChatbot:
         try:
             history = self.get_user_history(user_id)
             logger.debug(f"传递给 OpenAI 的历史记录: {history}")  # 调试打印")
-            response = openai.ChatCompletion.create(
+            response = self.openai_client.chat.completions.create(
                 model=self.openai_model,
                 messages=history
             )
-            reply_text = response["choices"][0]["message"]['content']
+            # reply_text = response["choices"][0]["message"]['content']
+            reply_text = response.choices[0].message['content']  # 使用对象属性访问方式
             self.add_message_openai("assistant", reply_text, user_id)
             return f"{reply_text}[O]"
         except Exception as e:

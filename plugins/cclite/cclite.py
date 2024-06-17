@@ -470,6 +470,7 @@ class CCLite(Plugin):
             logger.debug("获取每日早报")
             function_response = fun.get_morning_news(api_key=self.alapi_key)
             system_prompt = "你是每日新闻的早报助手，需要将获取到的新闻晨报资讯进行整理后，搭配适当emoji，返回给用户进行阅读。"
+            self.c_modelpro.set_ai_model("Zhipuai")
             self.c_modelpro.set_system_prompt(system_prompt, user_id)
             function_response = self.c_modelpro.get_model_reply(function_response, user_id)
             logger.debug(f"已获取，交由模型处理")
