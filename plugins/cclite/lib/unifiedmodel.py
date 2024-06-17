@@ -282,6 +282,7 @@ class UnifiedChatbot:
                 messages=history,
                 stream=False,
             )
+            logger.debug(f"来自 OpenAI 的回复: {response}")
             # reply_text = response["choices"][0]["message"]['content']
             reply_text = response.choices[0].message['content']  # 使用对象属性访问方式
             self.add_message_openai("assistant", reply_text, user_id)
