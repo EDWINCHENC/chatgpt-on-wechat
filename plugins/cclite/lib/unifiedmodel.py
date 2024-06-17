@@ -29,7 +29,7 @@ class UnifiedChatbot:
         openai.api_key = self.openai_api_key
         openai.api_base = self.openai_api_base
         # 初始化OpenAI客户端
-        self.openai_client = OpenAI(api_key=self.openai_api_key, api_base=self.openai_api_base)
+        self.openai_client = OpenAI(api_key=self.openai_api_key, base_url=self.openai_api_base)
 
 
         # Gemini配置
