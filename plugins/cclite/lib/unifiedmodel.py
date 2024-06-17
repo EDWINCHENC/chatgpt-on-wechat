@@ -31,7 +31,6 @@ class UnifiedChatbot:
         # 初始化OpenAI客户端
         self.openai_client = OpenAI(api_key=self.openai_api_key, base_url=self.openai_api_base)
 
-
         # Gemini配置
         self.gemini_api_key = config.get("gemini_api_key", "")
         self.gemini_model = genai.GenerativeModel(config.get("gemini_model", "gemini-pro"))
@@ -456,8 +455,8 @@ class UnifiedChatbot:
 
             for message in messages:
                 role = message.get("role", "assistant")
-                content = message.get("content", "")
                 type = message.get("type", "")
+                content = message.get("content", "")
                 content_type = message.get("content_type", "")
 
                 if type == "answer" and content_type == "text":
