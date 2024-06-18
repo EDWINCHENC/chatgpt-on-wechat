@@ -59,6 +59,13 @@ class UnifiedChatbot:
         self.coze_bot_id = config.get("coze_bot_id", "")  # 确保你的config.json中有这个配置
         self.coze_api_base = "https://api.coze.cn/open_api/v2/chat"
 
+        # DeepSeek 配置
+        self.deepseek_api_key = config.get("deepseek_api_key", "")
+        self.deepseek_api_base = "https://api.deepseek.com"
+        self.deepseek_model = config.get("deepseek_model", "deepseek-chat")
+        self.deepseek_client = OpenAI(api_key=self.deepseek_api_key, base_url=self.deepseek_api_base)
+
+
         # 其他配置
         self.user_histories = {}
         # 设置默认用户 ID
@@ -98,6 +105,10 @@ class UnifiedChatbot:
             self.ai_model = "Coze"
             logger.debug(f"已切换到 Coze 模型。")
             return "已切换到 Coze 模型。"
+        elif model_name_lower == "deepseek":
+            self.ai_model = "DeepSeek"
+            logger.debug(f"已切换到 DeepSeek 模型。")
+            return "已切换到 DeepSeek 模型。"
         else:
             return "无效的模型名称。"
 
@@ -180,6 +191,13 @@ class UnifiedChatbot:
         history.append(message)
         self._trim_history(history)
 
+    # 添加 add_message_deepseek 方法
+    def add_message_deepseek(self, role, content, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        history = self.get_user_history(user_id)
+        history.append({'role': role, 'content': content})
+        self._trim_history(history)
+
 
     def set_initial_history(self, initial_messages, user_id=None):
         user_id = user_id or self.DEFAULT_USER_ID
@@ -210,12 +228,12 @@ class UnifiedChatbot:
             logger.debug("移除1条助手记录")
 
         # 如果模型不是 OpenAI 或 Qwen 且第一条是 'system'，则移除
-        if self.ai_model not in ["OpenAI", "Qwen", "ZhipuAI", "Ark"] and history[0]["role"] == "system":
+        if self.ai_model not in ["OpenAI", "Qwen", "ZhipuAI", "Ark","DeepSeek"] and history[0]["role"] == "system":
             history.pop(0)
             logger.debug("移除1条系统提示")
 
         # 根据模型特定逻辑修剪历史记录
-        if self.ai_model in ["OpenAI", "Qwen", "ZhipuAI", "Ark"] and history and history[0]["role"] == "system":
+        if self.ai_model in ["OpenAI", "Qwen", "ZhipuAI", "Ark","DeepSeek"] and history and history[0]["role"] == "system":
             while len(history) > max_history_length:
                 # 确保至少有3条历史记录
                 if len(history) > 3:
@@ -265,6 +283,11 @@ class UnifiedChatbot:
             logger.debug(f"当前使用的具体模型名称：{model_name}")
             logger.debug("调用 _get_reply_coze")  # 调试打印
             return self._get_reply_coze(user_input, user_id)
+        elif self.ai_model == "DeepSeek":
+            model_name = self.deepseek_model
+            logger.debug(f"当前使用的具体模型名称：{model_name}")
+            logger.debug("调用 _get_reply_deepseek")  # 调试打印
+            return self._get_reply_deepseek(user_input, user_id)
         else:
             return "未知的 AI 模型。"
 
@@ -472,6 +495,32 @@ class UnifiedChatbot:
             
         except requests.exceptions.RequestException as e:
             return f"请求失败：{e}"
+
+    # 添加 _get_reply_deepseek 方法
+    def _get_reply_deepseek(self, user_input, user_id=None):
+        user_id = user_id or self.DEFAULT_USER_ID
+        logger.debug(f"进入 _get_reply_deepseek 方法")
+        logger.debug(f"向 DeepSeek API 发送消息: {user_input}")
+        self.add_message_deepseek('user', user_input, user_id)
+        try:
+            history = self.get_user_history(user_id)
+            logger.debug(f"传递给 DeepSeek API 的历史记录: {history}")
+            response = self.deepseek_client.chat.completions.create(
+                model=self.deepseek_model,
+                messages=history,
+                stream=False,
+                temperature=1.0,
+            )
+            # 使用 json.dumps 格式化日志输出
+            logger.debug("来自 DeepSeek 的回复: %s", json.dumps(response, indent=4))
+            reply_text = response.choices[0].message.content
+            self.add_message_deepseek('assistant', reply_text, user_id)
+            return f"{reply_text}[D]"
+        except Exception as e:
+            logger.debug(f"发生异常: {e}")
+            history = self.get_user_history(user_id)
+            history.pop(-1) if history and history[-1]["role"] == "user" else None
+            return str(e)
 
 
     def _generate_image_zhipuai(self, prompt):
