@@ -512,7 +512,7 @@ class UnifiedChatbot:
                 temperature=1.0,
             )
             # 使用 json.dumps 格式化日志输出
-            logger.debug("来自 DeepSeek 的回复: %s", json.dumps(response, indent=4))
+            logger.debug(f"来自 DeepSeek 的回复: {response}")
             reply_text = response.choices[0].message.content
             self.add_message_deepseek('assistant', reply_text, user_id)
             return f"{reply_text}[D]"
