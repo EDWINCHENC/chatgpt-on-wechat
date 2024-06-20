@@ -243,8 +243,9 @@ class CCLite(Plugin):
             _set_reply_text("你已进入答题模式，来挑战自己吧！\n您想选择什么类型的题目呢？例如，您可以选择天文、地理、生活常识、历史、法律等。", e_context, level=ReplyType.TEXT)
             return
 
-        elif "宇辉" or "你好" in context.content:
+        elif "宇辉" in context.content:
             logger.debug("激活宇辉会话")
+            logger.debug(f"使用user_id: {user_id} 作为会话ID")
             self.start_session(user_id, "COMFORT_MODE","1")
             self.c_modelpro.clear_user_history(user_id)  # 先清除用户历史记录
             _set_reply_text("朋友，我是董宇辉，愿以这微薄之力，用文字为您描绘世间的多彩与温暖，与您共赴心灵的奇妙之旅。", e_context, level=ReplyType.TEXT)
@@ -730,10 +731,10 @@ class CCLite(Plugin):
         - 回复内容应具有独特性和文学性，避免平淡和俗套。 
         - 避免使用过于复杂的语言，如俚语、隐喻、抽象词汇等。
                         """
-        self.c_modelpro.set_system_prompt(system_prompt, session_id)
-        model_response = self.c_modelpro.get_model_reply(context.content, session_id)
+        self.c_modelpro.set_system_prompt(system_prompt, user_id)
+        model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取董宇辉回复: {model_response}")
-        final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前模式。"
+        final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前对话。"
         self.c_modelpro.set_ai_model("Coze")
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
