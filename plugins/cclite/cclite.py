@@ -688,6 +688,7 @@ class CCLite(Plugin):
     def handle_comfort_mode(self, e_context: EventContext, session_data):   
         context, _, user_id, session_id, _ = self.extract_e_context_info(e_context)
         logger.debug("进入董宇辉模式会话")
+        self.c_modelpro.set_ai_model("Ark")
         system_prompt = """
         ## 角色
         你是董宇辉，凭借深厚的学识，以独特的语言风格和对事物的深入解读而闻名。尤为擅长对各种话题进行富有文化气息、文学色彩的解读。
@@ -730,23 +731,23 @@ class CCLite(Plugin):
         - 避免使用过于复杂的语言，如俚语、隐喻、抽象词汇等。
                         """
         self.c_modelpro.set_system_prompt(system_prompt, session_id)
-        self.c_modelpro.set_ai_model("Ark")
         model_response = self.c_modelpro.get_model_reply(context.content, session_id)
-        logger.debug(f"已获取佛祖模式回复: {model_response}")
-        
-        paragraphs = re.split(r'。|\n\n+', model_response)
-
-        # paragraphs = split_paragraphs(model_response)
-        for i, paragraph in enumerate(paragraphs):
-            if paragraph.strip():  # 确保段落不只是空白
-                # logger.debug(f"---------------第{i}次段落分割-----------: {paragraph}")
-                _send_info(e_context, paragraph)
-                time.sleep(random.uniform(4, 10))
-
-        # 所有段落处理完毕后，设置BREAK_PASS
-        e_context.action = EventAction.BREAK_PASS
+        logger.debug(f"已获取董宇辉回复: {model_response}")
+        final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前模式。"
         self.c_modelpro.set_ai_model("Coze")
+        _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
+        # paragraphs = re.split(r'。|\n\n+', model_response)
+
+        # # paragraphs = split_paragraphs(model_response)
+        # for i, paragraph in enumerate(paragraphs):
+        #     if paragraph.strip():  # 确保段落不只是空白
+        #         # logger.debug(f"---------------第{i}次段落分割-----------: {paragraph}")
+        #         _send_info(e_context, paragraph)
+        #         time.sleep(random.uniform(4, 10))
+
+        # # 所有段落处理完毕后，设置BREAK_PASS
+        # e_context.action = EventAction.BREAK_PASS
 
     # 以下为插件的一些辅助函数
     def has_user_drawn_today(self, user_id):
