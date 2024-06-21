@@ -4,6 +4,8 @@ import google.generativeai as genai
 import json
 import os
 import requests
+from requests.exceptions import RequestException
+import time
 from http import HTTPStatus
 import dashscope
 from zhipuai import ZhipuAI
@@ -470,31 +472,40 @@ class UnifiedChatbot:
             "chat_history": chat_history
         }
 
-        try:
-            response = requests.post(self.coze_api_base, headers=headers, json=data)
-            logger.debug(f"Coze API 调用返回: {response.text}")
-            response.raise_for_status()
-            reply_data = response.json()
-            
-            messages = reply_data.get("messages", [])
-            reply_text = ""
+        max_retries = 3
+        retries = 0
+        while retries < max_retries:
+            try:
+                response = requests.post(self.coze_api_base, headers=headers, json=data)
+                logger.debug(f"Coze API 调用返回: {response.text}")
+                response.raise_for_status()
+                reply_data = response.json()
+                
+                messages = reply_data.get("messages", [])
+                reply_text = ""
 
-            for message in messages:
-                role = message.get("role", "assistant")
-                type = message.get("type", "")
-                content = message.get("content", "")
-                content_type = message.get("content_type", "")
+                for message in messages:
+                    role = message.get("role", "assistant")
+                    type = message.get("type", "")
+                    content = message.get("content", "")
+                    content_type = message.get("content_type", "")
 
-                if type == "answer" and content_type == "text":
-                    reply_text = content  # 找到type为answer且content_type为text的content并保存
-                    self.add_message_coze(role, content, type, content_type, user_id=user_id)
-                    reply_text = self.remove_markdown(reply_text)
-                    break  # 找到后立即退出循环
-    
-            return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
-            
-        except requests.exceptions.RequestException as e:
-            return f"请求失败：{e}"
+                    if type == "answer" and content_type == "text":
+                        reply_text = content  # 找到type为answer且content_type为text的content并保存
+                        self.add_message_coze(role, content, type, content_type, user_id=user_id)
+                        reply_text = self.remove_markdown(reply_text)
+                        break  # 找到后立即退出循环
+        
+                return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
+                
+            except RequestException as e:
+                if retries < max_retries - 1:
+                    time.sleep(1)  # 简单的退避策略
+                else:
+                    return f"Coze API 请求异常：{e}"
+                retries += 1
+
+        return "未收到有效回复。"
 
     # 添加 _get_reply_deepseek 方法
     def _get_reply_deepseek(self, user_input, user_id=None):
