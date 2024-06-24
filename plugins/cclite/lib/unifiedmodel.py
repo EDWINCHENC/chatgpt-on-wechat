@@ -496,7 +496,7 @@ class UnifiedChatbot:
                         reply_text = self.remove_markdown(reply_text)
                         break  # 找到后立即退出循环
         
-                return f"{reply_text}[C]" if reply_text else f"{reply_data.get('msg', '未知错误')}"
+                return f"{reply_text}[C]" if reply_text else "未收到有效回复。"
                 
             except RequestException as e:
                 if retries < max_retries - 1:
@@ -505,7 +505,7 @@ class UnifiedChatbot:
                     return f"Coze API 请求异常：{e}"
                 retries += 1
 
-        return f"{reply_data.get("msg", "未知错误")}"
+        return "未收到有效回复。"
 
     # 添加 _get_reply_deepseek 方法
     def _get_reply_deepseek(self, user_input, user_id=None):
