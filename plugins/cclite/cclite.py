@@ -301,6 +301,7 @@ class CCLite(Plugin):
                 function_response = self.c_modelpro.get_model_reply(function_response)
                 logger.debug(f"实时要闻整理完成: {function_response}")
                 self.c_modelpro.clear_user_history()  # 清除用户历史记录
+                self.c_modelpro.set_ai_model("Coze")
                 _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
                 return
             except requests.RequestException as e:
@@ -325,17 +326,18 @@ class CCLite(Plugin):
                     _send_info(e_context, f"@{nickname}\n✅获取实时财经资讯成功, 正在整理。🕒耗时{elapsed_time:.2f}秒")
                 else:
                     _send_info(e_context, f"✅获取实时财经资讯成功，正在整理。🕒耗时{elapsed_time:.2f}秒")
-                system_prompt = (
-                    "你是一个高级智能助手，专门用于整理和概括财经资讯。"
-                    "你的任务是将获取到的财经新闻资讯进行精确的整理和提炼，"
-                    "运用适当的emoji和精炼的语言，将经济数据和市场分析以简洁、清晰且专业的方式呈现给用户。"
-                    "确保内容既准确且专业，又不失趣味性、实时性、可读性。"
-                )
-                self.c_modelpro.set_ai_model("Ark")
-                self.c_modelpro.set_system_prompt(system_prompt)
-                function_response = self.c_modelpro.get_model_reply(function_response)
-                logger.debug(f"财经资讯整理完成: {function_response}")
-                self.c_modelpro.clear_user_history()  # 清除用户历史记录
+                # system_prompt = (
+                #     "你是一个高级智能助手，专门用于整理和概括财经资讯。"
+                #     "你的任务是将获取到的财经新闻资讯进行精确的整理和提炼，"
+                #     "运用适当的emoji和精炼的语言，将经济数据和市场分析以简洁、清晰且专业的方式呈现给用户。"
+                #     "确保内容既准确且专业，又不失趣味性、实时性、可读性。"
+                # )
+                # self.c_modelpro.set_ai_model("Ark")
+                # self.c_modelpro.set_system_prompt(system_prompt)
+                # function_response = self.c_modelpro.get_model_reply(function_response)
+                # logger.debug(f"财经资讯整理完成: {function_response}")
+                # self.c_modelpro.clear_user_history()  # 清除用户历史记录
+                # self.c_modelpro.set_ai_model("Coze")
                 _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
                 return
             except requests.RequestException as e:
