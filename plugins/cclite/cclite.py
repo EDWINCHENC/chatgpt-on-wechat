@@ -296,6 +296,7 @@ class CCLite(Plugin):
                     "运用适当的emoji和精炼的语言，将复杂的信息以简洁、清晰且吸引人的方式呈现给用户。"
                     "确保内容准确、排版优美、包含所有关键信息，又能激发用户的兴趣和好奇心。"
                 )
+                self.c_modelpro.set_ai_model("Ark")
                 self.c_modelpro.set_system_prompt(system_prompt)
                 function_response = self.c_modelpro.get_model_reply(function_response)
                 logger.debug(f"实时要闻整理完成: {function_response}")
@@ -330,6 +331,7 @@ class CCLite(Plugin):
                     "运用适当的emoji和精炼的语言，将经济数据和市场分析以简洁、清晰且专业的方式呈现给用户。"
                     "确保内容既准确且专业，又不失趣味性、实时性、可读性。"
                 )
+                self.c_modelpro.set_ai_model("Ark")
                 self.c_modelpro.set_system_prompt(system_prompt)
                 function_response = self.c_modelpro.get_model_reply(function_response)
                 logger.debug(f"财经资讯整理完成: {function_response}")
@@ -459,6 +461,7 @@ class CCLite(Plugin):
                     "运用适当的emoji和精炼的语言，将最新AI领域的资讯以简洁、清晰且专业的方式呈现给用户。"
                     "确保内容既准确且专业，又不失趣味性和可读性，排版优美，主题提炼得当，激发用户对AI领域的兴趣。"
                 )
+                self.c_modelpro.set_ai_model("Ark")
                 self.c_modelpro.set_system_prompt(system_prompt)
                 function_response = self.c_modelpro.get_model_reply(function_response)
                 logger.debug("AI资讯整理完成")  # 打印整理后的响应
@@ -475,7 +478,7 @@ class CCLite(Plugin):
             logger.debug("获取每日早报")
             function_response = fun.get_morning_news(api_key=self.alapi_key)
             system_prompt = "你是每日新闻的早报助手，需要将获取到的新闻晨报资讯进行整理后，搭配适当emoji，返回给用户进行阅读。"
-            self.c_modelpro.set_ai_model("Zhipuai")
+            self.c_modelpro.set_ai_model("Ark")
             self.c_modelpro.set_system_prompt(system_prompt, user_id)
             function_response = self.c_modelpro.get_model_reply(function_response, user_id)
             logger.debug(f"已获取，交由模型处理")
@@ -619,6 +622,7 @@ class CCLite(Plugin):
         logger.debug("进入答案之书会话")     
         # 构建提示词
         system_prompt = "你是一本《答案之书》，人生的每个问题，都能从你这找到答案，你拥有丰富的生活经验和深邃的洞察力。10秒沉思，你会从你的答案之书中寻找答案，帮助他人找到人生方向，解决疑惑，找到任何问题的答案，有时候，我不会告诉你我的问题，只是想要一个答案，我会在心中虔诚地默念，无论如何，你每次都要直接从答案之书中给出1个富有启发性的、简洁的(20字以内的)、尽量确切的、具有方向性、指导性的答案，为任何问题，或不存在的问题，解惑。记住，只需要给出问题答案，不需要解释，不需要任何其他内容。"
+        self.c_modelpro.set_ai_model("Ark")
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
         # 接收用户的问题
         if context.content == "答案":
@@ -632,6 +636,7 @@ class CCLite(Plugin):
         logger.debug(f"已获取答案: {final_response}")
         # 使用_set_reply_text发送回复
         final_response = f"{final_response}\n\n🆗 完成解答，自动退出当前模式。"
+        self.c_modelpro.set_ai_model("Coze")
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         # 结束当前会话
         self.c_modelpro.clear_user_history(user_id)
@@ -645,6 +650,7 @@ class CCLite(Plugin):
         self.c_modelpro.clear_user_history(user_id)
         # nickname = msg.actual_user_nickname  # 获取nickname   
         system_prompt = "你是一个拥有 25 年经验的解梦专家，你精通《周公解梦》（作者：周公）、《梦林玄解》（作者：李隆基）、《梦的解析》 作者：西格蒙德·弗洛伊德、《解梦大全》（作者：是詹姆斯·R·刘易斯）等解梦书籍。你正在为需要的人进行解梦。用户会向你描述他的梦境是什么？你要运用你渊博的解梦知识对用户的梦境进行专业解读。梦境解读搭配emoji, 发送给用户字数控制在100字以内。" 
+        self.c_modelpro.set_ai_model("Ark")
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
         model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取周公之解梦: {model_response}")
@@ -652,6 +658,7 @@ class CCLite(Plugin):
         _set_reply_text(model_response, e_context, level=ReplyType.TEXT)
         self.c_modelpro.clear_user_history(user_id)
         self.end_session(user_id)
+        self.c_modelpro.set_ai_model("Coze")
         return
     
     def handle_recipe_request(self, e_context: EventContext, session_data):
@@ -665,12 +672,14 @@ class CCLite(Plugin):
             2、不需要在一道菜里用完所有食材
             3、注意排版美观，适当搭配emoji        
         """ 
+        self.c_modelpro.set_ai_model("Ark")
         self.c_modelpro.set_system_prompt(system_prompt,user_id)
         model_response = self.c_modelpro.get_model_reply(context.content, user_id)
         logger.debug(f"已获取厨房助手食谱: {model_response}")
     # 在模型回复后面添加一行提醒
         final_response = f"{model_response}\n\n🔄 发送‘退出’，可退出当前模式。"
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
+        self.c_modelpro.set_ai_model("Coze")
         return
 
     def handle_quiz_mode(self, e_context: EventContext, session_data):   
