@@ -188,6 +188,8 @@ class UnifiedChatbot:
         message = {"role": role}
         if role == "assistant":
             message["type"] = type  # 使用默认值 "answer" 或传入的值
+        # elif role == "user":
+        #     message["type"] = "query"
         message["content"] = content
         message["content_type"] = content_type
         history.append(message)
@@ -497,6 +499,7 @@ class UnifiedChatbot:
                     if type == "answer" and content_type == "text":
                         reply_text = content  # 找到type为answer且content_type为text的content并保存
                         self.add_message_coze(role, content, type, content_type, user_id=user_id)
+                        logger.debug(f"已添加>>>模型回复>>>到历史记录，当前历史记录数量：{len(history)} 条")
                         reply_text = self.remove_markdown(reply_text)
                         break  # 找到后立即退出循环
         
