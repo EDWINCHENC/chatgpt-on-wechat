@@ -188,8 +188,6 @@ class UnifiedChatbot:
         message = {"role": role}
         if role == "assistant":
             message["type"] = type  # 使用默认值 "answer" 或传入的值
-        # elif role == "user":
-        #     message["type"] = "query"
         message["content"] = content
         message["content_type"] = content_type
         history.append(message)
