@@ -440,10 +440,12 @@ class UnifiedChatbot:
         user_id = user_id or self.DEFAULT_USER_ID
         logger.debug(f"进入 _get_reply_coze 方法")
         logger.debug(f"向 Coze API 发送消息: {user_input}")
-        self.add_message_coze("user", user_input, content_type="text", user_id=user_id)
+        # self.add_message_coze("user", user_input, content_type="text", user_id=user_id)
 
         # 获取用户历史记录
         history = self.get_user_history(user_id)
+        # 打印历史记录数量
+        logger.debug(f"历史记录数量: {len(history)} 条")
         logger.debug(f"传递给 Coze API 的历史记录: {history}")  # 调试打印
         # 构造 chat_history，包括所有消息
         chat_history = [
@@ -480,7 +482,9 @@ class UnifiedChatbot:
                 logger.debug(f"Coze API 调用返回: {response.text}")
                 response.raise_for_status()
                 reply_data = response.json()
-                
+                # 拿到响应后，添加消息到历史记录
+                self.add_message_coze("user", user_input, content_type="text", user_id=user_id)
+                logger.debug(f"已添加>>>{user_input}>>>到历史记录，当前历史记录数量：{len(history)} 条")
                 messages = reply_data.get("messages", [])
                 reply_text = ""
 
