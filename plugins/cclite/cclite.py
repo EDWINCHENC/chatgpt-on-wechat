@@ -344,6 +344,31 @@ class CCLite(Plugin):
                 logger.error(f"Request to API failed: {e}")
                 _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
+
+        elif "奥运" in context.content:
+            api_url = f"{self.base_url()}/olympic_schedule/"
+            day = 'both'  # 默认值
+
+            if "今日奥运" in context.content:
+                day = 'today'
+            elif "明日奥运" in context.content:
+                day = 'tomorrow'
+
+            try:
+                # 发送GET请求到你的FastAPI服务
+                response = requests.get(api_url, params={"day": day})
+                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
+                function_response = response.json()  # 解析JSON响应体为字典
+                logger.debug(f"Function response: {function_response}")  # 打印函数响应
+                function_response = function_response["results"]  # 返回结果字段中的数据
+                
+                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
+                return
+            except requests.RequestException as e:
+                logger.error(f"Request to API failed: {e}")
+                _set_reply_text("获取奥运赛程信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return
+
             
         elif "天气" in context.content:
             # 使用正则表达式匹配城市名称
