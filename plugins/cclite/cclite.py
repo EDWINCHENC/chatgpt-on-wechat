@@ -346,7 +346,7 @@ class CCLite(Plugin):
                 return
 
         elif "奥运" in context.content:
-            api_url = f"{self.base_url()}/olympic_schedule/"
+            api_url = f"{self.base_url()}/olympic_schedule"
             day = 'both'  # 默认值
 
             if "今日奥运" in context.content:
