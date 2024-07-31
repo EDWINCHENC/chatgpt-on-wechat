@@ -9,7 +9,6 @@ from plugins import *
 from common.log import logger
 import os
 import time
-import random
 from datetime import datetime
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
@@ -274,7 +273,7 @@ class CCLite(Plugin):
             
             # 以下为获取实时要闻的处理函数  
         elif "实时要闻" in context.content:
-            api_url = f"{self.base_url()}/latest_news/"
+            api_url = f"{self.base_url()}/latest_news"
             try:
                 # 发送GET请求到你的FastAPI服务
                 response = requests.get(api_url)
@@ -310,7 +309,7 @@ class CCLite(Plugin):
                 return
                             
         elif "财经资讯" in context.content:  # 2.获取财经新闻
-            api_url = f"{self.base_url()}/financial_news/"            
+            api_url = f"{self.base_url()}/financial_news"            
             try:
                 # 发送GET请求到你的FastAPI服务
                 response = requests.get(api_url)
@@ -353,7 +352,7 @@ class CCLite(Plugin):
                 day = 'today'
             elif "明日奥运" in context.content:
                 day = 'tomorrow'
-
+            logger.debug(f"获取{day}的奥运赛程信息")
             try:
                 # 发送GET请求到你的FastAPI服务
                 response = requests.get(api_url, params={"day": day})
@@ -361,7 +360,7 @@ class CCLite(Plugin):
                 function_response = response.json()  # 解析JSON响应体为字典
                 logger.debug(f"Function response: {function_response}")  # 打印函数响应
                 function_response = function_response["results"]  # 返回结果字段中的数据
-                
+                logger.debug(f"奥运赛程信息: {function_response}")
                 _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
                 return
             except requests.RequestException as e:
@@ -377,18 +376,18 @@ class CCLite(Plugin):
             adm = None 
             user_key = self.getwt_key
 
-            if context.kwargs.get('isgroup'):
-                msg = context.kwargs.get('msg')  # 这是WechatMessage实例
-                nickname = msg.actual_user_nickname  # 获取nickname
-                _send_info(e_context, "@{name}\n🔜正在获取{city}的天气情况🐳🐳🐳".format(name=nickname, city=city_name))
-            else:
-                _send_info(e_context, "🔜正在获取{city}的天气情况🐳🐳🐳".format(city=city_name))
+            # if context.kwargs.get('isgroup'):
+            #     msg = context.kwargs.get('msg')  # 这是WechatMessage实例
+            #     nickname = msg.actual_user_nickname  # 获取nickname
+            #     _send_info(e_context, "@{name}\n🔜正在获取{city}的天气情况🐳🐳🐳".format(name=nickname, city=city_name))
+            # else:
+            #     _send_info(e_context, "🔜正在获取{city}的天气情况🐳🐳🐳".format(city=city_name))
 
             # 向API端点发送GET请求，获取指定城市的天气情况
             logger.debug(f"向API端点发送GET请求，获取{city_name}的天气情况")
             try:
                 response = requests.get(
-                    self.base_url() + "/weather/",
+                    self.base_url() + "/weather",
                     params={
                         "city_name": city_name,
                         "user_key": user_key,
@@ -414,7 +413,7 @@ class CCLite(Plugin):
                 _send_info(e_context, "🔜正在获取最新影讯🐳🐳🐳")
 
             # 构建API请求的URL
-            api_url = f"{self.base_url()}/now_playing_movies/"
+            api_url = f"{self.base_url()}/now_playing_movies"
 
             # 向FastAPI端点发送GET请求
             try:
@@ -450,7 +449,7 @@ class CCLite(Plugin):
             # 调用函数，获取豆瓣最热电视剧榜单
             try:
                 response = requests.get(
-                    self.base_url() + "/top_tv_shows/",
+                    self.base_url() + "/top_tv_shows",
                     params={
                         "limit": limit,
                         "type": type_,
@@ -470,7 +469,7 @@ class CCLite(Plugin):
             max_items = 6
             try:
                 response = requests.get(
-                    self.base_url() + "/ainews/",
+                    self.base_url() + "/ainews",
                     params={"max_items": max_items}
                 )
                 response.raise_for_status()  # 如果请求返回了失败的状态码，将抛出异常
@@ -526,7 +525,7 @@ class CCLite(Plugin):
             
         elif "英雄梯度榜" in context.content:  # 9.获取英雄梯度榜
             # 构建 API 请求的 URL
-            api_url = f"{self.base_url()}/hero_ranking/"
+            api_url = f"{self.base_url()}/hero_ranking"
             # 向 FastAPI 端点发送 GET 请求
             try:
                 response = requests.get(api_url)
@@ -774,17 +773,6 @@ class CCLite(Plugin):
         self.c_modelpro.set_ai_model("Coze")
         _set_reply_text(final_response, e_context, level=ReplyType.TEXT)
         return
-        # paragraphs = re.split(r'。|\n\n+', model_response)
-
-        # # paragraphs = split_paragraphs(model_response)
-        # for i, paragraph in enumerate(paragraphs):
-        #     if paragraph.strip():  # 确保段落不只是空白
-        #         # logger.debug(f"---------------第{i}次段落分割-----------: {paragraph}")
-        #         _send_info(e_context, paragraph)
-        #         time.sleep(random.uniform(4, 10))
-
-        # # 所有段落处理完毕后，设置BREAK_PASS
-        # e_context.action = EventAction.BREAK_PASS
 
     # 以下为插件的一些辅助函数
     def has_user_drawn_today(self, user_id):
