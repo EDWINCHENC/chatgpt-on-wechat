@@ -10,8 +10,8 @@
     "zhipuai_model": "glm-4-flash",
     "ark_api_key":"8fe0cf3a-7d88-4588-a5c9-3259fc9c01c6",
     "ark_model": "ep-20240615153916-5lvnb",
-    "coze_api_key":"pat_6Cp93rMIer2jj8pbfSQctVfbE8ktwFafb0VQPdlwwlw7zOq02Ct6gRNayjMBixn6",
-    "coze_bot_id":"7381026923247386636",
+    "coze_api_key":"pat_OLTprWRHxJEDQUqBi6a7RuRu3TwFAgEY0Jpr2giCGmA8SZSz2y4rHqpmPBAYUQjO",
+    "coze_bot_id":"7400030142833197106",
     "deepseek_api_key":"sk-b0b49d29ece74a1eb518a0a57eceb10c",
     "deepseek_model":"deepseek-chat",
     "ai_model":"Qwen"
