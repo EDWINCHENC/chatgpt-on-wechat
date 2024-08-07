@@ -33,6 +33,7 @@ plugins/banwords/lib/__pycache__
 !plugins/linkai
 !plugins/cclite
 !plugins/cclite/**/
+plugins/cclite/lib/config.json
 !plugins/timetask
 !plugins/timetask/**/
 !plugins/cc_vpets
