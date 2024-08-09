@@ -344,13 +344,13 @@ class CCLite(Plugin):
                 _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
 
-        elif "奥运" in context.content:
+        elif context.content in ["奥运", "今日奥运", "明日奥运"]:
             api_url = f"{self.base_url()}/olympic_schedule"
             day = 'both'  # 默认值
 
-            if "今日奥运" in context.content:
+            if context.content == "今日奥运":
                 day = 'today'
-            elif "明日奥运" in context.content:
+            elif context.content == "明日奥运":
                 day = 'tomorrow'
             logger.debug(f"获取{day}的奥运赛程信息")
             try:
