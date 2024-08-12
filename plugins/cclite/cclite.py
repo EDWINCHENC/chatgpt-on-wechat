@@ -343,31 +343,6 @@ class CCLite(Plugin):
                 logger.error(f"Request to API failed: {e}")
                 _set_reply_text("获取财经新闻失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
-
-        elif context.content in ["奥运", "今日奥运", "明日奥运"]:
-            api_url = f"{self.base_url()}/olympic_schedule"
-            day = 'both'  # 默认值
-
-            if context.content == "今日奥运":
-                day = 'today'
-            elif context.content == "明日奥运":
-                day = 'tomorrow'
-            logger.debug(f"获取{day}的奥运赛程信息")
-            try:
-                # 发送GET请求到你的FastAPI服务
-                response = requests.get(api_url, params={"day": day})
-                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
-                function_response = response.json()  # 解析JSON响应体为字典
-                logger.debug(f"Function response: {function_response}")  # 打印函数响应
-                function_response = function_response["results"]  # 返回结果字段中的数据
-                logger.debug(f"奥运赛程信息: {function_response}")
-                _set_reply_text(function_response, e_context, level=ReplyType.TEXT)
-                return
-            except requests.RequestException as e:
-                logger.error(f"Request to API failed: {e}")
-                _set_reply_text("获取奥运赛程信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
-                return
-
             
         elif "天气" in context.content:
             # 使用正则表达式匹配城市名称
@@ -636,7 +611,7 @@ class CCLite(Plugin):
         else:
             logger.debug(f"进入通用会话处理模式")
             user_input = context.content
-            response = self.c_modelpro.get_model_reply(user_input, user_id)
+            response = self.c_modelpro.get_model_reply(user_input)
             logger.debug(f"已成功获取模型回复: {response}")
             _set_reply_text(response, e_context, level=ReplyType.TEXT)     
             return
