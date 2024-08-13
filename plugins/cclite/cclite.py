@@ -13,7 +13,7 @@ from datetime import datetime
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
 from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
-import prompts
+from .lib import prompts
 
 
 @plugins.register(
