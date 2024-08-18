@@ -144,6 +144,45 @@ class CCLite(Plugin):
                     _set_reply_text("查找电影信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                     return
 
+        elif context.content.startswith(("找", "搜", "搜索", "找资源")):
+            # 通过正则表达式匹配 "找电影名" 的模式
+            match = re.search(r"(找|搜|搜索|找资源)(.+)", context.content)
+            if match:
+                keyword = match.group(2).strip()  # 获取搜索关键词
+                logger.debug(f"正在查找资源: {keyword}")
+                try:
+                    # 调用fetch_movie_info函数获取电影信息
+                    movie_info = affdz.fetch_movie_info(keyword)
+                    if movie_info is None:
+                        logger.error(f"未找到电影: {keyword}")
+                        movie_info_str = "未找到电影信息，请检查电影名称是否正确。"
+                    else:
+                        logger.debug(f"获取电影信息响应：{movie_info}")
+                        movie_info_str = str(movie_info)
+
+                    # 调用/search_all_pan端点获取搜索结果
+                    api_url = f"{self.base_url()}/search_all_pan"
+                    response = requests.get(api_url, params={"keyword": keyword, "max_results": 3})
+                    response.raise_for_status()
+                    search_results = response.json().get('results', [])
+
+                    # 格式化搜索结果
+                    search_results_str = "\n".join([
+                        f"资源描述: {result['资源描述']}\n链接: {result['链接']}\n来源网盘: {result['来源网盘']}\n"
+                        for result in search_results
+                    ])
+
+                    # 组合结果
+                    combined_results_str = f"资源1:\n{movie_info_str}\n\n资源2:\n{search_results_str}"
+
+                    _set_reply_text(combined_results_str, e_context, level=ReplyType.TEXT)
+                    return
+                except Exception as e:
+                    logger.error(f"查找资源失败: {e}")
+                    _set_reply_text("查找资源失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    return
+
+
         # 使用正则表达式来匹配星座运势的请求
         elif "运势" in context.content:
             match = re.search(r"(今日)?\s*(白羊座|金牛座|双子座|巨蟹座|狮子座|处女座|天秤座|天蝎座|射手座|摩羯座|水瓶座|双鱼座)\s*(运势|今日运势)?", context.content)
