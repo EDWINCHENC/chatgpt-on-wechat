@@ -182,6 +182,41 @@ class CCLite(Plugin):
                     _set_reply_text("查找资源失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                     return
 
+        elif context.content.startswith(("搜闲鱼", "闲鱼搜", "闲鱼")):
+            # 通过正则表达式匹配 "搜闲鱼关键词" 的模式
+            match = re.search(r"(搜闲鱼|闲鱼搜|闲鱼)(.+)", context.content)
+            if match:
+                keyword = match.group(2).strip()  # 获取搜索关键词
+                logger.debug(f"正在查找闲鱼资源: {keyword}")
+                try:
+                    # 调用/goofish_search端点获取搜索结果
+                    api_url = "https://api.ilfei.cc/goofish_search"
+                    response = requests.get(api_url, params={"keyword": keyword})
+                    response.raise_for_status()
+                    search_results = response.json().get('results', [])
+
+                    # 格式化搜索结果
+                    formatted_results = []
+                    for idx, result in enumerate(search_results, start=1):
+                        formatted_result = (
+                            f"{idx}. 📦 {result['商品名称']}\n"
+                            f"   🖼️ 看看图: {result['看看图']}\n"
+                            f"   💰 多少钱: {result['多少钱']}\n"
+                            f"   🔗 上链接: {result['上链接']}\n"
+                        )
+                        formatted_results.append(formatted_result)
+                    search_results_str = "\n".join(formatted_results)
+
+                    # 组合结果
+                    combined_results_str = f"🐟 闲鱼搜索结果:\n\n{search_results_str}"
+
+                    _set_reply_text(combined_results_str, e_context, level=ReplyType.TEXT)
+                    return
+                except Exception as e:
+                    logger.error(f"查找闲鱼资源失败: {e}")
+                    _set_reply_text("查找闲鱼资源失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    return
+
 
         # 使用正则表达式来匹配星座运势的请求
         elif "运势" in context.content:
