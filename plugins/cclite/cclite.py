@@ -122,34 +122,13 @@ class CCLite(Plugin):
             _set_reply_text("您的会话历史已被清除。", e_context, level=ReplyType.TEXT)
             return
 
-        # elif context.content.startswith("找"):
-        #     # 通过正则表达式匹配 "找电影名" 的模式
-        #     match = re.search(r"找(.+)", context.content)
-        #     if match:
-        #         movie_name = match.group(1).strip()  # 获取电影名
-        #         logger.debug(f"正在查找影视资源: {movie_name}")
-        #         try:
-        #             # 调用fetch_movie_info函数获取电影信息
-        #             movie_info = affdz.fetch_movie_info(movie_name)
-        #             if movie_info is None:
-        #                 # 如果movie_info为None，则返回一个错误消息
-        #                 logger.error(f"未找到电影: {movie_info}")
-        #                 _set_reply_text("未找到电影信息，请检查电影名称是否正确。", e_context, level=ReplyType.TEXT)
-        #             else:
-        #                 logger.debug(f"获取电影信息响应：{movie_info}")
-        #                 _set_reply_text(movie_info, e_context, level=ReplyType.TEXT)
-        #             return
-        #         except Exception as e:
-        #             logger.error(f"查找电影信息失败: {e}")
-        #             _set_reply_text("查找电影信息失败，请稍后再试。", e_context, level=ReplyType.TEXT)
-        #             return
-
         elif context.content.startswith(("找", "搜", "搜索", "找资源")):
             # 通过正则表达式匹配 "找电影名" 的模式
             match = re.search(r"(找|搜|搜索|找资源)(.+)", context.content)
             if match:
                 keyword = match.group(2).strip()  # 获取搜索关键词
                 logger.debug(f"正在查找资源: {keyword}")
+                _send_info(e_context, f"🔍 正在搜索网盘资源...")
                 try:
                     # 调用fetch_movie_info函数获取电影信息
                     movie_info = affdz.fetch_movie_info(keyword)
@@ -159,7 +138,7 @@ class CCLite(Plugin):
                     else:
                         logger.debug(f"获取电影信息响应：{movie_info}")
                         movie_info_str = str(movie_info)
-
+                    _send_info(e_context,f"资源1:\n{movie_info_str}")
                     # 调用/search_all_pan端点获取搜索结果
                     api_url = f"{self.base_url()}/search_all_pan"
                     response = requests.get(api_url, params={"keyword": keyword, "max_results": 3})
@@ -173,7 +152,7 @@ class CCLite(Plugin):
                     ])
 
                     # 组合结果
-                    combined_results_str = f"资源1:\n{movie_info_str}\n\n资源2:\n{search_results_str}"
+                    combined_results_str = f"资源2:\n{search_results_str}"
 
                     _set_reply_text(combined_results_str, e_context, level=ReplyType.TEXT)
                     return
@@ -201,13 +180,13 @@ class CCLite(Plugin):
                         formatted_result = (
                             f"{idx}. 🐟 {result['商品名称']}\n"
                             f"   💰 多少钱: {result['多少钱']} 元\n"
-                            f"   🔗 上链接: {result['上链接']}\n"
+                            f"   🔗 上链接: {result['上链接']}"
                         )
-                        # 先发送图片
-                        _send_img(e_context, result['看看图'])
+                        # # 先发送图片
+                        # _send_img(e_context, result['看看图'])
                         # 再发送其他信息
                         _send_info(e_context, formatted_result)
-
+                    _set_reply_text(f"{search_results[0]['看看图']}", e_context, level=ReplyType.IMAGE_URL)
                     return
                 except Exception as e:
                     logger.error(f"查找闲鱼资源失败: {e}")
