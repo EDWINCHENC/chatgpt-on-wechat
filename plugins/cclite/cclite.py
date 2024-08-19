@@ -188,6 +188,7 @@ class CCLite(Plugin):
             if match:
                 keyword = match.group(2).strip()  # 获取搜索关键词
                 logger.debug(f"正在查找闲鱼资源: {keyword}")
+                _send_info(e_context, f"🔍 正在搜索闲鱼资源...")
                 try:
                     # 调用/goofish_search端点获取搜索结果
                     api_url = "https://api.ilfei.cc/goofish_search"
@@ -196,21 +197,17 @@ class CCLite(Plugin):
                     search_results = response.json().get('results', [])
 
                     # 格式化搜索结果
-                    formatted_results = []
                     for idx, result in enumerate(search_results, start=1):
                         formatted_result = (
-                            f"{idx}. 📦 {result['商品名称']}\n"
-                            f"   🖼️ 看看图: {result['看看图']}\n"
-                            f"   💰 多少钱: {result['多少钱']}\n"
+                            f"{idx}. 🐟 {result['商品名称']}\n"
+                            f"   💰 多少钱: {result['多少钱']} 元\n"
                             f"   🔗 上链接: {result['上链接']}\n"
                         )
-                        formatted_results.append(formatted_result)
-                    search_results_str = "\n".join(formatted_results)
+                        # 先发送图片
+                        _send_img(e_context, result['看看图'])
+                        # 再发送其他信息
+                        _send_info(e_context, formatted_result)
 
-                    # 组合结果
-                    combined_results_str = f"🐟 闲鱼搜索结果:\n\n{search_results_str}"
-
-                    _set_reply_text(combined_results_str, e_context, level=ReplyType.TEXT)
                     return
                 except Exception as e:
                     logger.error(f"查找闲鱼资源失败: {e}")
@@ -836,6 +833,11 @@ class CCLite(Plugin):
 
 def _send_info(e_context: EventContext, content: str):
     reply = Reply(ReplyType.TEXT, content)
+    channel = e_context["channel"]
+    channel.send(reply, e_context["context"])
+
+def _send_img(e_context: EventContext, content: str):
+    reply = Reply(ReplyType.IMAGE_URL, content)
     channel = e_context["channel"]
     channel.send(reply, e_context["context"])
 
