@@ -186,8 +186,7 @@ class CCLite(Plugin):
                         # _send_img(e_context, result['看看图'])
                         # 再发送其他信息
                         _send_info(e_context, formatted_result)
-                    # _set_reply_text(f"{search_results[0]['看看图']}", e_context, level=ReplyType.IMAGE_URL)
-                    _send_img(e_context, "https://qna.smzdm.com/202310/23/65367850709fd8054.jpg_e680.jpg")
+                    e_context.action = EventAction.BREAK_PASS                    
                     return
                 except Exception as e:
                     logger.error(f"查找闲鱼资源失败: {e}")
