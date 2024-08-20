@@ -138,28 +138,33 @@ class CCLite(Plugin):
                     else:
                         logger.debug(f"获取电影信息响应：{movie_info}")
                         movie_info_str = str(movie_info)
-                    _send_info(e_context,f"资源1:\n{movie_info_str}")
+                    _send_info(e_context, f"资源1:\n{movie_info_str}")
+
                     # 调用/search_all_pan端点获取搜索结果
                     api_url = f"{self.base_url()}/search_all_pan"
+                    logger.debug(f"正在调用 {api_url} 接口搜索资源...")
                     response = requests.get(api_url, params={"keyword": keyword, "max_results": 3})
+                    logger.debug(f"搜索资源响应：{response.text}")
                     response.raise_for_status()
                     search_results = response.json().get('results', [])
 
                     # 格式化搜索结果
-                    search_results_str = "\n".join([
-                        f"资源描述: {result['资源描述']}\n链接: {result['链接']}\n来源网盘: {result['来源网盘']}\n"
-                        for result in search_results
-                    ])
-
+                    if search_results:
+                        search_results_str = "\n".join([
+                            f"资源描述: {result['资源描述']}\n链接: {result['链接']}\n来源网盘: {result['来源网盘']}\n"
+                            for result in search_results
+                        ])
+                    else:
+                        search_results_str = "🎬 没有找到更多资源。"
                     # 组合结果
                     combined_results_str = f"资源2:\n{search_results_str}"
-
                     _set_reply_text(combined_results_str, e_context, level=ReplyType.TEXT)
                     return
                 except Exception as e:
                     logger.error(f"查找资源失败: {e}")
                     _set_reply_text("查找资源失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                     return
+
 
         elif context.content.startswith(("搜闲鱼", "闲鱼搜", "闲鱼")):
             # 通过正则表达式匹配 "搜闲鱼关键词" 的模式
