@@ -176,23 +176,28 @@ class CCLite(Plugin):
                     search_results = response.json().get('results', [])
 
                     # 格式化搜索结果
+                    formatted_results = []
                     for idx, result in enumerate(search_results, start=1):
                         formatted_result = (
                             f"{idx}. 🐟 {result['商品名称']}\n"
                             f"   💰 多少钱: {result['多少钱']} 元\n"
                             f"   🔗 上链接: {result['上链接']}"
                         )
+                        formatted_results.append(formatted_result)
                         # # 先发送图片
                         # _send_img(e_context, result['看看图'])
                         # 再发送其他信息
-                        _send_info(e_context, formatted_result)
-                    e_context.action = EventAction.BREAK_PASS                    
+                        logger.info(f"获取第{idx}个搜索结果：{formatted_result}")
+
+                    # 将所有结果合并成一个字符串
+                    all_results = "\n\n".join(formatted_results)
+                    logger.info(f"已获取所有闲鱼搜索结果：{all_results}")
+                    _set_reply_text(all_results, e_context, level=ReplyType.TEXT)
                     return
                 except Exception as e:
                     logger.error(f"查找闲鱼资源失败: {e}")
                     _set_reply_text("查找闲鱼资源失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                     return
-
 
         # 使用正则表达式来匹配星座运势的请求
         elif "运势" in context.content:
