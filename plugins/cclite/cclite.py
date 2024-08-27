@@ -272,6 +272,58 @@ class CCLite(Plugin):
                 _set_reply_text("请先求签后再请求解签。", e_context, level=ReplyType.TEXT)
                 return
 
+        elif "求卦" in context.content:
+            api_url = f"{self.base_url()}/iching_divine"
+            try:
+                # 发送GET请求到FastAPI服务
+                response = requests.get(api_url)
+                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
+                iching_data = response.json()  # 解析JSON响应体为字典
+                logger.debug(f"Iching divine response: {iching_data}")  # 打印函数响应
+
+                # 获取当前时间
+                current_time = datetime.now().strftime("%Y年%m月%d日 %H:%M:%S")
+
+                # 开始逐步发送信息
+                _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据当前时间（{current_time}）起卦中.....")
+                time.sleep(5)
+
+                # 合并发送本卦和变卦信息
+                ben_gua = iching_data['ben_gua']
+                bian_gua = iching_data['bian_gua']
+                gua_info = (
+                    f"🔮 卦象揭示：\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"本卦：{ben_gua['name']}\n"
+                    f"爻码：{ben_gua['numbers']}\n"
+                    f"卦辞：{ben_gua['interpretation']['text']}\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"变卦：{bian_gua['name']}\n"
+                    f"爻码：{bian_gua['numbers']}\n"
+                    f"卦辞：{bian_gua['interpretation']['text']}"
+                )
+                _send_info(e_context, gua_info)
+                time.sleep(1)
+
+                _send_info(e_context, "正在解卦，请稍候...")
+                time.sleep(5)
+
+                # 发送本卦和变卦解释
+                interpretation = (
+                    f"📜 卦象解释：\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"本卦解释：\n{ben_gua['interpretation']['interpretation']}\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"变卦解释：\n{bian_gua['interpretation']['interpretation']}"
+                )
+                _set_reply_text(interpretation, e_context, level=ReplyType.TEXT)
+                return
+            except requests.RequestException as e:
+                logger.error(f"Request to API failed: {e}")
+                _set_reply_text("求卦失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                return
+
+
         elif "答案之书" in context.content:
             logger.debug("激活答案之书会话")
             self.start_session(user_id, "ANSWER_BOOK")
