@@ -14,6 +14,7 @@ from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
 from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
 from .lib import prompts
+import random
 
 
 @plugins.register(
@@ -272,54 +273,75 @@ class CCLite(Plugin):
                 _set_reply_text("请先求签后再请求解签。", e_context, level=ReplyType.TEXT)
                 return
 
+        # 以下为求卦功能
         elif "求卦" in context.content:
+            logger.info(f"用户 {nickname} 请求求卦")
+            
+            # 检查用户是否已在当天求过卦
+            if self.has_user_drawn_today(nickname):
+                logger.info(f"用户 {nickname} 今日已经求过卦")
+                _set_reply_text("今日已经求过卦了，请明天再来。", e_context, level=ReplyType.TEXT)
+                return
+
+            # 使用正则表达式提取问题
+            match = re.match(r'求卦[：:+\s]*(.+)', context.content)
+            question = match.group(1).strip() if match else None
+
+            if question is None:
+                logger.info(f"用户 {nickname} 没有提供具体问题，将进行随机求卦")
+                _send_info(e_context, "不知你的疑惑，将因缘起卦。你可以通过'求卦+你的问题'来进行特定问题的求卦。")
+            else:
+                logger.info(f"用户 {nickname} 的求卦问题: {question}")
+
             api_url = f"{self.base_url()}/iching_divine"
+            params = {"question": question} if question else {}
+
             try:
                 # 发送GET请求到FastAPI服务
-                response = requests.get(api_url)
-                response.raise_for_status()  # 如果响应状态码不是200，将抛出异常
-                iching_data = response.json()  # 解析JSON响应体为字典
-                logger.debug(f"Iching divine response: {iching_data}")  # 打印函数响应
+                logger.debug(f"发送求卦请求: URL={api_url}, 参数={params}")
+                response = requests.get(api_url, params=params)
+                response.raise_for_status()
+                iching_data = response.json()
+                logger.debug(f"求卦API响应: {iching_data}")
 
-                # 获取当前时间
-                current_time = datetime.now().strftime("%Y年%m月%d日 %H:%M:%S")
+                # 更新用户的求卦记录
+                self.user_divinations[nickname] = {'date': datetime.now().date().isoformat()}
+                logger.info(f"更新用户 {nickname} 的求卦记录")
 
-                # 开始逐步发送信息
-                _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据当前时间（{current_time}）起卦中.....")
+                _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据求卦时间（{iching_data['求卦时间']}）起卦中.....")
                 time.sleep(5)
 
-                # 合并发送本卦和变卦信息
-                ben_gua = iching_data['ben_gua']
-                bian_gua = iching_data['bian_gua']
                 gua_info = (
                     f"🔮 卦象揭示：\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"本卦：{ben_gua['name']}\n"
-                    f"爻码：{ben_gua['numbers']}\n"
-                    f"卦辞：{ben_gua['interpretation']['text']}\n"
+                    f"{iching_data['卦象']}\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"变卦：{bian_gua['name']}\n"
-                    f"爻码：{bian_gua['numbers']}\n"
-                    f"卦辞：{bian_gua['interpretation']['text']}"
+                    f"本卦：{iching_data['本卦']['卦名']}\n"
+                    f"卦辞：{iching_data['本卦']['卦辞']}\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"变卦：{iching_data['变卦']['卦名']}\n"
+                    f"卦辞：{iching_data['变卦']['卦辞']}"
                 )
                 _send_info(e_context, gua_info)
-                time.sleep(1)
+                _send_info(e_context, f"卦因缘而起，六爻皆空。解卦时长不定，请耐心等待...")
+                wait_time = random.randint(8, 20)
+                logger.debug(f"解卦等待时间: {wait_time}秒")
 
-                _send_info(e_context, "正在解卦，请稍候...")
-                time.sleep(5)
+                time.sleep(wait_time)
 
-                # 发送本卦和变卦解释
                 interpretation = (
-                    f"📜 卦象解释：\n"
+                    f"📜 大师解读：\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"本卦解释：\n{ben_gua['interpretation']['interpretation']}\n"
+                    f"{iching_data['大师解读']}\n"
                     f"━━━━━━━━━━━━━━━━\n"
-                    f"变卦解释：\n{bian_gua['interpretation']['interpretation']}"
+                    f"问题：{iching_data['问题'] if iching_data['问题'] else '无'}"
                 )
                 _set_reply_text(interpretation, e_context, level=ReplyType.TEXT)
+                logger.info(f"用户 {nickname} 的求卦过程完成")
+
                 return
             except requests.RequestException as e:
-                logger.error(f"Request to API failed: {e}")
+                logger.error(f"求卦API请求失败: {e}")
                 _set_reply_text("求卦失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
 
