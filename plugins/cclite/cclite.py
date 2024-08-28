@@ -278,10 +278,10 @@ class CCLite(Plugin):
             logger.info(f"用户 {nickname} 请求求卦")
             
             # 检查用户是否已在当天求过卦
-            if self.has_user_drawn_today(nickname):
-                logger.info(f"用户 {nickname} 今日已经求过卦")
-                _set_reply_text("今日已经求过卦了，请明天再来。", e_context, level=ReplyType.TEXT)
-                return
+            # if self.has_user_drawn_today(nickname):
+            #     logger.info(f"用户 {nickname} 今日已经求过卦")
+            #     _set_reply_text("今日已经求过卦了，请明天再来。", e_context, level=ReplyType.TEXT)
+            #     return
 
             # 使用正则表达式提取问题
             match = re.match(r'求卦[：:+\s]*(.+)', context.content)
@@ -310,7 +310,6 @@ class CCLite(Plugin):
 
                 _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据求卦时间（{iching_data['求卦时间']}）起卦中.....")
                 time.sleep(5)
-
                 gua_info = (
                     f"🔮 卦象揭示：\n"
                     f"━━━━━━━━━━━━━━━━\n"
@@ -320,11 +319,15 @@ class CCLite(Plugin):
                     f"卦辞：{iching_data['本卦']['卦辞']}\n"
                     f"━━━━━━━━━━━━━━━━\n"
                     f"变卦：{iching_data['变卦']['卦名']}\n"
-                    f"卦辞：{iching_data['变卦']['卦辞']}"
+                    f"卦辞：{iching_data['变卦']['卦辞']}\n"
+                    f"━━━━━━━━━━━━━━━━\n"
+                    f"卦因缘而起，六爻皆空。\n"
+                    f"解卦时长不定，请耐心等待...\n"
+                    f"━━━━━━━━━━━━━━━━"
                 )
                 _send_info(e_context, gua_info)
-                _send_info(e_context, f"卦因缘而起，六爻皆空。解卦时长不定，请耐心等待...")
-                wait_time = random.randint(8, 20)
+
+                wait_time = random.randint(10, 20)
                 logger.debug(f"解卦等待时间: {wait_time}秒")
 
                 time.sleep(wait_time)
