@@ -275,8 +275,9 @@ class CCLite(Plugin):
 
         # 以下为求卦功能
         elif "求卦" in context.content:
+            # 获取当前时间
+            current_time = datetime.now().strftime("%Y年%m月%d日 %H:%M:%S")
             logger.info(f"用户 {nickname} 请求求卦")
-            
             # 检查用户是否已在当天求过卦
             # if self.has_user_drawn_today(nickname):
             #     logger.info(f"用户 {nickname} 今日已经求过卦")
@@ -292,7 +293,7 @@ class CCLite(Plugin):
                 _send_info(e_context, "不知你的疑惑，将因缘起卦。你可以通过'求卦+你的问题'来进行特定问题的求卦。")
             else:
                 logger.info(f"用户 {nickname} 的求卦问题: {question}")
-
+            _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据{nickname}的求卦时间{current_time}起卦中.....") 
             api_url = f"{self.base_url()}/iching_divine"
             params = {"question": question} if question else {}
 
@@ -308,7 +309,6 @@ class CCLite(Plugin):
                 self.user_divinations[nickname] = {'date': datetime.now().date().isoformat()}
                 logger.info(f"更新用户 {nickname} 的求卦记录")
 
-                _send_info(e_context, f"---- 三变生爻，六爻为卦 ----\n根据求卦时间（{iching_data['求卦时间']}）起卦中.....")
                 time.sleep(5)
                 gua_info = (
                     f"🔮 卦象揭示：\n"
