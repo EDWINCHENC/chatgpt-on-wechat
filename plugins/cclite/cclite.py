@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 from .lib.model_factory import ModelGenerator
 from .lib.unifiedmodel import UnifiedChatbot
-from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo
+from .lib import fetch_affdz as affdz, horoscope as horo, function as fun, fetch_tv_show_id as fetch_tv_show_id, tvshowinfo as tvinfo, ch_ai_diagnosis as ch_ai
 from .lib import prompts
 import random
 
@@ -347,6 +347,30 @@ class CCLite(Plugin):
                 logger.error(f"求卦API请求失败: {e}")
                 _set_reply_text("求卦失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
+
+        elif context.content.startswith("中医"):
+            logger.info(f"用户 {nickname} 请求中医诊断")
+            
+            # 提取问题
+            question = context.content[2:].strip()
+            if not question:
+                _set_reply_text("请提供具体的中医诊断问题。", e_context, level=ReplyType.TEXT)
+                return
+
+            logger.info(f"用户 {nickname} 的中医诊断问题: {question}")
+            _send_info(e_context, f"AI小中医正在为你解答中...")
+            try:
+                # 调用中医诊断模块
+                response_text = ch_ai.ask_question(question)
+                if response_text:
+                    _set_reply_text(response_text, e_context, level=ReplyType.TEXT)
+                    logger.info(f"用户 {nickname} 的中医诊断完成")
+                else:
+                    _set_reply_text("中医诊断请求失败，请稍后再试。", e_context, level=ReplyType.TEXT)
+                    logger.error(f"中医诊断请求失败: 未能获取响应")
+            except Exception as e:
+                logger.error(f"中医诊断请求失败: {e}")
+                _set_reply_text("中医诊断请求失败，请稍后再试。", e_context, level=ReplyType.TEXT)
 
 
         elif "答案之书" in context.content:
