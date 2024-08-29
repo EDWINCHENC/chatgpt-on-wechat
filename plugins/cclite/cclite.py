@@ -348,7 +348,7 @@ class CCLite(Plugin):
                 _set_reply_text("求卦失败，请稍后再试。", e_context, level=ReplyType.TEXT)
                 return
 
-        elif context.content.startswith("中医"):
+        elif context.content.startswith("中医") or context.content.startswith("/中医"):
             logger.info(f"用户 {nickname} 请求中医诊断")
             
             # 提取问题
@@ -371,7 +371,7 @@ class CCLite(Plugin):
             except Exception as e:
                 logger.error(f"中医诊断请求失败: {e}")
                 _set_reply_text("中医诊断请求失败，请稍后再试。", e_context, level=ReplyType.TEXT)
-
+            return
 
         elif "答案之书" in context.content:
             logger.debug("激活答案之书会话")
