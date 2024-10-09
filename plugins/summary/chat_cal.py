@@ -13,7 +13,7 @@ from common.log import logger
 import plugins
 import openai
 from collections import Counter
-from .lib import wxmsg as wx
+# from .lib import wxmsg as wx
 from .lib.model_factory import ModelGenerator
 import re
 
@@ -329,39 +329,39 @@ class ChatStatistics(Plugin):
         special_emojis = ["✨", "🌟", "💫", "", "", ""]
         return special_emojis[rank - 1] if rank <= len(special_emojis) else ""
 
-    def analyze_keyword_usage(self, keyword):
-        # 调用 wxmsg 模块中的函数
-        keyword_analysis = wx.analyze_keyword_in_messages(keyword)
-        logger.debug(f"分析关键词 {keyword} 的使用情况成功: {keyword_analysis}")
-        # 判断是否有有效的分析结果
-        if keyword_analysis:
-            # 准备 OpenAI 的输入
-            messages_to_openai = [
-                {"role": "system", "content": f"你是群里的聊天记录统计助手，你主要的功能是根据用户查询的关键词'{keyword}'，对和该关键词有关的聊天记录进行分析，形成一份简明、好看、完整的聊天记录报告，该报告要准确的结合聊天报告的文案风格，语言连贯，段落清晰，搭配数据加以展示。将获取到的聊天记录数据进行呈现，适当添加emoji，报告的角度包括但不限于该关键词讨论的热度、总提及次数、讨论最多的日期（频率、时间段）和该日提及次数、最多聊到该关键词的人是谁、聊了多少次....等等，以及根据提取出的特定聊天者针对该话题的聊天记录进行精彩点评。"},
-                {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
-            ]
-            # 调用 OpenAI 生成总结
-            openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
-            return openai_analysis
-        else:
-            return "没有找到关于此关键词的信息。"
+    # def analyze_keyword_usage(self, keyword):
+    #     # 调用 wxmsg 模块中的函数
+    #     keyword_analysis = wx.analyze_keyword_in_messages(keyword)
+    #     logger.debug(f"分析关键词 {keyword} 的使用情况成功: {keyword_analysis}")
+    #     # 判断是否有有效的分析结果
+    #     if keyword_analysis:
+    #         # 准备 OpenAI 的输入
+    #         messages_to_openai = [
+    #             {"role": "system", "content": f"你是群里的聊天记录统计助手，你主要的功能是根据用户查询的关键词'{keyword}'，对和该关键词有关的聊天记录进行分析，形成一份简明、好看、完整的聊天记录报告，该报告要准确的结合聊天报告的文案风格，语言连贯，段落清晰，搭配数据加以展示。将获取到的聊天记录数据进行呈现，适当添加emoji，报告的角度包括但不限于该关键词讨论的热度、总提及次数、讨论最多的日期（频率、时间段）和该日提及次数、最多聊到该关键词的人是谁、聊了多少次....等等，以及根据提取出的特定聊天者针对该话题的聊天记录进行精彩点评。"},
+    #             {"role": "user", "content": json.dumps(keyword_analysis, ensure_ascii=False)}
+    #         ]
+    #         # 调用 OpenAI 生成总结
+    #         openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
+    #         return openai_analysis
+    #     else:
+    #         return "没有找到关于此关键词的信息。"
     
-    def analyze_specific_user_usage(self, nickname):
-        # 调用 analyze_user_messages 函数进行分析
-        user_analysis = wx.analyze_user_messages(nickname)
-        logger.debug(f"分析用户{nickname}的使用情况: {user_analysis}")
-        if user_analysis:
-            # 准备 OpenAI 的输入
-            messages_to_openai = [
-                {"role": "system", "content": f"你是群里的聊天记录统计助手，主要的功能是分析群聊昵称名为【{nickname}】的聊天记录,精确整理出【{nickname}】的重要聊天信息。根据【{nickname}】的聊天记录各项数据生成一份专属于【{nickname}】的聊天记录报告，要求内容连贯、客观并体现数据，适当添加emoji使报告更美观，包括但不限于：各种类型的消息的发送数量、用户的消息最爱说哪些词汇、哪个时间段最爱聊天、该统计周期内总的聊天次数、聊天字数、话最多的一天是哪天（当天的发言条数和聊天字数）、用户的消息发送内容的情感倾向等等。报告要生动，对【{nickname}】和群员的互动进行精彩点评。"},
-                {"role": "user", "content": user_analysis}
-            ]
+    # def analyze_specific_user_usage(self, nickname):
+    #     # 调用 analyze_user_messages 函数进行分析
+    #     user_analysis = wx.analyze_user_messages(nickname)
+    #     logger.debug(f"分析用户{nickname}的使用情况: {user_analysis}")
+    #     if user_analysis:
+    #         # 准备 OpenAI 的输入
+    #         messages_to_openai = [
+    #             {"role": "system", "content": f"你是群里的聊天记录统计助手，主要的功能是分析群聊昵称名为【{nickname}】的聊天记录,精确整理出【{nickname}】的重要聊天信息。根据【{nickname}】的聊天记录各项数据生成一份专属于【{nickname}】的聊天记录报告，要求内容连贯、客观并体现数据，适当添加emoji使报告更美观，包括但不限于：各种类型的消息的发送数量、用户的消息最爱说哪些词汇、哪个时间段最爱聊天、该统计周期内总的聊天次数、聊天字数、话最多的一天是哪天（当天的发言条数和聊天字数）、用户的消息发送内容的情感倾向等等。报告要生动，对【{nickname}】和群员的互动进行精彩点评。"},
+    #             {"role": "user", "content": user_analysis}
+    #         ]
 
-            # 调用 OpenAI 生成总结
-            openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
-            return openai_analysis
-        else:
-            return "没有找到关于此用户的信息。"
+    #         # 调用 OpenAI 生成总结
+    #         openai_analysis = self.c_model._generate_summary_with_openai(messages_to_openai)
+    #         return openai_analysis
+    #     else:
+    #         return "没有找到关于此用户的信息。"
 
 
     def get_help_text(self, verbose=False, **kwargs):
