@@ -11,8 +11,8 @@ class ModelGenerator:
     def __init__(self):
         # 设置数据库路径和API配置
         curdir = os.path.dirname(__file__)
-        self.openai_api_key = conf().get("open_ai_api_key")
-        self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
+        self.openai_api_key = "sk-Ov9dJQYqVPDhTE5eBb015cDa7dEb442195Ca857dEe1e762f"
+        self.openai_api_base = "https://newapi.ilfei.cc/v1"
         self.gemini_api_key = conf().get("gemini_api_key")
 
         logger.debug(f"[ModelGenerator] openai_api_key: {self.openai_api_key}")
@@ -93,7 +93,7 @@ class ModelGenerator:
 
             # 调用 OpenAI ChatGPT
             response = openai.ChatCompletion.create(
-                model="gpt-4-1106-preview",
+                model="doubao-pro-32k",
                 messages=messages
             )
             logger.debug(f"来自 OpenAI 的回复: {json.dumps(response, ensure_ascii=False)}")

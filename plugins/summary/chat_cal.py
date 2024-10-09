@@ -134,7 +134,7 @@ class ChatStatistics(Plugin):
                 username = cmsg.from_user_id
 
         self._insert_record(session_id, cmsg.msg_id, username, context.content, str(context.type), cmsg.create_time)
-        # logger.debug("[Summary] {}:{} ({})" .format(username, context.content, session_id))
+        logger.debug("[Summary] {}:{} ({})" .format(username, context.content, session_id))
 
 # 在类中添加一个新的辅助方法
     def _get_session_id(self, chat_message: ChatMessage):
@@ -225,7 +225,7 @@ class ChatStatistics(Plugin):
     def get_chat_activity_ranking(self, session_id):
         try:
             # 定义要排除的用户列表
-            excluded_users = ["黄二狗²⁴⁶⁷", "Oʀ ."]
+            excluded_users = ["Oʀ ."]
             # 获取今天的聊天记录
             today_records = self._get_records(session_id)
             today_count = len(today_records)  # 计算今日聊天记录总条数
