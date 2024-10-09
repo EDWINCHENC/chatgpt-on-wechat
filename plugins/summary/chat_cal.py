@@ -16,7 +16,7 @@ from collections import Counter
 from .lib import wxmsg as wx
 from .lib.model_factory import ModelGenerator
 import re
-import google.generativeai as genai
+
 
 
 @plugins.register(
