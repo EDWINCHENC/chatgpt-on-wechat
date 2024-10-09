@@ -153,25 +153,8 @@ class ChatStatistics(Plugin):
         session_id = self._get_session_id(chat_message)
         prefix = "查群聊关键词"
 
-        # 检查是否有切换模型的命令
-        content_lower = content.lower()  # 将用户输入转换为小写
-
-        # 检查是否有切换模型的命令
-        if "cset openai" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.c_model.ai_model = "OpenAI"
-            _set_reply_text("已切换到 OpenAI 模型。", e_context, level=ReplyType.TEXT)
-            return
-        elif "cset gemini" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.c_model.ai_model = "Gemini"
-            _set_reply_text("已切换到 Gemini 模型。", e_context, level=ReplyType.TEXT)
-            return
-        elif "cset qwen" in content_lower:  # 使用转换后的小写字符串进行比较
-            self.c_model.ai_model = "Qwen"
-            _set_reply_text("已切换到 Qwen 模型。", e_context, level=ReplyType.TEXT)
-            return
-
         # 解析用户请求
-        elif "总结群聊" in content:
+        if "总结群聊" in content:
             logger.debug("开始总结群聊...")
             result = remove_markdown(self.summarize_group_chat(session_id, 100) ) # 总结最近100条群聊消息
             logger.debug("总结群聊结果: {}".format(result))
