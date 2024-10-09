@@ -1,17 +1,17 @@
 import os
 import sqlite3
-from bot import bot_factory
-from bridge.bridge import Bridge
+# from bot import bot_factory
+# from bridge.bridge import Bridge
 from bridge.context import ContextType
 from channel.chat_message import ChatMessage
-from config import conf
+# from config import conf
 from plugins import *
 from bridge.context import ContextType
 from bridge.reply import Reply, ReplyType
 import datetime
 from common.log import logger
 import plugins
-import openai
+# import openai
 from collections import Counter
 # from .lib import wxmsg as wx
 from .lib.model_factory import ModelGenerator
@@ -24,7 +24,7 @@ import re
     desc="A plugin that summarize",
     version="0.1.0",
     author="cc",
-    desire_priority=60
+    desire_priority=70
 )
 
 
@@ -35,9 +35,6 @@ class ChatStatistics(Plugin):
         # 设置数据库路径和API配置
         curdir = os.path.dirname(__file__)
         self.db_path = os.path.join(curdir, "chat.db")
-        self.openai_api_key = conf().get("open_ai_api_key")
-        self.openai_api_base = conf().get("open_ai_api_base", "https://api.openai.com/v1")
-        self.gemini_api_key = conf().get("gemini_api_key")
 
         config_path = os.path.join(curdir, "config.json")
         with open(config_path, "r", encoding="utf-8") as f:
@@ -79,14 +76,14 @@ class ChatStatistics(Plugin):
                 c = conn.cursor()
                 c.execute("INSERT OR REPLACE INTO chat_records VALUES (?,?,?,?,?,?,?)", 
                           (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
-            # logger.debug("insert chat record to db: %s", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
+            logger.debug("insert chat record to db: %s", (session_id, msg_id, user, content, msg_type, timestamp, is_triggered))
         except Exception as e:
             logger.error(f"Error inserting record: {e}")
 
     def _get_records(self, session_id, excluded_users=None, specific_day=None):
         """获取指定会话的聊天记录，排除特定用户列表中的用户，可选特定日期"""
         if excluded_users is None:
-            excluded_users = ["黄二狗²⁴⁶⁷","Oʀ ."]  # 默认排除的用户列表
+            excluded_users = ["Oʀ ."]  # 默认排除的用户列表
 
         if specific_day is None:
             specific_day = datetime.datetime.now()
@@ -202,7 +199,6 @@ class ChatStatistics(Plugin):
         )
         prompt = "你是一个群聊聊天记录分析总结助手，要根据获取到的聊天记录，将时间段内的聊天内容的主要信息提炼出来，适当使用emoji让生成的总结更生动。可以先用50字左右总结你认为最精华的聊天话题和内容。然后适当提炼总结3个左右群聊的精华主题/标题+聊天内容，标题用emoji美化。最后点点名一下表现活跃的一个群成员，并点评他的聊天记录，在总结的末尾单独一行，搭配emoji展示3-5个核心关键词（可以是活跃的群友名字、关键话题等）,并进行一句话精华点评（搭配emoji)。 总体要求：总结的文本要连贯、排版要段落结构清晰。总体字数不超过180字。"
         function_response = self.c_model._generate_model_analysis(prompt, combined_content)           
-        logger.debug(f"Summary response from {self.c_model.ai_model}: {json.dumps(function_response, ensure_ascii=False)}")
         return function_response
 
     def get_chat_activity_ranking(self, session_id):
