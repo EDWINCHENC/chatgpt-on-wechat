@@ -9,7 +9,13 @@
   "group_chat_prefix": ["cc","or"],
   "nick_name_black_list": [],
 
-  "channel_type": "wx",
+  "channel_type": "gewechat", 
+  "gewechat_token": "",        
+  "gewechat_app_id": "",      
+  "gewechat_base_url": "http://本机ip:2531/v2/api",  
+  "gewechat_callback_url": "http://本机ip:9919/v2/api/callback/collect", 
+  "gewechat_download_url": "http://本机ip:2532/download",
+
   "group_chat_reply_suffix": "",
   "group_chat_keyword": ["群聊统计","总结群聊"],  
   "group_name_white_list": [
